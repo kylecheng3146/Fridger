@@ -70,6 +70,14 @@ fun HomeScreen(modifier: Modifier = Modifier) {
             items = uiState.refrigeratedItems,
             onItemClick = viewModel::onItemClick,
         )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // Frozen Items
+        FrozenItemsSection(
+            items = uiState.refrigeratedItems, // TODO: Replace with frozen items
+            onItemClick = viewModel::onItemClick,
+        )
     }
 }
 
@@ -79,7 +87,7 @@ private fun HomeHeader() {
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
+                .padding(top = 60.dp, bottom = 5.dp, start = 20.dp, end = 20.dp),
     ) {
         Text(
             text = "冰食控",
@@ -330,9 +338,38 @@ private fun RefrigeratedItemsSection(
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
-                .padding(bottom = 20.dp),
+                .padding(bottom = 10.dp),
     ) {
         SectionTitle(title = "冷藏")
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        items.forEach { item ->
+            RefrigeratedItemCard(
+                item = item,
+                onClick = { onItemClick(item.id) },
+            )
+
+            if (item != items.last()) {
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun FrozenItemsSection(
+    items: List<RefrigeratedItem>,
+    onItemClick: (String) -> Unit,
+) {
+    Column(
+        modifier =
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .padding(bottom = 20.dp),
+    ) {
+        SectionTitle(title = "冷凍")
 
         Spacer(modifier = Modifier.height(16.dp))
 
