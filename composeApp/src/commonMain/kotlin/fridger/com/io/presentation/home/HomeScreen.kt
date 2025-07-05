@@ -1,0 +1,442 @@
+@file:Suppress("ktlint:standard:no-wildcard-imports")
+
+package fridger.com.io.presentation.home
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import fridger.com.io.ui.theme.AppColors
+
+@Composable
+fun HomeScreen(modifier: Modifier = Modifier) {
+    val viewModel = remember { HomeViewModel() }
+    val uiState by viewModel.uiState.collectAsState()
+
+    Column(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .verticalScroll(rememberScrollState()),
+    ) {
+        // Header
+        HomeHeader()
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Expiry Section
+        ExpirySection(
+            todayItems = uiState.todayExpiringItems,
+            weekItems = uiState.weekExpiringItems,
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // Fridge Capacity
+        FridgeCapacitySection(
+            capacityPercentage = uiState.fridgeCapacityPercentage,
+            onAddClick = viewModel::onAddNewItemClick,
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // Refrigerated Items
+        RefrigeratedItemsSection(
+            items = uiState.refrigeratedItems,
+            onItemClick = viewModel::onItemClick,
+        )
+    }
+}
+
+@Composable
+private fun HomeHeader() {
+    Box(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+    ) {
+        Text(
+            text = "冰食控",
+            fontSize = 32.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+    }
+}
+
+@Composable
+private fun ExpirySection(
+    todayItems: List<ExpiringItem>,
+    weekItems: List<ExpiringItem>,
+) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp),
+    ) {
+        SectionTitle(title = "即將到期")
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            if (todayItems.isNotEmpty()) {
+                val item = todayItems.first()
+                ExpiryCard(
+                    icon = item.icon,
+                    count = item.count,
+                    label = "今天",
+                    modifier = Modifier.weight(1f),
+                )
+            } else {
+                ExpiryCard(
+                    icon = "",
+                    count = null,
+                    label = "今天",
+                    modifier = Modifier.weight(1f),
+                    isEmpty = true,
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            ExpiryCard(
+                icon = "",
+                count = null,
+                label = "今天",
+                modifier = Modifier.weight(1f),
+                isEmpty = true,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        SectionTitle(title = "本週到期")
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            if (weekItems.isNotEmpty()) {
+                val item = weekItems.first()
+                ExpiryCard(
+                    icon = item.icon,
+                    count = item.count,
+                    label = "本週內",
+                    modifier = Modifier.weight(1f),
+                )
+            } else {
+                ExpiryCard(
+                    icon = "",
+                    count = null,
+                    label = "本週內",
+                    modifier = Modifier.weight(1f),
+                    isEmpty = true,
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Spacer(modifier = Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun ExpiryCard(
+    icon: String,
+    count: Int?,
+    label: String,
+    modifier: Modifier = Modifier,
+    isEmpty: Boolean = false,
+) {
+    Card(
+        modifier = modifier.height(100.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+            ),
+        elevation =
+            CardDefaults.cardElevation(
+                defaultElevation = 2.dp,
+            ),
+    ) {
+        if (!isEmpty) {
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    text = icon,
+                    fontSize = 32.sp,
+                )
+
+                Column {
+                    Text(
+                        text = "$count $label",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+        } else {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = label,
+                    fontSize = 14.sp,
+                    color = AppColors.TextSecondary,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FridgeCapacitySection(
+    capacityPercentage: Float,
+    onAddClick: () -> Unit,
+) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp),
+    ) {
+        SectionTitle(title = "冰箱容量")
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = Color.White,
+                ),
+            elevation =
+                CardDefaults.cardElevation(
+                    defaultElevation = 2.dp,
+                ),
+        ) {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    LinearProgressIndicator(
+                        progress = { capacityPercentage },
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .height(8.dp)
+                                .clip(RoundedCornerShape(4.dp)),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = AppColors.ProgressTrack,
+                    )
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Text(
+                        text = "${(capacityPercentage * 100).toInt()}%",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                OutlinedButton(
+                    onClick = onAddClick,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors =
+                        ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary,
+                        ),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "新增食材",
+                        fontSize = 16.sp,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RefrigeratedItemsSection(
+    items: List<RefrigeratedItem>,
+    onItemClick: (String) -> Unit,
+) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 20.dp),
+    ) {
+        SectionTitle(title = "冷藏")
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        items.forEach { item ->
+            RefrigeratedItemCard(
+                item = item,
+                onClick = { onItemClick(item.id) },
+            )
+
+            if (item != items.last()) {
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun RefrigeratedItemCard(
+    item: RefrigeratedItem,
+    onClick: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+            ),
+        elevation =
+            CardDefaults.cardElevation(
+                defaultElevation = 1.dp,
+            ),
+        onClick = onClick,
+    ) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // Icon
+            Box(
+                modifier =
+                    Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(AppColors.IconBackground),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = item.icon,
+                    fontSize = 24.sp,
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Name and Quantity
+            Column(
+                modifier = Modifier.weight(1f),
+            ) {
+                Text(
+                    text = item.name,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = item.quantity,
+                    fontSize = 14.sp,
+                    color = AppColors.TextSecondary,
+                )
+            }
+
+            // Expiry info
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                if (item.hasWarning) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = AppColors.Warning,
+                    )
+                }
+                Text(
+                    text = "${item.daysUntilExpiry}天後到期",
+                    fontSize = 14.sp,
+                    color = if (item.hasWarning) AppColors.Warning else AppColors.TextSecondary,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SectionTitle(title: String) {
+    Text(
+        text = title,
+        fontSize = 20.sp,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onBackground,
+    )
+}
