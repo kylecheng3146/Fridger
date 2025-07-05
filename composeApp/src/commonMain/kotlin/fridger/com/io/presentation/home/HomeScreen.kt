@@ -1,7 +1,7 @@
 @file:Suppress("ktlint:standard:no-wildcard-imports")
 
 package fridger.com.io.presentation.home
-
+import AddNewItemDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -31,14 +31,33 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import fridger.com.io.ui.theme.AppColors
+import fridger.composeapp.generated.resources.Res
+import fridger.composeapp.generated.resources.home_add_ingredient
+import fridger.composeapp.generated.resources.home_days_until_expiry
+import fridger.composeapp.generated.resources.home_expiring_soon
+import fridger.composeapp.generated.resources.home_expiring_this_week
+import fridger.composeapp.generated.resources.home_fridge_capacity
+import fridger.composeapp.generated.resources.home_frozen
+import fridger.composeapp.generated.resources.home_refrigerated
+import fridger.composeapp.generated.resources.home_this_week
+import fridger.composeapp.generated.resources.home_title
+import fridger.composeapp.generated.resources.home_today
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier) {
     val viewModel = remember { HomeViewModel() }
     val uiState by viewModel.uiState.collectAsState()
 
+    if (uiState.showAddNewItemDialog) {
+        AddNewItemDialog(
+            onDismiss = viewModel::onDismissDialog,
+            onConfirm = viewModel::onAddNewItemConfirm
+        )
+    }
+
     Column(
-        modifier =
+        modifier = 
             modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
@@ -90,7 +109,7 @@ private fun HomeHeader() {
                 .padding(top = 60.dp, bottom = 5.dp, start = 20.dp, end = 20.dp),
     ) {
         Text(
-            text = "冰食控",
+            text = stringResource(Res.string.home_title),
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground,
@@ -109,7 +128,7 @@ private fun ExpirySection(
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp),
     ) {
-        SectionTitle(title = "即將到期")
+        SectionTitle(title = stringResource(Res.string.home_expiring_soon))
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -122,14 +141,14 @@ private fun ExpirySection(
                 ExpiryCard(
                     icon = item.icon,
                     count = item.count,
-                    label = "今天",
+                    label = stringResource(Res.string.home_today),
                     modifier = Modifier.weight(1f),
                 )
             } else {
                 ExpiryCard(
                     icon = "",
                     count = null,
-                    label = "今天",
+                    label = stringResource(Res.string.home_today),
                     modifier = Modifier.weight(1f),
                     isEmpty = true,
                 )
@@ -140,7 +159,7 @@ private fun ExpirySection(
             ExpiryCard(
                 icon = "",
                 count = null,
-                label = "今天",
+                label = stringResource(Res.string.home_today),
                 modifier = Modifier.weight(1f),
                 isEmpty = true,
             )
@@ -148,7 +167,7 @@ private fun ExpirySection(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        SectionTitle(title = "本週到期")
+        SectionTitle(title = stringResource(Res.string.home_expiring_this_week))
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -161,14 +180,14 @@ private fun ExpirySection(
                 ExpiryCard(
                     icon = item.icon,
                     count = item.count,
-                    label = "本週內",
+                    label = stringResource(Res.string.home_this_week),
                     modifier = Modifier.weight(1f),
                 )
             } else {
                 ExpiryCard(
                     icon = "",
                     count = null,
-                    label = "本週內",
+                    label = stringResource(Res.string.home_this_week),
                     modifier = Modifier.weight(1f),
                     isEmpty = true,
                 )
@@ -253,7 +272,7 @@ private fun FridgeCapacitySection(
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp),
     ) {
-        SectionTitle(title = "冰箱容量")
+        SectionTitle(title = stringResource(Res.string.home_fridge_capacity))
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -319,7 +338,7 @@ private fun FridgeCapacitySection(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "新增食材",
+                        text = stringResource(Res.string.home_add_ingredient),
                         fontSize = 16.sp,
                     )
                 }
@@ -340,7 +359,7 @@ private fun RefrigeratedItemsSection(
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 10.dp),
     ) {
-        SectionTitle(title = "冷藏")
+        SectionTitle(title = stringResource(Res.string.home_refrigerated))
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -369,7 +388,7 @@ private fun FrozenItemsSection(
             .padding(horizontal = 20.dp)
             .padding(bottom = 20.dp),
     ) {
-        SectionTitle(title = "冷凍")
+        SectionTitle(title = stringResource(Res.string.home_frozen))
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -459,7 +478,7 @@ private fun RefrigeratedItemCard(
                     )
                 }
                 Text(
-                    text = "${item.daysUntilExpiry}天後到期",
+                    text = stringResource(Res.string.home_days_until_expiry, item.daysUntilExpiry),
                     fontSize = 14.sp,
                     color = if (item.hasWarning) AppColors.Warning else AppColors.TextSecondary,
                 )

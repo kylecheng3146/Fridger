@@ -12,6 +12,7 @@ data class HomeUiState(
     val weekExpiringItems: List<ExpiringItem> = emptyList(),
     val fridgeCapacityPercentage: Float = 0f,
     val refrigeratedItems: List<RefrigeratedItem> = emptyList(),
+    val showAddNewItemDialog: Boolean = false,
     val isLoading: Boolean = false,
     val error: String? = null
 )
@@ -107,7 +108,16 @@ class HomeViewModel : ViewModel() {
     }
     
     fun onAddNewItemClick() {
-        // TODO: Navigate to add item screen
+        _uiState.value = _uiState.value.copy(showAddNewItemDialog = true)
+    }
+
+    fun onDismissDialog() {
+        _uiState.value = _uiState.value.copy(showAddNewItemDialog = false)
+    }
+
+    fun onAddNewItemConfirm(name: String, quantity: String, expiryDate: String) {
+        // TODO: Add item to repository
+        _uiState.value = _uiState.value.copy(showAddNewItemDialog = false)
     }
     
     fun onItemClick(itemId: String) {

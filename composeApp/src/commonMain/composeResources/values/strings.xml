@@ -18,4 +18,32 @@
     <string name="common_error">發生錯誤</string>
     <string name="common_retry">重試</string>
     <string name="common_loading">載入中…</string>
+
+    <!-- Add New Item Dialog -->
+    <string name="add_new_item_close">關閉</string>
+    <string name="add_new_item_title">新增食材</string>
+    <string name="add_new_item_name">名稱</string>
+    <string name="add_new_item_quantity_optional">數量 (選填)</string>
+    <string name="add_new_item_expiry_date">到期日</string>
+    <string name="add_new_item_add">新增</string>
+    <string name="add_new_item_confirm">確定</string>
+    <string name="add_new_item_cancel">取消</string>
+    <string name="add_new_item_suggestion_milk">牛奶</string>
+    <string name="add_new_item_suggestion_egg">雞蛋</string>
+    <string name="add_new_item_suggestion_apple">蘋果</string>
+    <string name="date_format_yyyy_MM_dd">yyyy/MM/dd</string>
+    <string name="home_frozen">冷凍</string>
+    <string name="mock_item_tomato_name">番茄</string>
+    <string name="mock_item_tomato_icon">🍅</string>
+    <string name="mock_item_meat_name">肉類</string>
+    <string name="mock_item_meat_icon">🥩</string>
+    <string name="mock_item_egg_name">雞蛋</string>
+    <string name="mock_item_egg_icon">🐔</string>
+    <string name="mock_item_cabbage_name">青江菜</string>
+    <string name="mock_item_cabbage_icon">🥬</string>
+    <string name="mock_item_milk_name">鮮奶</string>
+    <string name="mock_item_milk_icon">🥛</string>
+    <string name="mock_quantity_ten">x10</string>
+    <string name="mock_quantity_one_bundle">x1 束</string>
+    <string name="mock_quantity_one_bottle">x1 瓶</string>
 </resources>
