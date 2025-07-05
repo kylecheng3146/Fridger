@@ -43,6 +43,7 @@ import fridger.composeapp.generated.resources.home_this_week
 import fridger.composeapp.generated.resources.home_title
 import fridger.composeapp.generated.resources.home_today
 import org.jetbrains.compose.resources.stringResource
+import fridger.com.io.utils.stringResourceFormat
 
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier) {
@@ -478,7 +479,7 @@ private fun RefrigeratedItemCard(
                     )
                 }
                 Text(
-                    text = stringResource(Res.string.home_days_until_expiry, item.daysUntilExpiry),
+                    text = stringResourceFormat(Res.string.home_days_until_expiry, item.daysUntilExpiry),
                     fontSize = 14.sp,
                     color = if (item.hasWarning) AppColors.Warning else AppColors.TextSecondary,
                 )
