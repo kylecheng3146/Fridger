@@ -1,0 +1,96 @@
+# EditorConfig helps developers define and maintain consistent
+# coding styles between different editors and IDEs
+# http://editorconfig.org
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_size = 4
+indent_style = space
+insert_final_newline = true
+max_line_length = 120
+trim_trailing_whitespace = true
+
+[*.{kt,kts}]
+# Kotlin coding conventions
+# https://kotlinlang.org/docs/coding-conventions.html
+ij_kotlin_code_style_defaults = KOTLIN_OFFICIAL
+
+# Imports
+ij_kotlin_imports_layout = *,java.**,javax.**,kotlin.**,^
+ij_kotlin_name_count_to_use_star_import = 5
+ij_kotlin_name_count_to_use_star_import_for_members = 3
+ij_kotlin_packages_to_use_import_on_demand = java.util.*,kotlinx.android.synthetic.**,io.ktor.**
+
+# Blank lines
+ij_kotlin_blank_lines_after_class_header = 0
+ij_kotlin_blank_lines_around_block_when_branches = 0
+ij_kotlin_blank_lines_before_declaration_with_comment_or_annotation_on_separate_line = 1
+
+# Spaces
+ij_kotlin_spaces_around_function_type_arrow = true
+ij_kotlin_spaces_around_logical_operators = true
+ij_kotlin_spaces_around_equality_operators = true
+ij_kotlin_spaces_around_range = false
+ij_kotlin_spaces_around_unary_operator = false
+
+# Wrapping
+ij_kotlin_call_parameters_wrap = on_every_item
+ij_kotlin_call_parameters_lparen_on_next_line = false
+ij_kotlin_call_parameters_rparen_on_next_line = false
+ij_kotlin_method_parameters_wrap = on_every_item
+ij_kotlin_method_parameters_lparen_on_next_line = false
+ij_kotlin_method_parameters_rparen_on_next_line = false
+ij_kotlin_extends_list_wrap = normal
+ij_kotlin_method_call_chain_wrap = normal
+ij_kotlin_assignment_wrap = normal
+ij_kotlin_parameter_annotation_wrap = split_into_lines
+ij_kotlin_variable_annotation_wrap = split_into_lines
+ij_kotlin_enum_constants_wrap = off
+
+# Other
+ij_kotlin_continuation_indent_size = 4
+ij_kotlin_continuation_indent_in_parameter_lists = true
+ij_kotlin_continuation_indent_in_argument_lists = true
+ij_kotlin_continuation_indent_for_expression_bodies = true
+ij_kotlin_continuation_indent_for_chained_calls = true
+ij_kotlin_continuation_indent_in_supertype_lists = true
+ij_kotlin_continuation_indent_in_if_conditions = true
+ij_kotlin_continuation_indent_in_elvis = true
+ij_kotlin_wrap_elvis_expressions = 1
+ij_kotlin_wrap_expression_body_parameters = true
+ij_kotlin_allow_trailing_comma = true
+ij_kotlin_allow_trailing_comma_on_call_site = true
+
+# Disabled rules for ktlint
+# https://pinterest.github.io/ktlint/latest/rules/standard/
+ktlint_standard_no-wildcard-imports = disabled
+ktlint_standard_max-line-length = disabled
+ktlint_standard_trailing-comma-on-call-site = disabled
+ktlint_standard_trailing-comma-on-declaration-site = disabled
+ktlint_standard_function-naming = disabled
+
+[*.{yml,yaml}]
+indent_size = 2
+
+[*.json]
+indent_size = 2
+
+[*.xml]
+indent_size = 2
+ij_xml_continuation_indent_size = 4
+
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = off
+
+[{**/build/**,**/generated/**,**/iosMain/**,**/desktopMain/**,**/wasmJsMain/**}]
+charset = unset
+end_of_line = unset
+indent_size = unset
+indent_style = unset
+insert_final_newline = unset
+max_line_length = unset
+trim_trailing_whitespace = unset

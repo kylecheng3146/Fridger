@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import fridger.com.io.utils.epochMillisToDateString
 import fridger.composeapp.generated.resources.Res
 import fridger.composeapp.generated.resources.add_new_item_add
 import fridger.composeapp.generated.resources.add_new_item_cancel
@@ -24,7 +25,6 @@ import fridger.composeapp.generated.resources.add_new_item_suggestion_egg
 import fridger.composeapp.generated.resources.add_new_item_suggestion_milk
 import fridger.composeapp.generated.resources.add_new_item_title
 import org.jetbrains.compose.resources.stringResource
-import fridger.com.io.utils.epochMillisToDateString
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,15 +42,17 @@ fun AddNewItemDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 16.dp),
             shape = RoundedCornerShape(16.dp),
         ) {
             Column(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Row(
@@ -77,9 +79,10 @@ fun AddNewItemDialog(
                         trailingIcon = {
                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                         },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor()
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .menuAnchor()
                     )
                     ExposedDropdownMenu(
                         expanded = expanded,
@@ -117,12 +120,12 @@ fun AddNewItemDialog(
                         readOnly = true
                     )
                     Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .clickable { showDatePicker = true }
+                        modifier =
+                            Modifier
+                                .matchParentSize()
+                                .clickable { showDatePicker = true }
                     )
                 }
-
 
                 Spacer(modifier = Modifier.height(24.dp))
 

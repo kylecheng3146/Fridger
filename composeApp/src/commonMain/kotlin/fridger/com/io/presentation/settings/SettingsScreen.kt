@@ -11,6 +11,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,7 +23,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import fridger.com.io.ui.theme.AppColors
 
 @Composable
 fun SettingsScreen(
@@ -42,10 +43,11 @@ fun SettingsScreen(
     }
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState())
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .verticalScroll(rememberScrollState())
     ) {
         // Header
         SettingsHeader(onBackClick = onBackClick)
@@ -72,12 +74,13 @@ fun SettingsScreen(
                         viewModel.onThemeChange(newTheme)
                         onThemeChange(newTheme)
                     },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = uiState.selectedThemeColor.primary,
-                        uncheckedThumbColor = Color.White,
-                        uncheckedTrackColor = Color.Gray
-                    )
+                    colors =
+                        SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = uiState.selectedThemeColor.primary,
+                            uncheckedThumbColor = Color.White,
+                            uncheckedTrackColor = Color.Gray
+                        )
                 )
             }
 
@@ -106,35 +109,36 @@ fun SettingsScreen(
             // Theme Color Picker
             if (showThemeColorPicker) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    ThemeColor.values().forEach { themeColor ->
+                    ThemeColor.entries.forEach { themeColor ->
                         Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(themeColor.primary)
-                                .clickable {
-                                    viewModel.onThemeColorChange(themeColor)
-                                    onThemeColorChange(themeColor)
-                                }
-                                .then(
-                                    if (uiState.selectedThemeColor==themeColor) {
-                                        Modifier.border(
-                                            width = 3.dp,
-                                            color = if (uiState.isDarkTheme) Color.White else Color.Black,
-                                            shape = CircleShape
-                                        )
-                                    } else {
-                                        Modifier
-                                    }
-                                ),
+                            modifier =
+                                Modifier
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                                    .background(themeColor.primary)
+                                    .clickable {
+                                        viewModel.onThemeColorChange(themeColor)
+                                        onThemeColorChange(themeColor)
+                                    }.then(
+                                        if (uiState.selectedThemeColor == themeColor) {
+                                            Modifier.border(
+                                                width = 3.dp,
+                                                color = if (uiState.isDarkTheme) Color.White else Color.Black,
+                                                shape = CircleShape
+                                            )
+                                        } else {
+                                            Modifier
+                                        }
+                                    ),
                             contentAlignment = Alignment.Center
                         ) {
-                            if (uiState.selectedThemeColor==themeColor) {
+                            if (uiState.selectedThemeColor == themeColor) {
                                 Icon(
                                     imageVector = Icons.Default.Check,
                                     contentDescription = null,
@@ -165,12 +169,13 @@ fun SettingsScreen(
                 Switch(
                     checked = uiState.notificationEnabled,
                     onCheckedChange = viewModel::onNotificationEnabledChange,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = uiState.selectedThemeColor.primary,
-                        uncheckedThumbColor = Color.White,
-                        uncheckedTrackColor = Color.Gray
-                    )
+                    colors =
+                        SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = uiState.selectedThemeColor.primary,
+                            uncheckedThumbColor = Color.White,
+                            uncheckedTrackColor = Color.Gray
+                        )
                 )
             }
 
@@ -194,7 +199,7 @@ fun SettingsScreen(
 
                 // Sound Setting
                 SettingsItem(
-                    icon = Icons.Default.VolumeUp,
+                    icon = Icons.AutoMirrored.Filled.VolumeUp,
                     iconBackgroundColor = if (uiState.soundEnabled) uiState.selectedThemeColor.primaryDark else Color.Gray,
                     title = "通知音效",
                     subtitle = if (uiState.soundEnabled) "已啟用" else "已停用",
@@ -205,12 +210,13 @@ fun SettingsScreen(
                     Switch(
                         checked = uiState.soundEnabled,
                         onCheckedChange = viewModel::onSoundEnabledChange,
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = uiState.selectedThemeColor.primary,
-                            uncheckedThumbColor = Color.White,
-                            uncheckedTrackColor = Color.Gray
-                        )
+                        colors =
+                            SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = uiState.selectedThemeColor.primary,
+                                uncheckedThumbColor = Color.White,
+                                uncheckedTrackColor = Color.Gray
+                            )
                     )
                 }
 
@@ -227,12 +233,13 @@ fun SettingsScreen(
                     Switch(
                         checked = uiState.vibrationEnabled,
                         onCheckedChange = viewModel::onVibrationEnabledChange,
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = uiState.selectedThemeColor.primary,
-                            uncheckedThumbColor = Color.White,
-                            uncheckedTrackColor = Color.Gray
-                        )
+                        colors =
+                            SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = uiState.selectedThemeColor.primary,
+                                uncheckedThumbColor = Color.White,
+                                uncheckedTrackColor = Color.Gray
+                            )
                     )
                 }
 
@@ -290,14 +297,15 @@ fun SettingsScreen(
 @Composable
 private fun SettingsHeader(onBackClick: () -> Unit) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 60.dp, bottom = 5.dp, start = 20.dp, end = 20.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(top = 60.dp, bottom = 5.dp, start = 20.dp, end = 20.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onBackClick) {
             Icon(
-                imageVector = Icons.Default.ArrowBack,
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "返回",
                 tint = MaterialTheme.colorScheme.onBackground
             )
@@ -320,9 +328,10 @@ private fun SettingsSection(
     content: @Composable ColumnScope.() -> Unit
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
     ) {
         Text(
             text = title,
@@ -335,12 +344,14 @@ private fun SettingsSection(
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            elevation = CardDefaults.cardElevation(
-                defaultElevation = 2.dp
-            )
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+            elevation =
+                CardDefaults.cardElevation(
+                    defaultElevation = 2.dp
+                )
         ) {
             Column {
                 content()
@@ -359,18 +370,20 @@ private fun SettingsItem(
     endContent: @Composable (() -> Unit)? = null
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(16.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable { onClick() }
+                .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Icon with background
         Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(iconBackgroundColor),
+            modifier =
+                Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(iconBackgroundColor),
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -424,15 +437,16 @@ private fun ReminderDaysDialog(
                 val dayOptions = listOf(1, 2, 3, 5, 7, 10, 14)
                 dayOptions.forEach { days ->
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable { selectedDays = days }
-                            .padding(12.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { selectedDays = days }
+                                .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(
-                            selected = selectedDays==days,
+                            selected = selectedDays == days,
                             onClick = { selectedDays = days }
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -469,17 +483,18 @@ private fun LanguageDialog(
         },
         text = {
             Column {
-                Language.values().forEach { language ->
+                Language.entries.forEach { language ->
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable { onLanguageSelect(language) }
-                            .padding(12.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { onLanguageSelect(language) }
+                                .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(
-                            selected = currentLanguage==language,
+                            selected = currentLanguage == language,
                             onClick = { onLanguageSelect(language) }
                         )
                         Spacer(modifier = Modifier.width(8.dp))

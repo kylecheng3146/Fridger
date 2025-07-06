@@ -9,7 +9,10 @@ import org.jetbrains.compose.resources.stringResource
  * 解決 Compose Multiplatform 中 stringResource 參數化的限制問題
  */
 @Composable
-fun stringResourceFormat(resource: StringResource, vararg args: Any): String {
+fun stringResourceFormat(
+    resource: StringResource,
+    vararg args: Any
+): String {
     val template = stringResource(resource)
     return template.format(*args)
 }

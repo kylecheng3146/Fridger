@@ -42,61 +42,63 @@ object AppColors {
     val DarkProgressTrack = Color(0xFF424242)
 }
 
-private fun getLightColorScheme(themeColor: ThemeColor) = lightColorScheme(
-    primary = themeColor.primary,
-    onPrimary = AppColors.OnPrimary,
-    primaryContainer = themeColor.primaryLight.copy(alpha = 0.3f),
-    onPrimaryContainer = themeColor.primaryDark,
-    secondary = AppColors.Secondary,
-    onSecondary = AppColors.OnSecondary,
-    secondaryContainer = Color(0xFFFFE082),
-    onSecondaryContainer = Color(0xFF6D4C00),
-    tertiary = Color(0xFF4CAF50),
-    onTertiary = Color.White,
-    tertiaryContainer = Color(0xFFC8E6C9),
-    onTertiaryContainer = Color(0xFF1B5E20),
-    error = AppColors.Error,
-    onError = AppColors.OnError,
-    errorContainer = Color(0xFFFFCDD2),
-    onErrorContainer = Color(0xFFB71C1C),
-    background = AppColors.Background,
-    onBackground = AppColors.OnBackground,
-    surface = AppColors.Surface,
-    onSurface = AppColors.OnSurface,
-    surfaceVariant = Color(0xFFE0E0E0),
-    onSurfaceVariant = Color(0xFF616161),
-    outline = Color(0xFFBDBDBD),
-    outlineVariant = Color(0xFFE0E0E0),
-    scrim = Color.Black
-)
+private fun getLightColorScheme(themeColor: ThemeColor) =
+    lightColorScheme(
+        primary = themeColor.primary,
+        onPrimary = AppColors.OnPrimary,
+        primaryContainer = themeColor.primaryLight.copy(alpha = 0.3f),
+        onPrimaryContainer = themeColor.primaryDark,
+        secondary = AppColors.Secondary,
+        onSecondary = AppColors.OnSecondary,
+        secondaryContainer = Color(0xFFFFE082),
+        onSecondaryContainer = Color(0xFF6D4C00),
+        tertiary = Color(0xFF4CAF50),
+        onTertiary = Color.White,
+        tertiaryContainer = Color(0xFFC8E6C9),
+        onTertiaryContainer = Color(0xFF1B5E20),
+        error = AppColors.Error,
+        onError = AppColors.OnError,
+        errorContainer = Color(0xFFFFCDD2),
+        onErrorContainer = Color(0xFFB71C1C),
+        background = AppColors.Background,
+        onBackground = AppColors.OnBackground,
+        surface = AppColors.Surface,
+        onSurface = AppColors.OnSurface,
+        surfaceVariant = Color(0xFFE0E0E0),
+        onSurfaceVariant = Color(0xFF616161),
+        outline = Color(0xFFBDBDBD),
+        outlineVariant = Color(0xFFE0E0E0),
+        scrim = Color.Black
+    )
 
-private fun getDarkColorScheme(themeColor: ThemeColor) = darkColorScheme(
-    primary = themeColor.primaryLight,
-    onPrimary = themeColor.primaryDark,
-    primaryContainer = themeColor.primaryDark,
-    onPrimaryContainer = themeColor.primaryLight.copy(alpha = 0.9f),
-    secondary = Color(0xFFFFD54F),
-    onSecondary = Color(0xFF3E2D00),
-    secondaryContainer = Color(0xFF6D4C00),
-    onSecondaryContainer = Color(0xFFFFE082),
-    tertiary = Color(0xFF81C784),
-    onTertiary = Color(0xFF003907),
-    tertiaryContainer = Color(0xFF1B5E20),
-    onTertiaryContainer = Color(0xFFC8E6C9),
-    error = Color(0xFFEF5350),
-    onError = Color(0xFF5F0A0A),
-    errorContainer = Color(0xFFB71C1C),
-    onErrorContainer = Color(0xFFFFCDD2),
-    background = AppColors.DarkBackground,
-    onBackground = AppColors.DarkTextPrimary,
-    surface = AppColors.DarkSurface,
-    onSurface = AppColors.DarkTextPrimary,
-    surfaceVariant = Color(0xFF424242),
-    onSurfaceVariant = AppColors.DarkTextSecondary,
-    outline = Color(0xFF757575),
-    outlineVariant = Color(0xFF424242),
-    scrim = Color.Black
-)
+private fun getDarkColorScheme(themeColor: ThemeColor) =
+    darkColorScheme(
+        primary = themeColor.primaryLight,
+        onPrimary = themeColor.primaryDark,
+        primaryContainer = themeColor.primaryDark,
+        onPrimaryContainer = themeColor.primaryLight.copy(alpha = 0.9f),
+        secondary = Color(0xFFFFD54F),
+        onSecondary = Color(0xFF3E2D00),
+        secondaryContainer = Color(0xFF6D4C00),
+        onSecondaryContainer = Color(0xFFFFE082),
+        tertiary = Color(0xFF81C784),
+        onTertiary = Color(0xFF003907),
+        tertiaryContainer = Color(0xFF1B5E20),
+        onTertiaryContainer = Color(0xFFC8E6C9),
+        error = Color(0xFFEF5350),
+        onError = Color(0xFF5F0A0A),
+        errorContainer = Color(0xFFB71C1C),
+        onErrorContainer = Color(0xFFFFCDD2),
+        background = AppColors.DarkBackground,
+        onBackground = AppColors.DarkTextPrimary,
+        surface = AppColors.DarkSurface,
+        onSurface = AppColors.DarkTextPrimary,
+        surfaceVariant = Color(0xFF424242),
+        onSurfaceVariant = AppColors.DarkTextSecondary,
+        outline = Color(0xFF757575),
+        outlineVariant = Color(0xFF424242),
+        scrim = Color.Black
+    )
 
 @Composable
 fun FridgerTheme(
@@ -104,10 +106,11 @@ fun FridgerTheme(
     themeColor: ThemeColor = ThemeColor.BLUE,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        darkTheme -> getDarkColorScheme(themeColor)
-        else -> getLightColorScheme(themeColor)
-    }
+    val colorScheme =
+        when {
+            darkTheme -> getDarkColorScheme(themeColor)
+            else -> getLightColorScheme(themeColor)
+        }
 
     MaterialTheme(
         colorScheme = colorScheme,

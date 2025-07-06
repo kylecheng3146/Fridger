@@ -11,6 +11,7 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.sqldelight)
+    alias(libs.plugins.ktlint)
 }
 
 kotlin {
@@ -140,5 +141,74 @@ sqldelight {
         create("FridgerDatabase") {
             packageName.set("fridger.com.io.database")
         }
+    }
+}
+
+// ktlint 配置
+ktlint {
+    version.set("1.5.0")
+    android.set(true)
+    ignoreFailures.set(false)
+    reporters {
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.HTML)
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.CHECKSTYLE)
+    }
+    filter {
+        // 排除生成的代碼
+        exclude("**/build/**")
+        exclude("**/generated/**")
+        exclude { element -> element.file.path.contains("generated") }
+        exclude { element -> element.file.path.contains("build/") }
+    }
+}
+
+// 創建只檢查 Android 和 Common 的任務
+tasks.register("ktlintCheckAndroidAndCommon") {
+    group = "verification"
+    description = "Check Kotlin code style for Android and Common source sets only"
+    
+    dependsOn(
+        tasks.matching { task ->
+            task.name.startsWith("ktlint") && 
+            task.name.contains("Check") &&
+            (task.name.contains("AndroidMain") || 
+             task.name.contains("CommonMain") ||
+             task.name.contains("AndroidTest") ||
+             task.name.contains("CommonTest")) &&
+            !task.name.contains("Ios") &&
+            !task.name.contains("Desktop") &&
+            !task.name.contains("WasmJs")
+        }
+    )
+}
+
+tasks.register("ktlintFormatAndroidAndCommon") {
+    group = "formatting"
+    description = "Fix Kotlin code style for Android and Common source sets only"
+    
+    dependsOn(
+        tasks.matching { task ->
+            task.name.startsWith("ktlint") && 
+            task.name.contains("Format") &&
+            (task.name.contains("AndroidMain") || 
+             task.name.contains("CommonMain") ||
+             task.name.contains("AndroidTest") ||
+             task.name.contains("CommonTest")) &&
+            !task.name.contains("Ios") &&
+            !task.name.contains("Desktop") &&
+            !task.name.contains("WasmJs")
+        }
+    )
+}
+
+// 禁用不需要的 ktlint 任務
+afterEvaluate {
+    tasks.matching { task ->
+        task.name.contains("ktlint") &&
+        (task.name.contains("Ios") ||
+         task.name.contains("Desktop") ||
+         task.name.contains("WasmJs"))
+    }.configureEach {
+        enabled = false
     }
 }

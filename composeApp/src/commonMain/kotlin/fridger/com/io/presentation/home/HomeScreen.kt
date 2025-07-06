@@ -1,5 +1,3 @@
-@file:Suppress("ktlint:standard:no-wildcard-imports")
-
 package fridger.com.io.presentation.home
 import AddNewItemDialog
 import androidx.compose.foundation.background
@@ -17,7 +15,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -28,11 +25,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import fridger.com.io.ui.theme.AppColors
+import fridger.com.io.utils.stringResourceFormat
 import fridger.composeapp.generated.resources.Res
 import fridger.composeapp.generated.resources.home_add_ingredient
 import fridger.composeapp.generated.resources.home_days_until_expiry
@@ -45,7 +42,6 @@ import fridger.composeapp.generated.resources.home_this_week
 import fridger.composeapp.generated.resources.home_title
 import fridger.composeapp.generated.resources.home_today
 import org.jetbrains.compose.resources.stringResource
-import fridger.com.io.utils.stringResourceFormat
 
 @Composable
 fun HomeScreen(
@@ -63,7 +59,7 @@ fun HomeScreen(
     }
 
     Column(
-        modifier = 
+        modifier =
             modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
@@ -120,7 +116,7 @@ private fun HomeHeader(onSettingsClick: () -> Unit) {
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground,
         )
-        
+
         // Settings button
         IconButton(
             onClick = onSettingsClick,
@@ -254,7 +250,7 @@ private fun ExpiryCard(
 
                 Column {
                     Text(
-                        text = "$count $label",
+                        text = label,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -286,7 +282,7 @@ private fun FridgeCapacitySection(
 ) {
     val isDarkTheme = MaterialTheme.colorScheme.background == AppColors.DarkBackground
     val progressTrackColor = if (isDarkTheme) AppColors.DarkProgressTrack else AppColors.ProgressTrack
-    
+
     Column(
         modifier =
             Modifier
@@ -322,17 +318,19 @@ private fun FridgeCapacitySection(
                 ) {
                     // Custom progress bar
                     Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(progressTrackColor)
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .height(8.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(progressTrackColor)
                     ) {
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth(capacityPercentage)
-                                .fillMaxHeight()
-                                .background(MaterialTheme.colorScheme.primary)
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth(capacityPercentage)
+                                    .fillMaxHeight()
+                                    .background(MaterialTheme.colorScheme.primary)
                         )
                     }
 
@@ -409,10 +407,10 @@ private fun FrozenItemsSection(
 ) {
     Column(
         modifier =
-        Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp)
-            .padding(bottom = 20.dp),
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 20.dp),
     ) {
         SectionTitle(title = stringResource(Res.string.home_frozen))
 

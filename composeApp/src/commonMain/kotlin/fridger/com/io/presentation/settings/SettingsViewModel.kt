@@ -49,7 +49,10 @@ data class SettingsUiState(
     val selectedLanguage: Language = Language.CHINESE
 )
 
-enum class Language(val displayName: String, val code: String) {
+enum class Language(
+    val displayName: String,
+    val code: String
+) {
     CHINESE("繁體中文", "zh-TW"),
     ENGLISH("English", "en"),
     JAPANESE("日本語", "ja")

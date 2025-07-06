@@ -44,5 +44,6 @@ fun App() {
 }
 
 enum class Screen {
-    Home, Settings
+    Home,
+    Settings
 }
