@@ -38,6 +38,7 @@ object AppColors {
     val DarkSurface = Color(0xFF1E1E1E)
     val DarkTextPrimary = Color(0xFFE0E0E0)
     val DarkTextSecondary = Color(0xFFBDBDBD)
+    val DarkProgressTrack = Color(0xFF424242)
 }
 
 private val LightColorScheme = lightColorScheme(

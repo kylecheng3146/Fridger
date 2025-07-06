@@ -10,11 +10,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Brightness4
+import androidx.compose.material.icons.filled.Brightness7
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -46,7 +49,10 @@ import org.jetbrains.compose.resources.stringResource
 import fridger.com.io.utils.stringResourceFormat
 
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier) {
+fun HomeScreen(
+    modifier: Modifier = Modifier,
+    onThemeToggle: () -> Unit = {}
+) {
     val viewModel = remember { HomeViewModel() }
     val uiState by viewModel.uiState.collectAsState()
 
@@ -65,7 +71,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                 .verticalScroll(rememberScrollState()),
     ) {
         // Header
-        HomeHeader()
+        HomeHeader(onThemeToggle = onThemeToggle)
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -102,7 +108,9 @@ fun HomeScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun HomeHeader() {
+private fun HomeHeader(onThemeToggle: () -> Unit) {
+    val isCurrentlyDarkTheme = MaterialTheme.colorScheme.background == AppColors.DarkBackground
+    
     Box(
         modifier =
             Modifier
@@ -115,6 +123,21 @@ private fun HomeHeader() {
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground,
         )
+        
+        // Theme toggle button
+        IconButton(
+            onClick = onThemeToggle,
+            modifier = Modifier.align(Alignment.CenterEnd)
+        ) {
+            Icon(
+                imageVector = if (isCurrentlyDarkTheme) 
+                    Icons.Default.Brightness7 
+                else 
+                    Icons.Default.Brightness4,
+                contentDescription = "Toggle theme",
+                tint = MaterialTheme.colorScheme.onBackground
+            )
+        }
     }
 }
 
@@ -267,6 +290,9 @@ private fun FridgeCapacitySection(
     capacityPercentage: Float,
     onAddClick: () -> Unit,
 ) {
+    val isDarkTheme = MaterialTheme.colorScheme.background == AppColors.DarkBackground
+    val progressTrackColor = if (isDarkTheme) AppColors.DarkProgressTrack else AppColors.ProgressTrack
+    
     Column(
         modifier =
             Modifier
@@ -282,7 +308,7 @@ private fun FridgeCapacitySection(
             shape = RoundedCornerShape(16.dp),
             colors =
                 CardDefaults.cardColors(
-                    containerColor = Color.White,
+                    containerColor = MaterialTheme.colorScheme.surface,
                 ),
             elevation =
                 CardDefaults.cardElevation(
@@ -300,16 +326,21 @@ private fun FridgeCapacitySection(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    LinearProgressIndicator(
-                        progress = { capacityPercentage },
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .height(8.dp)
-                                .clip(RoundedCornerShape(4.dp)),
-                        color = MaterialTheme.colorScheme.primary,
-                        trackColor = AppColors.ProgressTrack,
-                    )
+                    // Custom progress bar
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(progressTrackColor)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(capacityPercentage)
+                                .fillMaxHeight()
+                                .background(MaterialTheme.colorScheme.primary)
+                        )
+                    }
 
                     Spacer(modifier = Modifier.width(16.dp))
 
