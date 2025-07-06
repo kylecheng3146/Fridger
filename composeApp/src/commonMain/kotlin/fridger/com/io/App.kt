@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import fridger.com.io.presentation.home.HomeScreen
+import fridger.com.io.presentation.settings.SettingsScreen
 import fridger.com.io.ui.theme.FridgerTheme
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -14,10 +15,26 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Preview
 fun App() {
     var isDarkTheme by remember { mutableStateOf(false) }
+    var currentScreen by remember { mutableStateOf(Screen.Home) }
     
     FridgerTheme(darkTheme = isDarkTheme) {
-        HomeScreen(
-            onThemeToggle = { isDarkTheme = !isDarkTheme }
-        )
+        when (currentScreen) {
+            Screen.Home -> {
+                HomeScreen(
+                    onSettingsClick = { currentScreen = Screen.Settings }
+                )
+            }
+            Screen.Settings -> {
+                SettingsScreen(
+                    isDarkTheme = isDarkTheme,
+                    onThemeChange = { isDarkTheme = it },
+                    onBackClick = { currentScreen = Screen.Home }
+                )
+            }
+        }
     }
+}
+
+enum class Screen {
+    Home, Settings
 }

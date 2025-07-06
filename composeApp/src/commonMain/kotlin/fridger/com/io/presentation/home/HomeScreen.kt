@@ -10,8 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Brightness4
-import androidx.compose.material.icons.filled.Brightness7
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -51,7 +50,7 @@ import fridger.com.io.utils.stringResourceFormat
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    onThemeToggle: () -> Unit = {}
+    onSettingsClick: () -> Unit = {}
 ) {
     val viewModel = remember { HomeViewModel() }
     val uiState by viewModel.uiState.collectAsState()
@@ -71,7 +70,7 @@ fun HomeScreen(
                 .verticalScroll(rememberScrollState()),
     ) {
         // Header
-        HomeHeader(onThemeToggle = onThemeToggle)
+        HomeHeader(onSettingsClick = onSettingsClick)
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -108,9 +107,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun HomeHeader(onThemeToggle: () -> Unit) {
-    val isCurrentlyDarkTheme = MaterialTheme.colorScheme.background == AppColors.DarkBackground
-    
+private fun HomeHeader(onSettingsClick: () -> Unit) {
     Box(
         modifier =
             Modifier
@@ -124,17 +121,14 @@ private fun HomeHeader(onThemeToggle: () -> Unit) {
             color = MaterialTheme.colorScheme.onBackground,
         )
         
-        // Theme toggle button
+        // Settings button
         IconButton(
-            onClick = onThemeToggle,
+            onClick = onSettingsClick,
             modifier = Modifier.align(Alignment.CenterEnd)
         ) {
             Icon(
-                imageVector = if (isCurrentlyDarkTheme) 
-                    Icons.Default.Brightness7 
-                else 
-                    Icons.Default.Brightness4,
-                contentDescription = "Toggle theme",
+                imageVector = Icons.Default.Settings,
+                contentDescription = "Settings",
                 tint = MaterialTheme.colorScheme.onBackground
             )
         }
