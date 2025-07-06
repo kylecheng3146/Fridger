@@ -3,9 +3,11 @@
 package fridger.com.io.presentation.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -15,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -23,16 +26,19 @@ import fridger.com.io.ui.theme.AppColors
 @Composable
 fun SettingsScreen(
     isDarkTheme: Boolean,
+    selectedThemeColor: ThemeColor,
     onThemeChange: (Boolean) -> Unit,
+    onThemeColorChange: (ThemeColor) -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val viewModel = remember { SettingsViewModel() }
     val uiState by viewModel.uiState.collectAsState()
 
-    // Update dark theme state from parent
-    LaunchedEffect(isDarkTheme) {
+    // Update states from parent
+    LaunchedEffect(isDarkTheme, selectedThemeColor) {
         viewModel.onThemeChange(isDarkTheme)
+        viewModel.onThemeColorChange(selectedThemeColor)
     }
 
     Column(
@@ -51,6 +57,7 @@ fun SettingsScreen(
             // Theme Setting
             SettingsItem(
                 icon = Icons.Default.Brightness4,
+                iconBackgroundColor = uiState.selectedThemeColor.primaryDark,
                 title = "主題",
                 subtitle = if (uiState.isDarkTheme) "深色模式" else "淺色模式",
                 onClick = {
@@ -64,8 +71,80 @@ fun SettingsScreen(
                     onCheckedChange = { newTheme ->
                         viewModel.onThemeChange(newTheme)
                         onThemeChange(newTheme)
-                    }
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = uiState.selectedThemeColor.primary,
+                        uncheckedThumbColor = Color.White,
+                        uncheckedTrackColor = Color.Gray
+                    )
                 )
+            }
+
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+            )
+
+            // Theme Color Setting
+            var showThemeColorPicker by remember { mutableStateOf(false) }
+
+            SettingsItem(
+                icon = Icons.Default.Palette,
+                iconBackgroundColor = uiState.selectedThemeColor.primary,
+                title = "主題顏色",
+                subtitle = uiState.selectedThemeColor.displayName,
+                onClick = { showThemeColorPicker = !showThemeColorPicker }
+            ) {
+                Icon(
+                    imageVector = if (showThemeColorPicker) Icons.Default.ExpandLess else Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // Theme Color Picker
+            if (showThemeColorPicker) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    ThemeColor.values().forEach { themeColor ->
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(themeColor.primary)
+                                .clickable {
+                                    viewModel.onThemeColorChange(themeColor)
+                                    onThemeColorChange(themeColor)
+                                }
+                                .then(
+                                    if (uiState.selectedThemeColor==themeColor) {
+                                        Modifier.border(
+                                            width = 3.dp,
+                                            color = if (uiState.isDarkTheme) Color.White else Color.Black,
+                                            shape = CircleShape
+                                        )
+                                    } else {
+                                        Modifier
+                                    }
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (uiState.selectedThemeColor==themeColor) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                    }
+                }
             }
 
             HorizontalDivider(
@@ -76,6 +155,7 @@ fun SettingsScreen(
             // Notification Settings
             SettingsItem(
                 icon = Icons.Default.Notifications,
+                iconBackgroundColor = if (uiState.notificationEnabled) uiState.selectedThemeColor.primaryDark else Color.Gray,
                 title = "過期提醒通知",
                 subtitle = if (uiState.notificationEnabled) "已啟用" else "已停用",
                 onClick = {
@@ -84,16 +164,23 @@ fun SettingsScreen(
             ) {
                 Switch(
                     checked = uiState.notificationEnabled,
-                    onCheckedChange = viewModel::onNotificationEnabledChange
+                    onCheckedChange = viewModel::onNotificationEnabledChange,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = uiState.selectedThemeColor.primary,
+                        uncheckedThumbColor = Color.White,
+                        uncheckedTrackColor = Color.Gray
+                    )
                 )
             }
 
             if (uiState.notificationEnabled) {
                 // Reminder Days
                 var showReminderDialog by remember { mutableStateOf(false) }
-                
+
                 SettingsItem(
                     icon = Icons.Default.Schedule,
+                    iconBackgroundColor = uiState.selectedThemeColor.primaryDark,
                     title = "提醒時間",
                     subtitle = "過期前 ${uiState.reminderDays} 天提醒",
                     onClick = { showReminderDialog = true }
@@ -108,6 +195,7 @@ fun SettingsScreen(
                 // Sound Setting
                 SettingsItem(
                     icon = Icons.Default.VolumeUp,
+                    iconBackgroundColor = if (uiState.soundEnabled) uiState.selectedThemeColor.primaryDark else Color.Gray,
                     title = "通知音效",
                     subtitle = if (uiState.soundEnabled) "已啟用" else "已停用",
                     onClick = {
@@ -116,13 +204,20 @@ fun SettingsScreen(
                 ) {
                     Switch(
                         checked = uiState.soundEnabled,
-                        onCheckedChange = viewModel::onSoundEnabledChange
+                        onCheckedChange = viewModel::onSoundEnabledChange,
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = uiState.selectedThemeColor.primary,
+                            uncheckedThumbColor = Color.White,
+                            uncheckedTrackColor = Color.Gray
+                        )
                     )
                 }
 
                 // Vibration Setting
                 SettingsItem(
                     icon = Icons.Default.PhoneAndroid,
+                    iconBackgroundColor = if (uiState.vibrationEnabled) uiState.selectedThemeColor.primaryDark else Color.Gray,
                     title = "震動提醒",
                     subtitle = if (uiState.vibrationEnabled) "已啟用" else "已停用",
                     onClick = {
@@ -131,7 +226,13 @@ fun SettingsScreen(
                 ) {
                     Switch(
                         checked = uiState.vibrationEnabled,
-                        onCheckedChange = viewModel::onVibrationEnabledChange
+                        onCheckedChange = viewModel::onVibrationEnabledChange,
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = uiState.selectedThemeColor.primary,
+                            uncheckedThumbColor = Color.White,
+                            uncheckedTrackColor = Color.Gray
+                        )
                     )
                 }
 
@@ -155,9 +256,10 @@ fun SettingsScreen(
 
             // Language Setting
             var showLanguageDialog by remember { mutableStateOf(false) }
-            
+
             SettingsItem(
                 icon = Icons.Default.Language,
+                iconBackgroundColor = uiState.selectedThemeColor.primaryDark,
                 title = "語言",
                 subtitle = uiState.selectedLanguage.displayName,
                 onClick = { showLanguageDialog = true }
@@ -200,9 +302,9 @@ private fun SettingsHeader(onBackClick: () -> Unit) {
                 tint = MaterialTheme.colorScheme.onBackground
             )
         }
-        
+
         Spacer(modifier = Modifier.width(8.dp))
-        
+
         Text(
             text = "設定",
             fontSize = 32.sp,
@@ -250,6 +352,7 @@ private fun SettingsSection(
 @Composable
 private fun SettingsItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconBackgroundColor: Color,
     title: String,
     subtitle: String,
     onClick: () -> Unit,
@@ -262,12 +365,21 @@ private fun SettingsItem(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(24.dp)
-        )
+        // Icon with background
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(iconBackgroundColor),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(24.dp)
+            )
+        }
 
         Spacer(modifier = Modifier.width(16.dp))
 
@@ -308,7 +420,7 @@ private fun ReminderDaysDialog(
             Column {
                 Text(text = "選擇過期前幾天開始提醒：")
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 val dayOptions = listOf(1, 2, 3, 5, 7, 10, 14)
                 dayOptions.forEach { days ->
                     Row(
@@ -320,7 +432,7 @@ private fun ReminderDaysDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(
-                            selected = selectedDays == days,
+                            selected = selectedDays==days,
                             onClick = { selectedDays = days }
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -367,7 +479,7 @@ private fun LanguageDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(
-                            selected = currentLanguage == language,
+                            selected = currentLanguage==language,
                             onClick = { onLanguageSelect(language) }
                         )
                         Spacer(modifier = Modifier.width(8.dp))

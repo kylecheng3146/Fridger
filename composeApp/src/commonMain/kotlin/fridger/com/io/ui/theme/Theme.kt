@@ -4,27 +4,28 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import fridger.com.io.presentation.settings.ThemeColor
 
 // App Color Palette
 object AppColors {
-    // Primary Colors
+    // Primary Colors (will be replaced by dynamic theme)
     val Primary = Color(0xFF2196F3)
     val PrimaryVariant = Color(0xFF1976D2)
     val Secondary = Color(0xFFFFC107)
     val SecondaryVariant = Color(0xFFFFA000)
-    
+
     // Background Colors
     val Background = Color(0xFFF5F5F5)
     val Surface = Color(0xFFFFFFFF)
     val Error = Color(0xFFF44336)
-    
+
     // Text Colors
     val OnPrimary = Color(0xFFFFFFFF)
     val OnSecondary = Color(0xFF000000)
     val OnBackground = Color(0xFF000000)
     val OnSurface = Color(0xFF000000)
     val OnError = Color(0xFFFFFFFF)
-    
+
     // App Specific Colors
     val TextPrimary = Color(0xFF212121)
     val TextSecondary = Color(0xFF757575)
@@ -32,7 +33,7 @@ object AppColors {
     val IconBackground = Color(0xFFF5F5F5)
     val Warning = Color(0xFFFFA726)
     val ProgressTrack = Color(0xFFE0E0E0)
-    
+
     // Dark Theme Colors
     val DarkBackground = Color(0xFF121212)
     val DarkSurface = Color(0xFF1E1E1E)
@@ -41,11 +42,11 @@ object AppColors {
     val DarkProgressTrack = Color(0xFF424242)
 }
 
-private val LightColorScheme = lightColorScheme(
-    primary = AppColors.Primary,
+private fun getLightColorScheme(themeColor: ThemeColor) = lightColorScheme(
+    primary = themeColor.primary,
     onPrimary = AppColors.OnPrimary,
-    primaryContainer = Color(0xFFBBDEFB),
-    onPrimaryContainer = Color(0xFF0D47A1),
+    primaryContainer = themeColor.primaryLight.copy(alpha = 0.3f),
+    onPrimaryContainer = themeColor.primaryDark,
     secondary = AppColors.Secondary,
     onSecondary = AppColors.OnSecondary,
     secondaryContainer = Color(0xFFFFE082),
@@ -69,11 +70,11 @@ private val LightColorScheme = lightColorScheme(
     scrim = Color.Black
 )
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Color(0xFF64B5F6),
-    onPrimary = Color(0xFF003C6E),
-    primaryContainer = Color(0xFF0D47A1),
-    onPrimaryContainer = Color(0xFFBBDEFB),
+private fun getDarkColorScheme(themeColor: ThemeColor) = darkColorScheme(
+    primary = themeColor.primaryLight,
+    onPrimary = themeColor.primaryDark,
+    primaryContainer = themeColor.primaryDark,
+    onPrimaryContainer = themeColor.primaryLight.copy(alpha = 0.9f),
     secondary = Color(0xFFFFD54F),
     onSecondary = Color(0xFF3E2D00),
     secondaryContainer = Color(0xFF6D4C00),
@@ -100,11 +101,12 @@ private val DarkColorScheme = darkColorScheme(
 @Composable
 fun FridgerTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    themeColor: ThemeColor = ThemeColor.BLUE,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        darkTheme -> getDarkColorScheme(themeColor)
+        else -> getLightColorScheme(themeColor)
     }
 
     MaterialTheme(
