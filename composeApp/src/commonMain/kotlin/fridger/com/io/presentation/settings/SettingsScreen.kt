@@ -23,6 +23,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import fridger.com.io.presentation.ViewModelFactoryProvider
 
 @Composable
 fun SettingsScreen(
@@ -33,7 +35,7 @@ fun SettingsScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val viewModel = remember { SettingsViewModel() }
+    val viewModel: SettingsViewModel = viewModel(factory = ViewModelFactoryProvider.factory)
     val uiState by viewModel.uiState.collectAsState()
 
     // Update states from parent

@@ -1,41 +1,84 @@
 package fridger.com.io.presentation.settings
 
 import androidx.compose.ui.graphics.Color
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
-class SettingsViewModel {
+class SettingsViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
+    init {
+        // Load saved settings from SettingsManager
+        viewModelScope.launch {
+            SettingsManager.settings.collect { settings ->
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        isDarkTheme = settings.isDarkTheme,
+                        selectedThemeColor = settings.themeColor,
+                        notificationEnabled = settings.notificationEnabled,
+                        reminderDays = settings.reminderDays,
+                        soundEnabled = settings.soundEnabled,
+                        vibrationEnabled = settings.vibrationEnabled,
+                        selectedLanguage = settings.language
+                    )
+                }
+            }
+        }
+    }
+
     fun onThemeChange(isDarkTheme: Boolean) {
-        _uiState.update { it.copy(isDarkTheme = isDarkTheme) }
+        viewModelScope.launch {
+            SettingsManager.setDarkTheme(isDarkTheme)
+            _uiState.update { it.copy(isDarkTheme = isDarkTheme) }
+        }
     }
 
     fun onThemeColorChange(themeColor: ThemeColor) {
-        _uiState.update { it.copy(selectedThemeColor = themeColor) }
+        viewModelScope.launch {
+            SettingsManager.setThemeColor(themeColor)
+            _uiState.update { it.copy(selectedThemeColor = themeColor) }
+        }
     }
 
     fun onNotificationEnabledChange(enabled: Boolean) {
-        _uiState.update { it.copy(notificationEnabled = enabled) }
+        viewModelScope.launch {
+            SettingsManager.setNotificationEnabled(enabled)
+            _uiState.update { it.copy(notificationEnabled = enabled) }
+        }
     }
 
     fun onReminderDaysChange(days: Int) {
-        _uiState.update { it.copy(reminderDays = days) }
+        viewModelScope.launch {
+            SettingsManager.setReminderDays(days)
+            _uiState.update { it.copy(reminderDays = days) }
+        }
     }
 
     fun onSoundEnabledChange(enabled: Boolean) {
-        _uiState.update { it.copy(soundEnabled = enabled) }
+        viewModelScope.launch {
+            SettingsManager.setSoundEnabled(enabled)
+            _uiState.update { it.copy(soundEnabled = enabled) }
+        }
     }
 
     fun onVibrationEnabledChange(enabled: Boolean) {
-        _uiState.update { it.copy(vibrationEnabled = enabled) }
+        viewModelScope.launch {
+            SettingsManager.setVibrationEnabled(enabled)
+            _uiState.update { it.copy(vibrationEnabled = enabled) }
+        }
     }
 
     fun onLanguageChange(language: Language) {
-        _uiState.update { it.copy(selectedLanguage = language) }
+        viewModelScope.launch {
+            SettingsManager.setLanguage(language)
+            _uiState.update { it.copy(selectedLanguage = language) }
+        }
     }
 }
 

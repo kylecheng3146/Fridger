@@ -1,11 +1,8 @@
 package fridger.com.io
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import fridger.com.io.presentation.home.HomeScreen
+import fridger.com.io.presentation.settings.SettingsManager
 import fridger.com.io.presentation.settings.SettingsScreen
 import fridger.com.io.presentation.settings.ThemeColor
 import fridger.com.io.ui.theme.FridgerTheme
@@ -15,8 +12,10 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Composable
 @Preview
 fun App() {
-    var isDarkTheme by remember { mutableStateOf(false) }
-    var selectedThemeColor by remember { mutableStateOf(ThemeColor.BLUE) }
+    // Load settings from DataStore
+    val isDarkTheme by SettingsManager.isDarkTheme.collectAsState(initial = false)
+    val selectedThemeColor by SettingsManager.themeColor.collectAsState(initial = ThemeColor.BLUE)
+
     var currentScreen by remember { mutableStateOf(Screen.Home) }
 
     FridgerTheme(
@@ -34,8 +33,8 @@ fun App() {
                 SettingsScreen(
                     isDarkTheme = isDarkTheme,
                     selectedThemeColor = selectedThemeColor,
-                    onThemeChange = { isDarkTheme = it },
-                    onThemeColorChange = { selectedThemeColor = it },
+                    onThemeChange = { /* Handled by ViewModel */ },
+                    onThemeColorChange = { /* Handled by ViewModel */ },
                     onBackClick = { currentScreen = Screen.Home }
                 )
             }
