@@ -12,7 +12,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Composable
 @Preview
 fun App() {
-    // Load settings from DataStore
+    // Load settings from DataStore - these are now the single source of truth
     val isDarkTheme by SettingsManager.isDarkTheme.collectAsState(initial = false)
     val selectedThemeColor by SettingsManager.themeColor.collectAsState(initial = ThemeColor.BLUE)
 
@@ -31,10 +31,6 @@ fun App() {
 
             Screen.Settings -> {
                 SettingsScreen(
-                    isDarkTheme = isDarkTheme,
-                    selectedThemeColor = selectedThemeColor,
-                    onThemeChange = { /* Handled by ViewModel */ },
-                    onThemeColorChange = { /* Handled by ViewModel */ },
                     onBackClick = { currentScreen = Screen.Home }
                 )
             }

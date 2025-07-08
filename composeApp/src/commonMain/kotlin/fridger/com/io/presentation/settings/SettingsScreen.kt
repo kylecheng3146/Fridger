@@ -28,21 +28,11 @@ import fridger.com.io.presentation.ViewModelFactoryProvider
 
 @Composable
 fun SettingsScreen(
-    isDarkTheme: Boolean,
-    selectedThemeColor: ThemeColor,
-    onThemeChange: (Boolean) -> Unit,
-    onThemeColorChange: (ThemeColor) -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val viewModel: SettingsViewModel = viewModel(factory = ViewModelFactoryProvider.factory)
     val uiState by viewModel.uiState.collectAsState()
-
-    // Update states from parent
-    LaunchedEffect(isDarkTheme, selectedThemeColor) {
-        viewModel.onThemeChange(isDarkTheme)
-        viewModel.onThemeColorChange(selectedThemeColor)
-    }
 
     Column(
         modifier =
@@ -65,17 +55,12 @@ fun SettingsScreen(
                 title = "主題",
                 subtitle = if (uiState.isDarkTheme) "深色模式" else "淺色模式",
                 onClick = {
-                    val newTheme = !uiState.isDarkTheme
-                    viewModel.onThemeChange(newTheme)
-                    onThemeChange(newTheme)
+                    viewModel.onThemeChange(!uiState.isDarkTheme)
                 }
             ) {
                 Switch(
                     checked = uiState.isDarkTheme,
-                    onCheckedChange = { newTheme ->
-                        viewModel.onThemeChange(newTheme)
-                        onThemeChange(newTheme)
-                    },
+                    onCheckedChange = viewModel::onThemeChange,
                     colors =
                         SwitchDefaults.colors(
                             checkedThumbColor = Color.White,
@@ -126,7 +111,6 @@ fun SettingsScreen(
                                     .background(themeColor.primary)
                                     .clickable {
                                         viewModel.onThemeColorChange(themeColor)
-                                        onThemeColorChange(themeColor)
                                     }.then(
                                         if (uiState.selectedThemeColor == themeColor) {
                                             Modifier.border(

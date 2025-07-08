@@ -14,7 +14,7 @@ class SettingsViewModel : ViewModel() {
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
     init {
-        // Load saved settings from SettingsManager
+        // Load saved settings from SettingsManager - single source of truth
         viewModelScope.launch {
             SettingsManager.settings.collect { settings ->
                 _uiState.update { currentState ->
@@ -34,50 +34,47 @@ class SettingsViewModel : ViewModel() {
 
     fun onThemeChange(isDarkTheme: Boolean) {
         viewModelScope.launch {
+            // Update the single source of truth (SettingsManager)
             SettingsManager.setDarkTheme(isDarkTheme)
-            _uiState.update { it.copy(isDarkTheme = isDarkTheme) }
+            // The UI state will be automatically updated via the collect in init
         }
     }
 
     fun onThemeColorChange(themeColor: ThemeColor) {
         viewModelScope.launch {
+            // Update the single source of truth (SettingsManager)
             SettingsManager.setThemeColor(themeColor)
-            _uiState.update { it.copy(selectedThemeColor = themeColor) }
+            // The UI state will be automatically updated via the collect in init
         }
     }
 
     fun onNotificationEnabledChange(enabled: Boolean) {
         viewModelScope.launch {
             SettingsManager.setNotificationEnabled(enabled)
-            _uiState.update { it.copy(notificationEnabled = enabled) }
         }
     }
 
     fun onReminderDaysChange(days: Int) {
         viewModelScope.launch {
             SettingsManager.setReminderDays(days)
-            _uiState.update { it.copy(reminderDays = days) }
         }
     }
 
     fun onSoundEnabledChange(enabled: Boolean) {
         viewModelScope.launch {
             SettingsManager.setSoundEnabled(enabled)
-            _uiState.update { it.copy(soundEnabled = enabled) }
         }
     }
 
     fun onVibrationEnabledChange(enabled: Boolean) {
         viewModelScope.launch {
             SettingsManager.setVibrationEnabled(enabled)
-            _uiState.update { it.copy(vibrationEnabled = enabled) }
         }
     }
 
     fun onLanguageChange(language: Language) {
         viewModelScope.launch {
             SettingsManager.setLanguage(language)
-            _uiState.update { it.copy(selectedLanguage = language) }
         }
     }
 }
