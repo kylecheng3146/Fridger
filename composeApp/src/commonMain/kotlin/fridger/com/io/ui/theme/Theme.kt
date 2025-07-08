@@ -3,6 +3,7 @@ package fridger.com.io.ui.theme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import fridger.com.io.presentation.settings.ThemeColor
 
@@ -112,9 +113,14 @@ fun FridgerTheme(
             else -> getLightColorScheme(themeColor)
         }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography(),
-        content = content
-    )
+    CompositionLocalProvider(
+        LocalSpacing provides Spacing(),
+        LocalSizing provides Sizing()
+    ) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography(),
+            content = content
+        )
+    }
 }

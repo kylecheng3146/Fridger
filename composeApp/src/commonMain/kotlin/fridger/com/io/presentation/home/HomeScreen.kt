@@ -1,4 +1,5 @@
 package fridger.com.io.presentation.home
+
 import AddNewItemDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -31,6 +32,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import fridger.com.io.ui.theme.AppColors
+import fridger.com.io.ui.theme.spacing
+import fridger.com.io.ui.theme.sizing
 import fridger.com.io.utils.stringResourceFormat
 import fridger.composeapp.generated.resources.Res
 import fridger.composeapp.generated.resources.home_add_ingredient
@@ -64,12 +67,12 @@ fun HomeScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(bottom = 20.dp),
+        contentPadding = PaddingValues(bottom = MaterialTheme.sizing.contentPaddingVertical),
     ) {
         // Header
         item {
             HomeHeader(onSettingsClick = onSettingsClick)
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
         }
 
         // Expiry Section
@@ -78,7 +81,7 @@ fun HomeScreen(
                 todayItems = uiState.todayExpiringItems,
                 weekItems = uiState.weekExpiringItems,
             )
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraHuge))
         }
 
         // Fridge Capacity
@@ -87,7 +90,7 @@ fun HomeScreen(
                 capacityPercentage = uiState.fridgeCapacityPercentage,
                 onAddClick = viewModel::onAddNewItemClick,
             )
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraHuge))
         }
 
         // Refrigerated Items
@@ -96,15 +99,15 @@ fun HomeScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp)
-                        .padding(bottom = 10.dp),
+                        .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
+                        .padding(bottom = MaterialTheme.spacing.small),
                 ) {
                     SectionTitle(title = stringResource(Res.string.home_refrigerated))
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
                 }
             }
         }
-        
+
         items(
             items = uiState.refrigeratedItems,
             key = { it.id }
@@ -112,27 +115,27 @@ fun HomeScreen(
             RefrigeratedItemCard(
                 item = item,
                 onClick = { viewModel.onItemClick(item.id) },
-                modifier = Modifier.padding(horizontal = 20.dp)
+                modifier = Modifier.padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
         }
 
         // Frozen Items
         item {
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraLarge))
             if (uiState.refrigeratedItems.isNotEmpty()) { // TODO: Replace with frozen items
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp)
-                        .padding(bottom = 10.dp),
+                        .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
+                        .padding(bottom = MaterialTheme.spacing.small),
                 ) {
                     SectionTitle(title = stringResource(Res.string.home_frozen))
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
                 }
             }
         }
-        
+
         items(
             items = uiState.refrigeratedItems, // TODO: Replace with frozen items
             key = { "${it.id}_frozen" } // Temporary key to avoid conflicts
@@ -140,9 +143,9 @@ fun HomeScreen(
             RefrigeratedItemCard(
                 item = item,
                 onClick = { viewModel.onItemClick(item.id) },
-                modifier = Modifier.padding(horizontal = 20.dp)
+                modifier = Modifier.padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
         }
     }
 }
@@ -153,7 +156,12 @@ private fun HomeHeader(onSettingsClick: () -> Unit) {
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(top = 60.dp, bottom = 5.dp, start = 20.dp, end = 20.dp),
+                .padding(
+                    top = MaterialTheme.sizing.contentPaddingTop,
+                    bottom = MaterialTheme.spacing.extraSmall,
+                    start = MaterialTheme.sizing.contentPaddingHorizontal,
+                    end = MaterialTheme.sizing.contentPaddingHorizontal
+                ),
     ) {
         Text(
             text = stringResource(Res.string.home_title),
@@ -185,11 +193,11 @@ private fun ExpirySection(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
     ) {
         SectionTitle(title = stringResource(Res.string.home_expiring_soon))
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -213,7 +221,7 @@ private fun ExpirySection(
                 )
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(MaterialTheme.spacing.large))
 
             ExpiryCard(
                 icon = "",
@@ -224,11 +232,11 @@ private fun ExpirySection(
             )
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
 
         SectionTitle(title = stringResource(Res.string.home_expiring_this_week))
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -252,7 +260,7 @@ private fun ExpirySection(
                 )
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(MaterialTheme.spacing.large))
 
             Spacer(modifier = Modifier.weight(1f))
         }
@@ -268,8 +276,8 @@ private fun ExpiryCard(
     isEmpty: Boolean = false,
 ) {
     Card(
-        modifier = modifier.height(100.dp),
-        shape = RoundedCornerShape(16.dp),
+        modifier = modifier.height(MaterialTheme.sizing.cardHeightMedium),
+        shape = RoundedCornerShape(MaterialTheme.sizing.cornerRadiusExtraLarge),
         colors =
             CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface,
@@ -284,13 +292,13 @@ private fun ExpiryCard(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .padding(16.dp),
+                        .padding(MaterialTheme.spacing.large),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
             ) {
                 Text(
                     text = icon,
-                    fontSize = 32.sp,
+                    fontSize = MaterialTheme.sizing.iconExtraLarge.value.sp,
                 )
 
                 Column {
@@ -307,7 +315,7 @@ private fun ExpiryCard(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .padding(16.dp),
+                        .padding(MaterialTheme.spacing.large),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -325,22 +333,23 @@ private fun FridgeCapacitySection(
     capacityPercentage: Float,
     onAddClick: () -> Unit,
 ) {
-    val isDarkTheme = MaterialTheme.colorScheme.background == AppColors.DarkBackground
-    val progressTrackColor = if (isDarkTheme) AppColors.DarkProgressTrack else AppColors.ProgressTrack
+    val isDarkTheme = MaterialTheme.colorScheme.background==AppColors.DarkBackground
+    val progressTrackColor =
+        if (isDarkTheme) AppColors.DarkProgressTrack else AppColors.ProgressTrack
 
     Column(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
     ) {
         SectionTitle(title = stringResource(Res.string.home_fridge_capacity))
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
 
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(MaterialTheme.sizing.cornerRadiusExtraLarge),
             colors =
                 CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface,
@@ -354,7 +363,7 @@ private fun FridgeCapacitySection(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .padding(20.dp),
+                        .padding(MaterialTheme.spacing.extraLarge),
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -366,8 +375,8 @@ private fun FridgeCapacitySection(
                         modifier =
                             Modifier
                                 .weight(1f)
-                                .height(8.dp)
-                                .clip(RoundedCornerShape(4.dp))
+                                .height(MaterialTheme.sizing.progressBarHeight)
+                                .clip(RoundedCornerShape(MaterialTheme.sizing.cornerRadiusSmall))
                                 .background(progressTrackColor)
                     ) {
                         Box(
@@ -379,7 +388,7 @@ private fun FridgeCapacitySection(
                         )
                     }
 
-                    Spacer(modifier = Modifier.width(16.dp))
+                    Spacer(modifier = Modifier.width(MaterialTheme.spacing.large))
 
                     Text(
                         text = "${(capacityPercentage * 100).toInt()}%",
@@ -389,12 +398,12 @@ private fun FridgeCapacitySection(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraLarge))
 
                 OutlinedButton(
                     onClick = onAddClick,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(MaterialTheme.sizing.cornerRadiusLarge),
                     colors =
                         ButtonDefaults.outlinedButtonColors(
                             contentColor = MaterialTheme.colorScheme.primary,
@@ -403,9 +412,9 @@ private fun FridgeCapacitySection(
                     Icon(
                         imageVector = Icons.Default.Add,
                         contentDescription = null,
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier.size(MaterialTheme.sizing.iconMedium),
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                     Text(
                         text = stringResource(Res.string.home_add_ingredient),
                         fontSize = 16.sp,
@@ -424,7 +433,7 @@ private fun RefrigeratedItemCard(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(MaterialTheme.sizing.cornerRadiusLarge),
         colors =
             CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface,
@@ -439,25 +448,25 @@ private fun RefrigeratedItemCard(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(MaterialTheme.spacing.large),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // Icon
             Box(
                 modifier =
                     Modifier
-                        .size(48.dp)
+                        .size(MaterialTheme.sizing.iconHuge)
                         .clip(CircleShape)
                         .background(AppColors.IconBackground),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = item.icon,
-                    fontSize = 24.sp,
+                    fontSize = MaterialTheme.sizing.iconLarge.value.sp,
                 )
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(MaterialTheme.spacing.large))
 
             // Name and Quantity
             Column(
@@ -479,18 +488,21 @@ private fun RefrigeratedItemCard(
             // Expiry info
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
             ) {
                 if (item.hasWarning) {
                     Icon(
                         imageVector = Icons.Default.Warning,
                         contentDescription = null,
-                        modifier = Modifier.size(16.dp),
+                        modifier = Modifier.size(MaterialTheme.sizing.iconSmall),
                         tint = AppColors.Warning,
                     )
                 }
                 Text(
-                    text = stringResourceFormat(Res.string.home_days_until_expiry, item.daysUntilExpiry),
+                    text = stringResourceFormat(
+                        Res.string.home_days_until_expiry,
+                        item.daysUntilExpiry
+                    ),
                     fontSize = 14.sp,
                     color = if (item.hasWarning) AppColors.Warning else AppColors.TextSecondary,
                 )
