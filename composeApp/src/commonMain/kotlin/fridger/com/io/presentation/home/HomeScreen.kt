@@ -2,10 +2,10 @@ package fridger.com.io.presentation.home
 import AddNewItemDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Settings
@@ -60,47 +60,90 @@ fun HomeScreen(
         )
     }
 
-    Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .verticalScroll(rememberScrollState()),
+    LazyColumn(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+        contentPadding = PaddingValues(bottom = 20.dp),
     ) {
         // Header
-        HomeHeader(onSettingsClick = onSettingsClick)
-
-        Spacer(modifier = Modifier.height(24.dp))
+        item {
+            HomeHeader(onSettingsClick = onSettingsClick)
+            Spacer(modifier = Modifier.height(24.dp))
+        }
 
         // Expiry Section
-        ExpirySection(
-            todayItems = uiState.todayExpiringItems,
-            weekItems = uiState.weekExpiringItems,
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
+        item {
+            ExpirySection(
+                todayItems = uiState.todayExpiringItems,
+                weekItems = uiState.weekExpiringItems,
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+        }
 
         // Fridge Capacity
-        FridgeCapacitySection(
-            capacityPercentage = uiState.fridgeCapacityPercentage,
-            onAddClick = viewModel::onAddNewItemClick,
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
+        item {
+            FridgeCapacitySection(
+                capacityPercentage = uiState.fridgeCapacityPercentage,
+                onAddClick = viewModel::onAddNewItemClick,
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+        }
 
         // Refrigerated Items
-        RefrigeratedItemsSection(
+        item {
+            if (uiState.refrigeratedItems.isNotEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .padding(bottom = 10.dp),
+                ) {
+                    SectionTitle(title = stringResource(Res.string.home_refrigerated))
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
+        }
+        
+        items(
             items = uiState.refrigeratedItems,
-            onItemClick = viewModel::onItemClick,
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
+            key = { it.id }
+        ) { item ->
+            RefrigeratedItemCard(
+                item = item,
+                onClick = { viewModel.onItemClick(item.id) },
+                modifier = Modifier.padding(horizontal = 20.dp)
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
 
         // Frozen Items
-        FrozenItemsSection(
+        item {
+            Spacer(modifier = Modifier.height(20.dp))
+            if (uiState.refrigeratedItems.isNotEmpty()) { // TODO: Replace with frozen items
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .padding(bottom = 10.dp),
+                ) {
+                    SectionTitle(title = stringResource(Res.string.home_frozen))
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
+        }
+        
+        items(
             items = uiState.refrigeratedItems, // TODO: Replace with frozen items
-            onItemClick = viewModel::onItemClick,
-        )
+            key = { "${it.id}_frozen" } // Temporary key to avoid conflicts
+        ) { item ->
+            RefrigeratedItemCard(
+                item = item,
+                onClick = { viewModel.onItemClick(item.id) },
+                modifier = Modifier.padding(horizontal = 20.dp)
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
     }
 }
 
@@ -374,70 +417,13 @@ private fun FridgeCapacitySection(
 }
 
 @Composable
-private fun RefrigeratedItemsSection(
-    items: List<RefrigeratedItem>,
-    onItemClick: (String) -> Unit,
-) {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 10.dp),
-    ) {
-        SectionTitle(title = stringResource(Res.string.home_refrigerated))
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        items.forEach { item ->
-            RefrigeratedItemCard(
-                item = item,
-                onClick = { onItemClick(item.id) },
-            )
-
-            if (item != items.last()) {
-                Spacer(modifier = Modifier.height(12.dp))
-            }
-        }
-    }
-}
-
-@Composable
-private fun FrozenItemsSection(
-    items: List<RefrigeratedItem>,
-    onItemClick: (String) -> Unit,
-) {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 20.dp),
-    ) {
-        SectionTitle(title = stringResource(Res.string.home_frozen))
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        items.forEach { item ->
-            RefrigeratedItemCard(
-                item = item,
-                onClick = { onItemClick(item.id) },
-            )
-
-            if (item != items.last()) {
-                Spacer(modifier = Modifier.height(12.dp))
-            }
-        }
-    }
-}
-
-@Composable
 private fun RefrigeratedItemCard(
     item: RefrigeratedItem,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors =
             CardDefaults.cardColors(
