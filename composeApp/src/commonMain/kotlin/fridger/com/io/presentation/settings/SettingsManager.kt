@@ -23,6 +23,9 @@ object SettingsManager {
     // Language setting
     val language: Flow<Language> = settings.map { it.language }
 
+    // Quick favorites for "快速新增"
+    val quickFavorites: Flow<Set<String>> = settingsDataStore.quickFavorites
+
     // Update methods
     suspend fun setDarkTheme(isDarkTheme: Boolean) {
         settingsDataStore.setDarkTheme(isDarkTheme)
@@ -50,6 +53,14 @@ object SettingsManager {
 
     suspend fun setLanguage(language: Language) {
         settingsDataStore.setLanguage(language)
+    }
+
+    // Quick favorites update methods
+    suspend fun toggleQuickFavorite(name: String) {
+        settingsDataStore.toggleQuickFavorite(name)
+    }
+    suspend fun setQuickFavorites(favorites: Set<String>) {
+        settingsDataStore.setQuickFavorites(favorites)
     }
 
     suspend fun clearSettings() {

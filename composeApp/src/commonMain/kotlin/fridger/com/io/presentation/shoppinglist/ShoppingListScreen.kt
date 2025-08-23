@@ -15,6 +15,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,14 +26,16 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
 import fridger.com.io.data.repository.ShoppingListItem
+import fridger.com.io.presentation.ViewModelFactoryProvider
 
 @Composable
 fun ShoppingListScreen(
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null
 ) {
-    val vm: ShoppingListViewModel = viewModel()
+    val vm: ShoppingListViewModel = viewModel(factory = ViewModelFactoryProvider.factory)
     val state by vm.uiState.collectAsState()
 
     // Add row replaced by quick-add dialog trigger
@@ -81,7 +85,7 @@ fun ShoppingListScreen(
                     contentColor = MaterialTheme.colorScheme.primary
                 )
             ) {
-                Text("清除已購項目")
+                Text("待買食材清單")
             }
 
             Spacer(Modifier.height(12.dp))
@@ -199,6 +203,9 @@ private fun ShoppingQuickAddTopDialog(
     var query by remember { mutableStateOf("") }
     var qty by remember { mutableStateOf("") } // optional quantity
 
+    // Multi-select state
+    val selected = remember { mutableStateListOf<String>() }
+
     val filtered = remember(query) {
         if (query.isBlank()) allSuggestions else allSuggestions.filter {
             it.name.contains(
@@ -207,6 +214,14 @@ private fun ShoppingQuickAddTopDialog(
             )
         }
     }
+
+    // Favorites for quick selection
+    val favorites by fridger.com.io.presentation.settings.SettingsManager.quickFavorites.collectAsState(initial = emptySet())
+    val ordered = remember(filtered, favorites) {
+        filtered.sortedBy { if (favorites.contains(it.name)) 0 else 1 }
+    }
+
+    val scope = rememberCoroutineScope()
 
     // Internal visibility to animate enter from top and exit to top
     var visible by remember { mutableStateOf(false) }
@@ -308,16 +323,19 @@ private fun ShoppingQuickAddTopDialog(
 
                         Spacer(Modifier.height(20.dp))
 
-                        // Action to add custom query
+                        // Add custom query into selection (do not add immediately)
                         if (query.isNotBlank()) {
-                            Button(
-                                onClick = { onAdd(query, qty.ifBlank { null }); visible = false },
+                            OutlinedButton(
+                                onClick = {
+                                    if (!selected.contains(query)) selected.add(query)
+                                    // keep dialog open for multi-select
+                                },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
                             ) {
                                 Icon(Icons.Default.Add, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
-                                Text("新增 \"$query\"")
+                                Text("選取 \"$query\"")
                             }
                             Spacer(Modifier.height(16.dp))
                         }
@@ -332,24 +350,71 @@ private fun ShoppingQuickAddTopDialog(
 
                         // Grid of suggestions - 使用剩餘空間
                         androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
-                            columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(4),
+                            columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(3),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f), // 使用剩餘的所有空間
                             horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(
-                                12.dp
+                                16.dp
                             ),
                             verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(
-                                12.dp
+                                16.dp
                             ),
                             contentPadding = PaddingValues(bottom = 20.dp) // 底部留白
                         ) {
-                            items(filtered.size) { index ->
-                                val item = filtered[index]
-                                QuickPickCell(name = item.name, icon = item.icon) {
-                                    onAdd(item.name, qty.ifBlank { null }); visible = false
+                            items(ordered.size) { index ->
+                                val item = ordered[index]
+                                QuickPickCell(
+                                    name = item.name,
+                                    icon = item.icon,
+                                    isFavorite = favorites.contains(item.name),
+                                    isSelected = selected.contains(item.name),
+                                    onToggleFavorite = {
+                                        // Fire and forget; no need to block UI
+                                        scope.launch {
+                                            fridger.com.io.presentation.settings.SettingsManager.toggleQuickFavorite(item.name)
+                                        }
+                                    }
+                                ) {
+                                    if (selected.contains(item.name)) selected.remove(item.name) else selected.add(item.name)
                                 }
                             }
+                        }
+
+                        // Selected summary and unified Add button
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = if (selected.isEmpty()) "未選取項目" else "已選取 ${'$'}{selected.size} 項",
+                                modifier = Modifier.weight(1f),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            if (selected.isNotEmpty()) {
+                                TextButton(onClick = { selected.clear() }) { Text("清除選取") }
+                            }
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Button(
+                            onClick = {
+                                val q = qty.ifBlank { null }
+                                selected.forEach { name -> onAdd(name, q) }
+                                selected.clear()
+                                visible = false
+                            },
+                            enabled = selected.isNotEmpty(),
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("加入選取")
                         }
                     }
                 }
@@ -367,35 +432,73 @@ private fun ShoppingQuickAddTopDialog(
 }
 
 @Composable
-private fun QuickPickCell(name: String, icon: String, onClick: () -> Unit) {
+private fun QuickPickCell(
+    name: String,
+    icon: String,
+    isFavorite: Boolean,
+    isSelected: Boolean,
+    onToggleFavorite: () -> Unit,
+    onClick: () -> Unit
+) {
     Card(
         onClick = onClick,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 2.dp,
             pressedElevation = 8.dp
         ),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+        border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 14.dp, horizontal = 8.dp)
-                .heightIn(min = 76.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .heightIn(min = 110.dp) // 增加高度以容納更大的內容
+                .padding(6.dp) // 減少外層padding，為星號留出更多margin空間
         ) {
-            Text(icon, fontSize = 26.sp)
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text = name,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            // Heart button at top-end with margin - 右上角置頂
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(3.dp) // 減少margin，靠近邊框一點
+                    .size(28.dp) // 設定固定點擊區域大小
+                    .clickable(onClick = onToggleFavorite)
+            ) {
+                Icon(
+                    imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                    contentDescription = if (isFavorite) "移除最愛" else "加入最愛",
+                    tint = if (isFavorite) androidx.compose.ui.graphics.Color.Red else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(18.dp) // 稍微縮小愛心圖示
+                )
+            }
+            
+            // Center content - 往下移並放大
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 8.dp, vertical = 16.dp), // 調整padding，增加垂直空間
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                // 往下偏移並放大emoji
+                Text(
+                    text = icon, 
+                    fontSize = 44.sp, // 從34sp大幅增加到44sp
+                    modifier = Modifier.padding(top = 6.dp) // 往下偏移
+                )
+                Spacer(Modifier.height(12.dp)) // 增加間距
+                Text(
+                    text = name,
+                    fontSize = 15.sp, // 稍微增大文字
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
         }
     }
 }

@@ -30,6 +30,12 @@ kotlin {
         iosTarget.binaries.framework {
             baseName = "ComposeApp"
             isStatic = true
+            // Explicit bundle ID to satisfy Kotlin/Native requirement for iOS framework
+            binaryOptions["bundleId"] = "fridger.com.io.composeapp"
+        }
+        // Link system SQLite on iOS to fix undefined sqlite3* symbols
+        iosTarget.binaries.all {
+            linkerOpts("-lsqlite3")
         }
     }
     

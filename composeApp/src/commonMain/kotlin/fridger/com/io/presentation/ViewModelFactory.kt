@@ -16,9 +16,11 @@ class ViewModelFactory : ViewModelProvider.Factory {
         return when (modelClass) {
             HomeViewModel::class -> HomeViewModel(fridger.com.io.data.repository.IngredientRepositoryImpl()) as T
             SettingsViewModel::class -> SettingsViewModel() as T
+            fridger.com.io.presentation.shoppinglist.ShoppingListViewModel::class -> fridger.com.io.presentation.shoppinglist.ShoppingListViewModel() as T
             else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.simpleName}")
         }
     }
+
 }
 
 /**

@@ -20,6 +20,7 @@ class SettingsDataStore(
         val KEY_SOUND_ENABLED = booleanPreferencesKey("sound_enabled")
         val KEY_VIBRATION_ENABLED = booleanPreferencesKey("vibration_enabled")
         val KEY_LANGUAGE = stringPreferencesKey("language")
+        val KEY_QUICK_FAVORITES = stringPreferencesKey("quick_favorites") // CSV list of names
     }
 
     // Read settings
@@ -96,6 +97,37 @@ class SettingsDataStore(
     suspend fun setLanguage(language: Language) {
         dataStore.edit { preferences ->
             preferences[KEY_LANGUAGE] = language.code
+        }
+    }
+
+    // Quick favorites for "快速新增" dialog
+    // Stored as a CSV of item names (since suggestions are simple names). Use Set to avoid duplicates.
+    val quickFavorites: Flow<Set<String>> = dataStore.data.map { preferences ->
+        preferences[KEY_QUICK_FAVORITES]
+            ?.split(',')
+            ?.map { it.trim() }
+            ?.filter { it.isNotEmpty() }
+            ?.toSet()
+            ?: emptySet()
+    }
+
+    suspend fun setQuickFavorites(favorites: Set<String>) {
+        dataStore.edit { prefs ->
+            prefs[KEY_QUICK_FAVORITES] = favorites.joinToString(",")
+        }
+    }
+
+    suspend fun toggleQuickFavorite(name: String) {
+        dataStore.edit { prefs ->
+            val current = prefs[KEY_QUICK_FAVORITES]
+                ?.split(',')
+                ?.map { it.trim() }
+                ?.filter { it.isNotEmpty() }
+                ?.toMutableSet() ?: mutableSetOf()
+            if (!current.add(name)) {
+                current.remove(name)
+            }
+            prefs[KEY_QUICK_FAVORITES] = current.joinToString(",")
         }
     }
 
