@@ -14,7 +14,7 @@ class ViewModelFactory : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: KClass<T>, extras: CreationExtras): T {
         return when (modelClass) {
-            HomeViewModel::class -> HomeViewModel() as T
+            HomeViewModel::class -> HomeViewModel(fridger.com.io.data.repository.IngredientRepositoryImpl()) as T
             SettingsViewModel::class -> SettingsViewModel() as T
             else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.simpleName}")
         }

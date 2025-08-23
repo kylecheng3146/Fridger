@@ -1,2 +1,25 @@
 -- SQLDelight schema file
 -- Add your table definitions here
+
+CREATE TABLE Ingredient (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    addDate TEXT NOT NULL,
+    expirationDate TEXT NOT NULL
+);
+
+-- Queries for Ingredient
+selectAllIngredients:
+SELECT * FROM Ingredient;
+
+getIngredientById:
+SELECT * FROM Ingredient
+WHERE id = ?;
+
+insertIngredient:
+INSERT INTO Ingredient(name, addDate, expirationDate)
+VALUES (?, ?, ?);
+
+deleteIngredientById:
+DELETE FROM Ingredient
+WHERE id = ?;
