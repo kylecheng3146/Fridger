@@ -47,10 +47,11 @@ fun App() {
                             colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
                                 selectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                 selectedTextColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                                indicatorColor = androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer,
+                                indicatorColor = androidx.compose.ui.graphics.Color.Transparent,
                                 unselectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
                                 unselectedTextColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            ),
+                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
                         )
                     }
                 }

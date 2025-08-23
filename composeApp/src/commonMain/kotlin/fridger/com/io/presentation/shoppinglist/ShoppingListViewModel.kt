@@ -34,6 +34,7 @@ class ShoppingListViewModel(
                 val items = repository.getShoppingList()
                 _uiState.value = ShoppingListUiState(items = items)
             } catch (e: Exception) {
+                e.printStackTrace()
                 _uiState.value = ShoppingListUiState(items = emptyList(), error = e.message)
             }
         }
@@ -46,6 +47,7 @@ class ShoppingListViewModel(
                 repository.addItem(name, quantity)
                 load()
             } catch (e: Exception) {
+                e.printStackTrace()
                 _uiState.value = _uiState.value.copy(error = e.message)
             }
         }
@@ -57,6 +59,7 @@ class ShoppingListViewModel(
                 repository.updateItem(id, checked)
                 load()
             } catch (e: Exception) {
+                e.printStackTrace()
                 _uiState.value = _uiState.value.copy(error = e.message)
             }
         }
@@ -68,6 +71,7 @@ class ShoppingListViewModel(
                 repository.deleteItem(id)
                 load()
             } catch (e: Exception) {
+                e.printStackTrace()
                 _uiState.value = _uiState.value.copy(error = e.message)
             }
         }
@@ -79,6 +83,7 @@ class ShoppingListViewModel(
                 repository.clearPurchasedItems()
                 load()
             } catch (e: Exception) {
+                e.printStackTrace()
                 _uiState.value = _uiState.value.copy(error = e.message)
             }
         }

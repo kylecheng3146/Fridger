@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,7 +17,9 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -53,13 +56,10 @@ fun ShoppingListScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    "採買清單",
+                    "購物清單",
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.weight(1f)
                 )
-                onBack?.let { back ->
-                    TextButton(onClick = back) { Text("返回") }
-                }
             }
             Spacer(Modifier.height(12.dp))
 
@@ -85,10 +85,60 @@ fun ShoppingListScreen(
                     contentColor = MaterialTheme.colorScheme.primary
                 )
             ) {
-                Text("待買食材清單")
+                Text("清除清單")
             }
 
             Spacer(Modifier.height(12.dp))
+
+            // Loading / Error / Empty states
+            when {
+                state.isLoading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+                state.error != null -> {
+                    Text(
+                        text = "載入失敗：${state.error}",
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 14.sp
+                    )
+                }
+                state.items.isEmpty() -> {
+                    // Empty state with centered content and SVG icon
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Spacer(Modifier.height(16.dp))
+
+                        // Empty cart icon (Material, cross-platform)
+                        Icon(
+                            imageVector = Icons.Outlined.ShoppingCart,
+                            contentDescription = "購物車為空",
+                            modifier = Modifier.size(120.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Spacer(Modifier.height(12.dp))
+                        
+                        Text(
+                            text = "清單空空如也～",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        
+                        Spacer(Modifier.height(8.dp))
+                        
+                        Text(
+                            text = "點擊上方「新增品項」開始採買吧！",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+            }
 
             // List
             LazyColumn(
@@ -264,7 +314,7 @@ private fun ShoppingQuickAddTopDialog(
                         .fillMaxWidth()
                         .fillMaxHeight(0.8f) // 改為占螢幕高度的 80%
                         .clickable { /* 防止點擊穿透 */ },
-                    color = MaterialTheme.colorScheme.surface,
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f),
                     tonalElevation = 8.dp,
                     shadowElevation = 12.dp,
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(
@@ -301,25 +351,24 @@ private fun ShoppingQuickAddTopDialog(
 
                         Spacer(Modifier.height(20.dp))
 
-                        // Search field
-                        OutlinedTextField(
-                            value = query,
-                            onValueChange = { query = it },
-                            label = { Text("搜尋或直接輸入品項") },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
-                        )
-
-                        Spacer(Modifier.height(16.dp))
-
-                        // Optional quantity quick input
-                        OutlinedTextField(
-                            value = qty,
-                            onValueChange = { qty = it },
-                            label = { Text("數量(選填)") },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
-                        )
+                        // Search + Quantity in the same row (50% / 50%)
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            OutlinedTextField(
+                                value = query,
+                                onValueChange = { query = it },
+                                label = { Text("搜尋或直接輸入品項") },
+                                modifier = Modifier.weight(1f),
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            OutlinedTextField(
+                                value = qty,
+                                onValueChange = { qty = it },
+                                label = { Text("數量(選填)") },
+                                modifier = Modifier.weight(1f),
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                            )
+                        }
 
                         Spacer(Modifier.height(20.dp))
 
@@ -388,7 +437,7 @@ private fun ShoppingQuickAddTopDialog(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
-                                text = if (selected.isEmpty()) "未選取項目" else "已選取 ${'$'}{selected.size} 項",
+                                text = if (selected.isEmpty()) "未選取項目" else "已選取 " + selected.joinToString("、"),
                                 modifier = Modifier.weight(1f),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -443,7 +492,7 @@ private fun QuickPickCell(
     Card(
         onClick = onClick,
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 2.dp,

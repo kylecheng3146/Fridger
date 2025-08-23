@@ -19,3 +19,19 @@ We would appreciate your feedback on Compose/Web and Kotlin/Wasm in the public S
 If you face any issues, please report them on [YouTrack](https://youtrack.jetbrains.com/newIssue?project=CMP).
 
 You can open the web application by running the `:composeApp:wasmJsBrowserDevelopmentRun` Gradle task.
+
+## Run iOS from Android Studio (no Xcode app required)
+
+From Android Studio, you can now build and run the iOS app on the Simulator via a Gradle task:
+
+- Gradle task: `:iosRunDebugOnSimulator`
+- Default simulator: iPhone 15
+- Choose a different simulator: add a project property `-PiosSimulator="<Device Name>"`, for example:
+  - `./gradlew iosRunDebugOnSimulator -PiosSimulator="iPhone 15 Pro Max"`
+
+This task will:
+- Boot the requested Simulator if needed
+- Build the `iosApp` Xcode project in Debug configuration
+- Install and launch the app on the booted Simulator
+
+No need to open Xcode. Ensure you have Xcode command line tools installed (`xcode-select --install`).

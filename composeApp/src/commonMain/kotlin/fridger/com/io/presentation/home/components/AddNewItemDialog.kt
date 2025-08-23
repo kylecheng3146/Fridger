@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -76,6 +77,7 @@ fun AddNewItemDialog(
                         value = name,
                         onValueChange = { name = it },
                         label = { Text(stringResource(Res.string.add_new_item_name)) },
+                        leadingIcon = { Icon(Icons.Outlined.ShoppingCart, contentDescription = null) },
                         trailingIcon = {
                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                         },
@@ -106,6 +108,7 @@ fun AddNewItemDialog(
                     value = quantity,
                     onValueChange = { quantity = it },
                     label = { Text(stringResource(Res.string.add_new_item_quantity_optional)) },
+                    leadingIcon = { Icon(Icons.Outlined.ShoppingCart, contentDescription = null) },
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -132,8 +135,8 @@ fun AddNewItemDialog(
                 OutlinedButton(
                     onClick = { onConfirm(name, quantity, expiryDate) },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(5.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(8.dp))
