@@ -15,6 +15,8 @@ import fridger.com.io.presentation.settings.SettingsManager
 import fridger.com.io.presentation.settings.SettingsScreen
 import fridger.com.io.presentation.settings.ThemeColor
 import fridger.com.io.ui.theme.FridgerTheme
+import androidx.compose.ui.graphics.Color
+import fridger.com.io.presentation.shoppinglist.ShoppingListScreen
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Suppress("ktlint:standard:function-naming")
@@ -47,7 +49,7 @@ fun App() {
                             colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
                                 selectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                 selectedTextColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                                indicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+                                indicatorColor = Color.Transparent,
                                 unselectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
                                 unselectedTextColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                             ),
@@ -58,21 +60,22 @@ fun App() {
             }
         ) { innerPadding ->
             Box(modifier = Modifier.padding(innerPadding)) {
-                when (currentScreen) {
-                    is Screen.Home -> {
-                        HomeScreen(
-                            onSettingsClick = { currentScreen = Screen.Settings }
-                        )
-                    }
-                    is Screen.ShoppingList -> {
-                        fridger.com.io.presentation.shoppinglist.ShoppingListScreen(
-                            onBack = { currentScreen = Screen.Home }
-                        )
-                    }
-                    is Screen.Settings -> {
-                        SettingsScreen(
-                            onBackClick = { currentScreen = Screen.Home }
-                        )
+                val stateHolder = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
+                stateHolder.SaveableStateProvider(currentScreen.route) {
+                    when (currentScreen) {
+                        is Screen.Home -> {
+                            HomeScreen(
+                                onSettingsClick = { currentScreen = Screen.Settings }
+                            )
+                        }
+                        is Screen.ShoppingList -> {
+                            ShoppingListScreen()
+                        }
+                        is Screen.Settings -> {
+                            SettingsScreen(
+                                onBackClick = { currentScreen = Screen.Home }
+                            )
+                        }
                     }
                 }
             }

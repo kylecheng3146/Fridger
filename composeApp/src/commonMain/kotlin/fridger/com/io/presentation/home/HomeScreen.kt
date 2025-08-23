@@ -60,7 +60,7 @@ fun HomeScreen(
     Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = MaterialTheme.sizing.contentPaddingVertical + 88.dp),
+            contentPadding = PaddingValues(bottom = MaterialTheme.sizing.contentPaddingVertical),
         ) {
             // Header
             item {
@@ -227,15 +227,14 @@ fun HomeScreen(
         ExtendedFloatingActionButton(
             onClick = viewModel::onAddNewItemClick,
             modifier = Modifier
-                .align(Alignment.BottomEnd)
+                .align(Alignment.BottomCenter)
                 .padding(
-                    end = MaterialTheme.sizing.contentPaddingHorizontal,
                     bottom = MaterialTheme.sizing.contentPaddingVertical
                 ),
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
             icon = { Icon(Icons.Default.Add, contentDescription = null) },
-            text = { Text("新增") }
+            text = { Text("新增食材") }
         )
     }
 }
@@ -297,7 +296,7 @@ private fun ExpirySection(
                 ExpiryCard(
                     icon = "⚠️",
                     count = null,
-                    label = "今天/明天沒有到期品項",
+                    label = "今天/明天沒有到期食材",
                     isEmpty = true
                 )
             }
@@ -306,11 +305,21 @@ private fun ExpirySection(
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
 
         // Title: 這週需要注意
-        SectionTitle(title = "這週需要注意")
+        SectionTitle(title = "需要留意嘍！")
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
         Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)) {
             weekItems.forEach { item ->
                 ExpiringListItemCard(item = item, accentColor = AppColors.Warning)
+            }
+
+            if (weekItems.isEmpty()) {
+                // Show an empty placeholder card
+                ExpiryCard(
+                    icon = "⚠️",
+                    count = null,
+                    label = "本週沒有快到期食材",
+                    isEmpty = true
+                )
             }
         }
     }
@@ -429,7 +438,7 @@ private fun ExpiringListItemCard(
                     .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
                 val daysText =
-                    if (item.daysUntil <= 0) "還剩 0 天到期" else "還剩 ${item.daysUntil} 天到期"
+                    if (item.daysUntil <= 0) "今天到期了" else "還剩 ${item.daysUntil} 天到期"
                 Text(
                     text = daysText,
                     color = accentColor,
