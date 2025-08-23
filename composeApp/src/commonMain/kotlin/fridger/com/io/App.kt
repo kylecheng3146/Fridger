@@ -1,7 +1,16 @@
 package fridger.com.io
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import fridger.com.io.presentation.home.HomeScreen
+import fridger.com.io.presentation.navigation.Screen
 import fridger.com.io.presentation.settings.SettingsManager
 import fridger.com.io.presentation.settings.SettingsScreen
 import fridger.com.io.presentation.settings.ThemeColor
@@ -16,29 +25,56 @@ fun App() {
     val isDarkTheme by SettingsManager.isDarkTheme.collectAsState(initial = false)
     val selectedThemeColor by SettingsManager.themeColor.collectAsState(initial = ThemeColor.BLUE)
 
-    var currentScreen by remember { mutableStateOf(Screen.Home) }
+    val navigationItems = remember { listOf(Screen.Home, Screen.ShoppingList) }
+    var currentScreen: Screen by remember { mutableStateOf(Screen.Home) }
 
     FridgerTheme(
         darkTheme = isDarkTheme,
         themeColor = selectedThemeColor
     ) {
-        when (currentScreen) {
-            Screen.Home -> {
-                HomeScreen(
-                    onSettingsClick = { currentScreen = Screen.Settings }
-                )
+        Scaffold(
+            bottomBar = {
+                NavigationBar(
+                    containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
+                    contentColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
+                ) {
+                    navigationItems.forEach { screen ->
+                        NavigationBarItem(
+                            selected = currentScreen == screen,
+                            onClick = { currentScreen = screen },
+                            icon = { Icon(screen.icon, contentDescription = screen.title) },
+                            label = { Text(screen.title) },
+                            colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
+                                selectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                                selectedTextColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                                indicatorColor = androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer,
+                                unselectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        )
+                    }
+                }
             }
-
-            Screen.Settings -> {
-                SettingsScreen(
-                    onBackClick = { currentScreen = Screen.Home }
-                )
+        ) { innerPadding ->
+            Box(modifier = Modifier.padding(innerPadding)) {
+                when (currentScreen) {
+                    is Screen.Home -> {
+                        HomeScreen(
+                            onSettingsClick = { currentScreen = Screen.Settings }
+                        )
+                    }
+                    is Screen.ShoppingList -> {
+                        fridger.com.io.presentation.shoppinglist.ShoppingListScreen(
+                            onBack = { currentScreen = Screen.Home }
+                        )
+                    }
+                    is Screen.Settings -> {
+                        SettingsScreen(
+                            onBackClick = { currentScreen = Screen.Home }
+                        )
+                    }
+                }
             }
         }
     }
-}
-
-enum class Screen {
-    Home,
-    Settings
 }

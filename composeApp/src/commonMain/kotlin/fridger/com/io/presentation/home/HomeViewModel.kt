@@ -18,11 +18,21 @@ data class HomeUiState(
     val todayExpiringItems: List<ExpiringItem> = emptyList(),
     val weekExpiringItems: List<ExpiringItem> = emptyList(),
     val fridgeCapacityPercentage: Float = 0f,
+    // Sorted (and filtered) list to render when not grouped
     val refrigeratedItems: List<RefrigeratedItem> = emptyList(),
+    // Grouped items by freshness when grouping is enabled
+    val groupedRefrigeratedItems: Map<Freshness, List<RefrigeratedItem>> = emptyMap(),
+    // User preferences for sorting and grouping
+    val sortOption: SortOption = SortOption.EXPIRY,
+    val groupOption: GroupOption = GroupOption.NONE,
     val showAddNewItemDialog: Boolean = false,
     val isLoading: Boolean = false,
     val error: String? = null
 )
+
+enum class SortOption { EXPIRY, NAME, ADDED_DATE }
+
+enum class GroupOption { NONE, FRESHNESS }
 
 data class ExpiringItem(
     val id: String,
@@ -48,6 +58,9 @@ class HomeViewModel(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+
+    // Keep original items to re-apply different sort/group transformations
+    private var originalRefrigeratedItems: List<RefrigeratedItem> = emptyList()
 
     init {
         loadHomeData()
@@ -98,11 +111,16 @@ class HomeViewModel(
                         )
                     }
 
+                originalRefrigeratedItems = refrigerated
+
+                val transformed = applySortAndGroup(originalRefrigeratedItems, _uiState.value.sortOption, _uiState.value.groupOption)
+
                 _uiState.value = _uiState.value.copy(
                     todayExpiringItems = todayExp,
                     weekExpiringItems = weekExp,
                     fridgeCapacityPercentage = 0.6f,
-                    refrigeratedItems = refrigerated,
+                    refrigeratedItems = transformed.first,
+                    groupedRefrigeratedItems = transformed.second,
                     isLoading = false,
                     error = null
                 )
@@ -146,6 +164,41 @@ class HomeViewModel(
 
     fun refresh() {
         loadHomeData()
+    }
+
+    fun updateSortingAndGrouping(sort: SortOption? = null, group: GroupOption? = null) {
+        val newSort = sort ?: _uiState.value.sortOption
+        val newGroup = group ?: _uiState.value.groupOption
+        val (sorted, grouped) = applySortAndGroup(originalRefrigeratedItems, newSort, newGroup)
+        _uiState.value = _uiState.value.copy(
+            sortOption = newSort,
+            groupOption = newGroup,
+            refrigeratedItems = sorted,
+            groupedRefrigeratedItems = grouped
+        )
+    }
+
+    private fun applySortAndGroup(
+        items: List<RefrigeratedItem>,
+        sort: SortOption,
+        group: GroupOption
+    ): Pair<List<RefrigeratedItem>, Map<Freshness, List<RefrigeratedItem>>> {
+        // Sort
+        val sorted = when (sort) {
+            SortOption.EXPIRY -> items.sortedWith(compareBy({ it.daysUntilExpiry }, { it.name.lowercase() }))
+            SortOption.NAME -> items.sortedBy { it.name.lowercase() }
+            SortOption.ADDED_DATE -> items.sortedByDescending { it.ageDays } // oldest first
+        }
+        // Group
+        val grouped = if (group == GroupOption.FRESHNESS) {
+            mapOf(
+                Freshness.Expired to sorted.filter { it.freshness is Freshness.Expired },
+                Freshness.NearingExpiration to sorted.filter { it.freshness is Freshness.NearingExpiration },
+                Freshness.Fresh to sorted.filter { it.freshness is Freshness.Fresh }
+            )
+        } else emptyMap()
+
+        return Pair(sorted, grouped)
     }
 
     private fun defaultIconFor(name: String): String {

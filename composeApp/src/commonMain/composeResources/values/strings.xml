@@ -1,16 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <resources>
-    <string name="app_name">冰食控</string>
+    <string name="app_name">食材管家</string>
     
     <!-- Home Screen -->
-    <string name="home_title">冰食控</string>
+    <string name="home_title">食材管家</string>
     <string name="home_expiring_soon">即將到期</string>
     <string name="home_expiring_this_week">本週到期</string>
     <string name="home_today">今天</string>
     <string name="home_this_week">本週內</string>
-    <string name="home_fridge_capacity">冰箱容量</string>
     <string name="home_add_ingredient">新增食材</string>
-    <string name="home_refrigerated">冷藏</string>
+    <string name="home_refrigerated">食材</string>
     <string name="home_days_until_expiry">%d天後到期</string>
     <string name="home_item_quantity">x%s</string>
     

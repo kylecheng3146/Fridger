@@ -8,6 +8,14 @@ CREATE TABLE Ingredient (
     expirationDate TEXT NOT NULL
 );
 
+CREATE TABLE ShoppingListItem (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    quantity TEXT,
+    isChecked INTEGER NOT NULL DEFAULT 0,
+    category TEXT
+);
+
 -- Queries for Ingredient
 selectAllIngredients:
 SELECT * FROM Ingredient;
@@ -23,3 +31,20 @@ VALUES (?, ?, ?);
 deleteIngredientById:
 DELETE FROM Ingredient
 WHERE id = ?;
+
+-- Queries for ShoppingListItem
+selectAllShoppingItems:
+SELECT * FROM ShoppingListItem ORDER BY isChecked ASC, id DESC;
+
+insertShoppingItem:
+INSERT INTO ShoppingListItem(name, quantity, isChecked, category)
+VALUES (?, ?, ?, ?);
+
+updateShoppingItemChecked:
+UPDATE ShoppingListItem SET isChecked = ? WHERE id = ?;
+
+deleteShoppingItemById:
+DELETE FROM ShoppingListItem WHERE id = ?;
+
+clearPurchasedItems:
+DELETE FROM ShoppingListItem WHERE isChecked = 1;
