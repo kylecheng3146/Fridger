@@ -15,19 +15,24 @@ data class ShoppingListItem(
 )
 
 interface ShoppingListRepository {
-    suspend fun getShoppingList(): List<ShoppingListItem>
-    suspend fun addItem(name: String, quantity: String?)
+    suspend fun getShoppingList(listId: String? = null): List<ShoppingListItem>
+    suspend fun addItem(name: String, quantity: String?, listId: String? = null)
     suspend fun updateItem(id: Long, isChecked: Boolean)
     suspend fun deleteItem(id: Long)
-    suspend fun clearPurchasedItems()
+    suspend fun clearPurchasedItems(listId: String? = null)
+    suspend fun deleteItemsByList(listId: String)
 }
 
 class ShoppingListRepositoryImpl(
     private val db: FridgerDatabase = DatabaseProvider.database
 ) : ShoppingListRepository {
 
-    override suspend fun getShoppingList(): List<ShoppingListItem> = withContext(Dispatchers.Default) {
-        val rows = db.fridgerDatabaseQueries.selectAllShoppingItems().executeAsList()
+    override suspend fun getShoppingList(listId: String?): List<ShoppingListItem> = withContext(Dispatchers.Default) {
+        val rows = if (listId == null) {
+            db.fridgerDatabaseQueries.selectAllShoppingItems().executeAsList()
+        } else {
+            db.fridgerDatabaseQueries.selectShoppingItemsByCategory(listId).executeAsList()
+        }
         rows.map { row ->
             ShoppingListItem(
                 id = row.id,
@@ -39,12 +44,12 @@ class ShoppingListRepositoryImpl(
         }
     }
 
-    override suspend fun addItem(name: String, quantity: String?) = withContext(Dispatchers.Default) {
+    override suspend fun addItem(name: String, quantity: String?, listId: String?) = withContext(Dispatchers.Default) {
         db.fridgerDatabaseQueries.insertShoppingItem(
             name = name,
             quantity = quantity,
             isChecked = 0,
-            category = null
+            category = listId
         )
     }
 
@@ -59,7 +64,15 @@ class ShoppingListRepositoryImpl(
         db.fridgerDatabaseQueries.deleteShoppingItemById(id)
     }
 
-    override suspend fun clearPurchasedItems() = withContext(Dispatchers.Default) {
-        db.fridgerDatabaseQueries.clearPurchasedItems()
+    override suspend fun clearPurchasedItems(listId: String?) = withContext(Dispatchers.Default) {
+        if (listId == null) {
+            db.fridgerDatabaseQueries.clearPurchasedItems()
+        } else {
+            db.fridgerDatabaseQueries.clearPurchasedItemsByCategory(listId)
+        }
+    }
+
+    override suspend fun deleteItemsByList(listId: String) = withContext(Dispatchers.Default) {
+        db.fridgerDatabaseQueries.deleteShoppingItemsByCategory(listId)
     }
 }

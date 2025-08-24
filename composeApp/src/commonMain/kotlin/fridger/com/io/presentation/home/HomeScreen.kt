@@ -46,6 +46,8 @@ import fridger.composeapp.generated.resources.empty_fridge
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.foundation.Image
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 
 @Composable
 fun HomeScreen(

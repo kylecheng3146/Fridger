@@ -36,6 +36,10 @@ WHERE id = ?;
 selectAllShoppingItems:
 SELECT * FROM ShoppingListItem ORDER BY isChecked ASC, id DESC;
 
+-- Items by category (used as listId)
+selectShoppingItemsByCategory:
+SELECT * FROM ShoppingListItem WHERE category = ? ORDER BY isChecked ASC, id DESC;
+
 insertShoppingItem:
 INSERT INTO ShoppingListItem(name, quantity, isChecked, category)
 VALUES (?, ?, ?, ?);
@@ -48,3 +52,10 @@ DELETE FROM ShoppingListItem WHERE id = ?;
 
 clearPurchasedItems:
 DELETE FROM ShoppingListItem WHERE isChecked = 1;
+
+clearPurchasedItemsByCategory:
+DELETE FROM ShoppingListItem WHERE isChecked = 1 AND category = ?;
+
+-- Delete all items by category (used when deleting a list)
+deleteShoppingItemsByCategory:
+DELETE FROM ShoppingListItem WHERE category = ?;

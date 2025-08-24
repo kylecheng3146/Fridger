@@ -1,12 +1,11 @@
 package fridger.com.io.presentation.settings
 
 import fridger.com.io.data.settings.SettingsDataStore
-import fridger.com.io.data.settings.createDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 object SettingsManager {
-    private val settingsDataStore by lazy { SettingsDataStore(createDataStore()) }
+    private val settingsDataStore by lazy { SettingsDataStore(fridger.com.io.data.settings.SharedDataStoreProvider.instance) }
 
     val settings = settingsDataStore.settings
 
