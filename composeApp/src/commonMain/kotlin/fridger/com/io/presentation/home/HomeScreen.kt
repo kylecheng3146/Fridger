@@ -12,6 +12,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -40,7 +42,10 @@ import fridger.composeapp.generated.resources.home_days_until_expiry
 import fridger.composeapp.generated.resources.home_frozen
 import fridger.composeapp.generated.resources.home_refrigerated
 import fridger.composeapp.generated.resources.home_title
+import fridger.composeapp.generated.resources.empty_fridge
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import androidx.compose.foundation.Image
 
 @Composable
 fun HomeScreen(
@@ -73,8 +78,42 @@ fun HomeScreen(
                 ExpirySection(
                     todayItems = uiState.todayExpiringItems,
                     weekItems = uiState.weekExpiringItems,
+                    expiredItems = uiState.expiredItems,
                 )
                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraHuge))
+            }
+
+            // Empty State when no items
+            if (uiState.refrigeratedItems.isEmpty()) {
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
+                            .padding(vertical = MaterialTheme.spacing.large),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = fridger.com.io.presentation.home.resources.emptyFridgePainter(),
+                            contentDescription = null,
+                            modifier = Modifier.size(130.dp)
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        Text(
+                            text = "您的冰箱空空如也～",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = "點擊下方按鈕新增第一樣食材吧！",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            fontSize = 14.sp
+                        )
+                        Spacer(Modifier.height(MaterialTheme.spacing.extraHuge))
+                    }
+                }
             }
 
             // Refrigerated Items
@@ -142,7 +181,7 @@ fun HomeScreen(
 
             if (uiState.groupOption==GroupOption.NONE) {
                 items(
-                    items = uiState.refrigeratedItems.chunked(4),
+                    items = uiState.refrigeratedItems.chunked(3),
                     key = { group -> group.joinToString("_") { it.id } }
                 ) { rowItems ->
                     Row(
@@ -157,11 +196,12 @@ fun HomeScreen(
                                     item = item,
                                     onClick = { viewModel.onItemClick(item.id) },
                                     modifier = Modifier.fillMaxWidth(),
-                                    compact = true
+                                    compact = true,
+                                    onRemove = { viewModel.removeItem(item.id) }
                                 )
                             }
                         }
-                        repeat(4 - rowItems.size) {
+                        repeat(3 - rowItems.size) {
                             Spacer(modifier = Modifier.weight(1f))
                         }
                     }
@@ -194,7 +234,7 @@ fun HomeScreen(
                             }
                         }
                         items(
-                            items = itemsInGroup.chunked(4),
+                            items = itemsInGroup.chunked(3),
                             key = { group -> group.joinToString("_") { it.id } + "_" + freshness::class.simpleName }
                         ) { rowItems ->
                             Row(
@@ -209,11 +249,12 @@ fun HomeScreen(
                                             item = item,
                                             onClick = { viewModel.onItemClick(item.id) },
                                             modifier = Modifier.fillMaxWidth(),
-                                            compact = true
+                                            compact = true,
+                                            onRemove = { viewModel.removeItem(item.id) }
                                         )
                                     }
                                 }
-                                repeat(4 - rowItems.size) {
+                                repeat(3 - rowItems.size) {
                                     Spacer(modifier = Modifier.weight(1f))
                                 }
                             }
@@ -277,6 +318,7 @@ private fun HomeHeader(onSettingsClick: () -> Unit) {
 private fun ExpirySection(
     todayItems: List<ExpiringItem>,
     weekItems: List<ExpiringItem>,
+    expiredItems: List<ExpiringItem>,
 ) {
     Column(
         modifier =
@@ -318,6 +360,26 @@ private fun ExpirySection(
                     icon = "⚠️",
                     count = null,
                     label = "本週沒有快到期食材",
+                    isEmpty = true
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
+
+        // Title: 已過期
+        SectionTitle(title = "已過期")
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
+        Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)) {
+            expiredItems.forEach { item ->
+                ExpiringListItemCard(item = item, accentColor = MaterialTheme.colorScheme.error)
+            }
+
+            if (expiredItems.isEmpty()) {
+                ExpiryCard(
+                    icon = "❄️",
+                    count = null,
+                    label = "沒有已過期食材",
                     isEmpty = true
                 )
             }
@@ -437,8 +499,11 @@ private fun ExpiringListItemCard(
                     .background(bg)
                     .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
-                val daysText =
-                    if (item.daysUntil <= 0) "今天到期了" else "還剩 ${item.daysUntil} 天到期"
+                val daysText = when {
+                    item.daysUntil < 0 -> "已過期 ${kotlin.math.abs(item.daysUntil)} 天"
+                    item.daysUntil == 0 -> "今天到期了"
+                    else -> "還剩 ${item.daysUntil} 天到期"
+                }
                 Text(
                     text = daysText,
                     color = accentColor,
@@ -456,71 +521,65 @@ private fun RefrigeratedItemCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     compact: Boolean = false,
+    onRemove: (() -> Unit)? = null,
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(MaterialTheme.sizing.cornerRadiusLarge),
         colors =
             CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface,
+                containerColor = if (compact) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface,
             ),
         elevation =
             CardDefaults.cardElevation(
-                defaultElevation = 1.dp,
+                defaultElevation = if (compact) 2.dp else 1.dp,
             ),
         onClick = onClick,
     ) {
         if (compact) {
-            // Compact tile for grid view
-            Column(
+            // Compact tile for grid view - mimic QuickPickCell style
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(MaterialTheme.spacing.medium),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
+                    .heightIn(min = 110.dp)
+                    .padding(6.dp)
             ) {
-                Box(
+                // Quick remove button at top-right for compact tiles
+                if (onRemove != null) {
+                    androidx.compose.material3.IconButton(
+                        onClick = onRemove,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "移除食材",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Column(
                     modifier = Modifier
-                        .size(MaterialTheme.sizing.iconLarge)
-                        .clip(CircleShape)
-                        .background(AppColors.IconBackground),
-                    contentAlignment = Alignment.Center,
+                        .fillMaxSize()
+                        .padding(horizontal = 8.dp, vertical = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
                     Text(
                         text = item.icon,
-                        fontSize = MaterialTheme.sizing.iconMedium.value.sp,
+                        fontSize = 44.sp,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text = item.name,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
-                Text(
-                    text = item.name,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1
-                )
-                val (tintColor, textDisplay) = when (item.freshness) {
-                    Freshness.Expired -> MaterialTheme.colorScheme.error to "已過期${
-                        kotlin.math.abs(
-                            item.daysUntilExpiry
-                        )
-                    }天"
-
-                    Freshness.NearingExpiration -> AppColors.Warning to stringResourceFormat(
-                        Res.string.home_days_until_expiry,
-                        item.daysUntilExpiry
-                    )
-
-                    Freshness.Fresh -> AppColors.TextSecondary to stringResourceFormat(
-                        Res.string.home_days_until_expiry,
-                        item.daysUntilExpiry
-                    )
-                }
-                Text(
-                    text = textDisplay,
-                    fontSize = 12.sp,
-                    color = tintColor,
-                    maxLines = 1
-                )
             }
         } else {
             Row(

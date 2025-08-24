@@ -17,6 +17,7 @@ import kotlinx.datetime.toLocalDateTime
 data class HomeUiState(
     val todayExpiringItems: List<ExpiringItem> = emptyList(),
     val weekExpiringItems: List<ExpiringItem> = emptyList(),
+    val expiredItems: List<ExpiringItem> = emptyList(),
     val fridgeCapacityPercentage: Float = 0f,
     // Sorted (and filtered) list to render when not grouped
     val refrigeratedItems: List<RefrigeratedItem> = emptyList(),
@@ -111,6 +112,17 @@ class HomeViewModel(
                         )
                     }
 
+                val expiredExp = refrigerated.filter { it.daysUntilExpiry < 0 }
+                    .map { item ->
+                        ExpiringItem(
+                            id = item.id + "_e",
+                            name = item.name,
+                            icon = item.icon,
+                            count = 1,
+                            daysUntil = item.daysUntilExpiry
+                        )
+                    }
+
                 originalRefrigeratedItems = refrigerated
 
                 val transformed = applySortAndGroup(originalRefrigeratedItems, _uiState.value.sortOption, _uiState.value.groupOption)
@@ -118,6 +130,7 @@ class HomeViewModel(
                 _uiState.value = _uiState.value.copy(
                     todayExpiringItems = todayExp,
                     weekExpiringItems = weekExp,
+                    expiredItems = expiredExp,
                     fridgeCapacityPercentage = 0.6f,
                     refrigeratedItems = transformed.first,
                     groupedRefrigeratedItems = transformed.second,
@@ -164,6 +177,18 @@ class HomeViewModel(
 
     fun refresh() {
         loadHomeData()
+    }
+
+    fun removeItem(itemId: String) {
+        viewModelScope.launch {
+            try {
+                repository.delete(itemId.toLong())
+                loadHomeData()
+            } catch (e: Exception) {
+                // keep state but record error
+                _uiState.value = _uiState.value.copy(error = e.message)
+            }
+        }
     }
 
     fun updateSortingAndGrouping(sort: SortOption? = null, group: GroupOption? = null) {
