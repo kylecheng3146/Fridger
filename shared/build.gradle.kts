@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     id("org.jetbrains.kotlin.plugin.serialization")
     alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.kover)
 }
 
 kotlin {
@@ -33,4 +34,3 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 }
-

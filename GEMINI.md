@@ -168,3 +168,46 @@ composeApp/
      - **字串 (Strings)**：如 API 端點 URL、錯誤訊息、UI 顯示文字。應使用常數、資源檔或設定檔管理。
      - **數字 (Numbers)**：如分頁大小、超時時間、重試次數。應定義為具名常數。
      - **金鑰與憑證 (Keys & Credentials)**：絕對禁止！必須透過環境變數、安全的設定檔或 Secret Management 服務載入。
+
+---
+
+### 🧪 單元測試規範 (Unit Testing Convention)
+
+#### 核心原則 (Core Principles)
+- **隔離 (Isolation)**: 測試案例必須彼此獨立，且與外部系統 (如網路、真實資料庫) 隔離。
+- **快速 (Fast)**: 單元測試的執行速度必須要快，以鼓勵頻繁執行。
+- **可重複 (Repeatable)**: 無論執行幾次，測試結果都必須保持一致。
+- **清晰 (Clear)**: 測試的意圖應一目了然，測試程式碼本身也需要具備高可讀性。
+
+#### 測試工具 (Testing Tools)
+| 工具 | 用途 |
+|---|---|
+| `kotlin.test` | 官方斷言庫，用於驗證測試結果 (如 `assertEquals`, `assertTrue`)。 |
+| `io.mockk:mockk` | 建立 Mock 物件的標準函式庫，用於隔離測試單元與其外部依賴。 |
+| `com.h2database:h2` | 記憶體資料庫，用於在測試環境中模擬真實資料庫，以驗證資料層邏輯。 |
+
+#### 各層級測試策略 (Testing Strategy by Layer)
+
+- **Data Layer (Repositories)**
+  - **策略**: 使用 H2 記憶體資料庫進行測試。
+  - **實作**: 每個測試類別需在測試前建立資料庫 Schema，並在測試後清理，確保測試的獨立性。
+  - **重點**: 驗證 SQL 查詢的正確性，包含資料的增、刪、改、查與對應關係。
+  - **範例**: `UserRepositoryTest` 應驗證 `findOrCreateUserByGoogle` 是否能正確地新增或查詢使用者。
+
+- **Service Layer (Services)**
+  - **策略**: 使用 MockK 模擬 (Mock) 所有外部依賴 (如 Repositories, Validators)。
+  - **實作**: 將 Mock 物件注入到 Service 中，設定其預期行為與回傳值。
+  - **重點**: 專注於測試 Service 本身的商業邏輯，驗證其是否根據依賴的回傳值做出正確的判斷與處理。
+  - **範例**: `AuthServiceTest` 應模擬 `UserRepository` 來測試登入與 Token 刷新邏輯。
+
+- **Security Layer (Validators)**
+  - **策略**: 避免真實的網路或複雜的密碼學運算，專注於邏輯驗證。
+  - **實作**: 對於如 `GoogleTokenValidator` 的元件，應手動建立測試用的 JWT 與公鑰。
+  - **重點**: 將測試用的公鑰注入 Validator，驗證其解析、簽名驗證、過期判斷等邏輯是否正確。
+
+- **Routing Layer (Ktor Routes)**
+  - **說明**: 路由層通常涉及多個元件的整合，建議使用 Ktor 提供的 `testApplication` 進行**整合測試 (Integration Test)**，而非單元測試。這部分不在單元測試的範疇，但為測試策略的下一步。
+
+#### 命名與結構 (Naming and Structure)
+- **檔案命名**: 測試檔案應以被測試的類別命名，並加上 `Test` 後綴。 (例如: `AuthService.kt` → `AuthServiceTest.kt`)
+- **函式命名**: 測試函式應清楚描述其測試的情境與預期結果，可使用反引號 (``) 增強可讀性。 (例如: `fun `given invalid token, refreshAccessToken should throw exception``)

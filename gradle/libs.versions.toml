@@ -28,6 +28,9 @@ bcrypt = "0.10.2"
 logback = "1.5.6"
 jwksrsa = "0.22.1"
 java-jwt = "4.4.0"
+mockk = "1.13.12"
+h2 = "2.2.224"
+kover = "0.8.2"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -73,6 +76,9 @@ jwks-rsa = { module = "com.auth0:jwks-rsa", version.ref = "jwksrsa" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 java-jwt = { module = "com.auth0:java-jwt", version.ref = "java-jwt" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+h2 = { module = "com.h2database:h2", version.ref = "h2" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
@@ -83,3 +89,4 @@ composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "k
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }

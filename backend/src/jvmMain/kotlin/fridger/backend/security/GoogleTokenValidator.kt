@@ -28,7 +28,7 @@ import java.util.*
 /**
  * 下載並快取 Google JWKS；提供本地驗證 Google ID Token 的功能。
  */
-class GoogleTokenValidator private constructor(
+class GoogleTokenValidator(
     private val logger: Logger,
     private val clientIds: Set<String>,
     private val jwksUrl: String,
@@ -100,11 +100,14 @@ class GoogleTokenValidator private constructor(
         // Verify signature
         val data = parts[0] + "." + parts[1]
         val signature = Base64.getUrlDecoder().decode(parts[2])
-        val sigOk =
+        val sigOk = try {
             java.security.Signature.getInstance("SHA256withRSA").apply {
                 initVerify(key)
                 update(data.toByteArray())
             }.verify(signature)
+        } catch (ex: Exception) {
+            false
+        }
         if (!sigOk) throw IllegalArgumentException(ErrorMessages.BAD_SIGNATURE)
         // exp
         val exp = payload["exp"]?.jsonPrimitive?.content?.toLongOrNull() ?: throw IllegalArgumentException(ErrorMessages.EXP_MISSING)

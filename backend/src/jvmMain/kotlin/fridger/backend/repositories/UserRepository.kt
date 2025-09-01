@@ -26,7 +26,6 @@ class UserRepository {
                         (UsersTable.googleId eq profile.googleId) or (UsersTable.email eq profile.email)
                     }.limit(1).firstOrNull()
                 if (existing != null) {
-                    // Optionally update name/picture if changed
                     val needUpdate = existing[UsersTable.name] != profile.name || existing[UsersTable.pictureUrl] != profile.pictureUrl || existing[UsersTable.googleId] == null
                     if (needUpdate) {
                         UsersTable.update({ UsersTable.id eq existing[UsersTable.id] }) {
@@ -34,8 +33,11 @@ class UserRepository {
                             it[pictureUrl] = profile.pictureUrl
                             it[googleId] = profile.googleId
                         }
+                        // Fetch updated row to reflect new values
+                        UsersTable.select { UsersTable.id eq existing[UsersTable.id] }.first().toUser()
+                    } else {
+                        existing.toUser()
                     }
-                    existing.toUser()
                 } else {
                     val id = UUID.randomUUID()
                     UsersTable.insert { row ->

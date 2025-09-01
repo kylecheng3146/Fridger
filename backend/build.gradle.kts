@@ -5,6 +5,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
     application
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.kover)
 }
 
 // Load local properties if the file exists
@@ -22,6 +23,10 @@ sourceSets {
     main {
         kotlin.srcDirs("src/jvmMain/kotlin")
         resources.srcDirs("src/jvmMain/resources")
+    }
+    test {
+        kotlin.srcDirs("src/jvmTest/kotlin")
+        resources.srcDirs("src/jvmTest/resources")
     }
 }
 
@@ -68,6 +73,9 @@ dependencies {
 
     // Tests (placeholder)
     testImplementation(libs.kotlin.test)
+    testImplementation(libs.mockk)
+    testImplementation(libs.h2)
+    testImplementation(libs.kotlinx.coroutines.test)
 
     implementation(project(":shared"))
 

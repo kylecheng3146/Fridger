@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform) apply false
     alias(libs.plugins.sqldelight) apply false
     alias(libs.plugins.ktlint) apply false
+    alias(libs.plugins.kover) apply false
     id("org.jetbrains.kotlin.jvm") version "2.1.21" apply false
     id("org.jetbrains.kotlin.plugin.serialization") version "2.1.21" apply false
 }
