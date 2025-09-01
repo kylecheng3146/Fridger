@@ -8,6 +8,5 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Indexes (unique on email already enforced by constraint)
 CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);
 

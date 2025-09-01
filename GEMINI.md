@@ -133,3 +133,38 @@ composeApp/
 
 開發人員應遵循本規範進行實作，
 
+---
+
+資料傳輸規範 (Data Transfer Object Convention)
+
+禁止事項
+•	❌ 嚴禁 在 API 或資料庫序列化/反序列化中使用以下型別：
+•	Map<String, Any>
+•	Map<String, String>
+•	org.json.JSONObject
+•	任何其他「無結構的」字典/物件型別
+
+理由：
+•	失去型別安全，容易發生 runtime 錯誤。
+•	無法被 Kotlin compiler/IDE 提示或檢查。
+•	對前後端的契約（Contract）沒有清晰文件化，導致溝通成本上升。
+
+⸻
+
+強制規範
+1.	所有 DTO / 資料模型必須使用 Kotlin data class 定義。
+2.	必須依照使用的序列化工具，標記正確的註解：
+•	Kotlinx Serialization → @Serializable
+•	Gson → @SerializedName("field_name")
+•	Jackson → @JsonProperty("field_name")
+3.	所有 API 回應必須包裝在 ApiResponse<T> 中，保持一致結構
+
+---
+
+### 通用開發原則 (General Development Principles)
+
+4. **禁止任何形式的硬編碼 (Hardcode)**：
+   - **❌ 嚴禁**：在程式碼中直接寫入任何未經抽離的常數，特別是：
+     - **字串 (Strings)**：如 API 端點 URL、錯誤訊息、UI 顯示文字。應使用常數、資源檔或設定檔管理。
+     - **數字 (Numbers)**：如分頁大小、超時時間、重試次數。應定義為具名常數。
+     - **金鑰與憑證 (Keys & Credentials)**：絕對禁止！必須透過環境變數、安全的設定檔或 Secret Management 服務載入。

@@ -1,47 +1,53 @@
 package fridger.backend
 
+import fridger.backend.config.ApiPaths
+import fridger.backend.config.loadAppConfig
+import fridger.backend.models.HealthDto
+import fridger.shared.models.ApiResponse
+import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
-import io.ktor.server.response.*
-import io.ktor.server.request.*
-import io.ktor.server.routing.*
 import io.ktor.server.plugins.contentnegotiation.*
-import io.ktor.serialization.kotlinx.json.*
-import io.ktor.server.auth.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import kotlinx.serialization.json.Json
 import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.StdOutSqlLogger
 import org.jetbrains.exposed.sql.addLogger
+import org.jetbrains.exposed.sql.transactions.transaction
 
 private data class DbConfig(
-    val url: String = System.getenv("DB_URL") ?: "jdbc:postgresql://localhost:5432/fridger",
-    val user: String = System.getenv("DB_USER") ?: "postgres",
-    val password: String = System.getenv("DB_PASSWORD") ?: "postgres"
+    val url: String,
+    val user: String,
+    val password: String
 )
 
 fun main() {
-    // Perform migrations before starting the server
-    val db = DbConfig()
+    val cfg = loadAppConfig()
+    val db = DbConfig(cfg.dbUrl, cfg.dbUser, cfg.dbPassword)
     migrate(db)
     initDatabase(db)
 
-    embeddedServer(Netty, port = (System.getenv("PORT") ?: "8080").toInt()) {
+    embeddedServer(Netty, port = cfg.port) {
         install(ContentNegotiation) {
-            json(Json {
-                prettyPrint = false
-                ignoreUnknownKeys = true
-                isLenient = true
-            })
+            json(
+                Json {
+                    prettyPrint = false
+                    ignoreUnknownKeys = true
+                    isLenient = true
+                }
+            )
         }
         install(Authentication) {
             // Placeholder for future Google JWT auth configuration
         }
         routing {
-            get("/health") {
-                call.respond(mapOf("status" to "ok"))
+            get(ApiPaths.HEALTH) {
+                call.respond(ApiResponse.ok(HealthDto("OK")))
             }
         }
     }.start(wait = true)
@@ -63,4 +69,3 @@ private fun initDatabase(cfg: DbConfig) {
         // no-op
     }
 }
-

@@ -1,7 +1,17 @@
+import java.util.Properties
+
 plugins {
     id("org.jetbrains.kotlin.jvm")
     id("org.jetbrains.kotlin.plugin.serialization")
     application
+    alias(libs.plugins.ktlint)
+}
+
+// Load local properties if the file exists
+val localProperties = Properties()
+val localPropertiesFile = file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(localPropertiesFile.inputStream())
 }
 
 kotlin {
@@ -40,12 +50,14 @@ dependencies {
     // Auth & crypto
     implementation(libs.bcrypt)
     implementation(libs.jwks.rsa)
+    implementation(libs.java.jwt)
 
     // Database & ORM
     implementation(libs.exposed.core)
     implementation(libs.exposed.dao)
     implementation(libs.exposed.jdbc)
     implementation(libs.postgresql)
+    implementation(libs.exposed.java.time)
 
     // Migration
     implementation(libs.flyway.core)
@@ -60,6 +72,26 @@ dependencies {
     implementation(project(":shared"))
 
     implementation(libs.kotlinx.coroutines.core)
+}
+
+ktlint {
+    android.set(false)
+    ignoreFailures.set(false)
+    reporters {
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.PLAIN)
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.CHECKSTYLE)
+    }
+    filter {
+        exclude("**/build/**")
+        exclude("**/generated/**")
+    }
+}
+
+tasks.named<JavaExec>("run") {
+    val jwtSecret = localProperties.getProperty("JWT_SECRET")
+    if (jwtSecret != null) {
+        environment("JWT_SECRET", jwtSecret)
+    }
 }
 
 // Simple task to print effective classpath (debug aid)

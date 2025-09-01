@@ -1,13 +1,13 @@
 package fridger.backend.plugins
 
+import fridger.backend.exceptions.ForbiddenException
+import fridger.backend.exceptions.UnauthorizedException
 import fridger.shared.models.ApiResponse
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
 import org.jetbrains.exposed.exceptions.ExposedSQLException
-import fridger.backend.exceptions.UnauthorizedException
-import fridger.backend.exceptions.ForbiddenException
 
 fun Application.configureStatusPages() {
     install(StatusPages) {
