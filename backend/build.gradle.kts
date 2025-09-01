@@ -11,11 +11,12 @@ kotlin {
 sourceSets {
     main {
         kotlin.srcDirs("src/jvmMain/kotlin")
+        resources.srcDirs("src/jvmMain/resources")
     }
 }
 
 application {
-    mainClass = "fridger.backend.ServerKt"
+    mainClass = "fridger.backend.ApplicationKt"
 }
 
 repositories {
@@ -30,6 +31,8 @@ dependencies {
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.ktor.server.auth)
     implementation(libs.ktor.server.auth.jwt)
+    implementation(libs.ktor.server.call.logging)
+    implementation(libs.ktor.server.status.pages)
 
     // Ktor client (for fetching Google JWKS if needed later)
     implementation(libs.ktor.client.cio)
@@ -53,6 +56,10 @@ dependencies {
 
     // Tests (placeholder)
     testImplementation(libs.kotlin.test)
+
+    implementation(project(":shared"))
+
+    implementation(libs.kotlinx.coroutines.core)
 }
 
 // Simple task to print effective classpath (debug aid)
