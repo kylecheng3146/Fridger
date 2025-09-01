@@ -8,12 +8,14 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform) apply false
     alias(libs.plugins.sqldelight) apply false
     alias(libs.plugins.ktlint) apply false
+    id("org.jetbrains.kotlin.jvm") version "2.2.10" apply false
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.2.10" apply false
 }
 
 // Gradle tasks to build and run the iOS app on Simulator without opening Xcode
 val iosSimulatorName = (findProperty("iosSimulator") as String?) ?: "iPhone 15"
 
-val derivedData = layout.projectDirectory.dir("iosApp/build/DerivedData").asFile.absolutePath
+val derivedData: String = layout.projectDirectory.dir("iosApp/build/DerivedData").asFile.absolutePath
 val appProductDir = "$derivedData/Build/Products/Debug-iphonesimulator"
 val appBundlePath = "$appProductDir/iosApp.app"
 val iosBundleId = "fridger.com.io.Fridger"
@@ -42,4 +44,17 @@ tasks.register("iosRunDebugOnSimulator") {
         exec { commandLine("xcrun", "simctl", "install", "booted", appBundlePath) }
         exec { commandLine("xcrun", "simctl", "launch", "booted", iosBundleId) }
     }
+}
+
+// Custom tasks to run subprojects individually
+tasks.register("runBackend") {
+    group = "application"
+    description = "Runs the backend server."
+    dependsOn(":backend:run")
+}
+
+tasks.register("runDesktop") {
+    group = "application"
+    description = "Runs the desktop application."
+    dependsOn(":composeApp:run")
 }

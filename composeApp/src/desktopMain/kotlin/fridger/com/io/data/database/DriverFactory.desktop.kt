@@ -6,9 +6,15 @@ import fridger.com.io.database.FridgerDatabase
 
 internal actual object DriverFactory {
     actual fun createDriver(): SqlDriver {
-        val driver = JdbcSqliteDriver(url = "jdbc:sqlite:fridger.db")
-        // Ensure schema exists
-        FridgerDatabase.Schema.create(driver)
+        val dbFile = java.io.File("fridger.db")
+        val needsSchemaCreation = !dbFile.exists()
+
+        val driver = JdbcSqliteDriver("jdbc:sqlite:${dbFile.absolutePath}")
+
+        if (needsSchemaCreation) {
+            FridgerDatabase.Schema.create(driver)
+        }
+
         return driver
     }
 }
