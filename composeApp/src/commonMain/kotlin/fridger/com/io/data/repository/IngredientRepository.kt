@@ -5,14 +5,18 @@ import fridger.com.io.data.model.Freshness
 import fridger.com.io.data.model.Ingredient
 import fridger.com.io.database.FridgerDatabase
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import app.cash.sqldelight.coroutines.asFlow
+import app.cash.sqldelight.coroutines.mapToList
 
 interface IngredientRepository {
-    suspend fun getAll(): List<Ingredient>
+    fun getIngredientsStream(): Flow<List<Ingredient>>
     suspend fun add(name: String, expirationDateDisplay: String)
     suspend fun delete(id: Long)
 }
@@ -21,20 +25,25 @@ class IngredientRepositoryImpl(
     private val db: FridgerDatabase = DatabaseProvider.database
 ) : IngredientRepository {
 
-    override suspend fun getAll(): List<Ingredient> = withContext(Dispatchers.Default) {
-        val rows = db.fridgerDatabaseQueries.selectAllIngredients().executeAsList()
-        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-        rows.map { row ->
-            val addDate = LocalDate.parse(row.addDate)
-            val expirationDate = LocalDate.parse(row.expirationDate)
-            Ingredient(
-                id = row.id,
-                name = row.name,
-                addDate = addDate,
-                expirationDate = expirationDate,
-                freshness = computeFreshness(today, expirationDate)
-            )
-        }
+    override fun getIngredientsStream(): Flow<List<Ingredient>> {
+        return db.fridgerDatabaseQueries
+            .selectAllIngredients()
+            .asFlow()
+            .mapToList(Dispatchers.Default)
+            .map { rows ->
+                val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+                rows.map { row ->
+                    val addDate = LocalDate.parse(row.addDate)
+                    val expirationDate = LocalDate.parse(row.expirationDate)
+                    Ingredient(
+                        id = row.id,
+                        name = row.name,
+                        addDate = addDate,
+                        expirationDate = expirationDate,
+                        freshness = computeFreshness(today, expirationDate)
+                    )
+                }
+            }
     }
 
     override suspend fun add(name: String, expirationDateDisplay: String) = withContext(Dispatchers.Default) {

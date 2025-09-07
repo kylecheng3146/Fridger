@@ -84,9 +84,12 @@ kotlin {
             implementation(libs.kotlinx.datetime)
             implementation(libs.datastore.preferences)
             implementation(libs.okio)
+            implementation(libs.sqldelight.coroutines)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.mockk)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)

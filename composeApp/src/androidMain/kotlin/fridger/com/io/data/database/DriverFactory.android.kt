@@ -1,8 +1,8 @@
 package fridger.com.io.data.database
 
 import android.database.sqlite.SQLiteDatabase
-import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import app.cash.sqldelight.db.SqlDriver
+import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import fridger.com.io.applicationContext
 import fridger.com.io.database.FridgerDatabase
 

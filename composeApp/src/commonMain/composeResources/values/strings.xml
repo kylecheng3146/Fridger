@@ -12,7 +12,31 @@
     <string name="home_refrigerated">食材</string>
     <string name="home_days_until_expiry">%d天後到期</string>
     <string name="home_item_quantity">x%s</string>
-    
+
+    <!-- Newly externalized Home strings -->
+    <string name="home_empty_title">您的冰箱空空如也～</string>
+    <string name="home_empty_subtitle">點擊下方按鈕新增第一樣食材吧！</string>
+    <string name="home_sort_expiry">過期日</string>
+    <string name="home_sort_name">名稱</string>
+    <string name="home_sort_added_date">新增日期</string>
+    <string name="home_group_label">分組:</string>
+    <string name="home_group_by_freshness">依新鮮度</string>
+    <string name="home_group_section_expired">已過期</string>
+    <string name="home_group_section_nearing">即將過期</string>
+    <string name="home_group_section_fresh">新鮮</string>
+    <string name="home_section_soon_title">快到期了！</string>
+    <string name="home_section_week_title">需要留意嘍！</string>
+    <string name="home_section_expired_title">已過期</string>
+    <string name="home_today_none">今天/明天沒有到期食材</string>
+    <string name="home_week_none">本週沒有快到期食材</string>
+    <string name="home_expired_none">沒有已過期食材</string>
+    <string name="home_days_overdue">已過期 %d 天</string>
+    <string name="home_days_due_today">今天到期了</string>
+    <string name="home_days_until">還剩 %d 天到期</string>
+    <string name="home_age_days">已放入 %d 天</string>
+    <string name="home_remove_ingredient">移除食材</string>
+    <string name="settings">設定</string>
+
     <!-- Common -->
     <string name="common_error">發生錯誤</string>
     <string name="common_retry">重試</string>

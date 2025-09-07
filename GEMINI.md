@@ -169,6 +169,25 @@ composeApp/
      - **數字 (Numbers)**：如分頁大小、超時時間、重試次數。應定義為具名常數。
      - **金鑰與憑證 (Keys & Credentials)**：絕對禁止！必須透過環境變數、安全的設定檔或 Secret Management 服務載入。
 
+5. 避免使用魔法值 (Avoid Magic Values)：
+  - ❌ 嚴禁: 在業務邏輯、資料查詢或設定中，直接使用缺乏上下文的數值或字串，這些被稱
+    為「魔法值」(Magic Values)。
+    - 範例 (Bad): items.filter { it.daysUntilExpiry in 2..7 }
+    - 範例 (Bad): if (user.role == 3)
+
+  - ✅ 必須: 將這些值定義為具名常數 (named constants)，以提供清晰的業務含義。
+    - 範例 (Good): private const val DAYS_RANGE_NEARING_EXPIRATION = 2..7
+    - 範例 (Good): if (user.role == UserRole.ADMIN)
+
+  - ✅ 建議: 對於跨越多個檔案或代表核心業務領域的常數，應將其集中在一個或多個專用的
+    Constants.kt 檔案中進行管理（例如 DomainConstants.kt, ApiConstants.kt）。
+
+  - 理由:
+    - 可讀性: if (user.role == UserRole.ADMIN) 遠比 if (user.role == 3)
+      更容易理解。
+    - 可維護性: 當需要調整數值時（例如，即將到期的定義從 7 天改為 5 天），只需在
+      Constants.kt 中修改常數定義，無需在整個專案中搜索和替換數值。
+
 ---
 
 ### 🧪 單元測試規範 (Unit Testing Convention)
@@ -211,3 +230,114 @@ composeApp/
 #### 命名與結構 (Naming and Structure)
 - **檔案命名**: 測試檔案應以被測試的類別命名，並加上 `Test` 後綴。 (例如: `AuthService.kt` → `AuthServiceTest.kt`)
 - **函式命名**: 測試函式應清楚描述其測試的情境與預期結果，可使用反引號 (``) 增強可讀性。 (例如: `fun `given invalid token, refreshAccessToken should throw exception``)
+
+📝 UI 與 ViewModel 開發規範 (UI & ViewModel Development Convention)
+
+1. 資源管理 (Resource Management)
+
+- 原則: UI 層不應存在任何未被管理的「魔法值」(Magic Values)。
+- 實踐清單:
+  - ✅ 字串資源化 (String Externalization)
+    - ❌ 嚴禁: 在 Composable 或 ViewModel 中直接使用硬編碼字串 (e.g.,
+      "新增食材", "過期日")。
+    - ✅ 必須: 將所有面向使用者的字串定義在
+      composeApp/src/commonMain/composeResources/values/strings.xml 中。
+    - ✅ 必須: 在程式碼中透過 stringResource(Res.string.id) 引用字串。
+    - 理由: 便於統一管理、修改，並為未來多語言支援 (i18n) 奠定基礎。
+  - ✅ 顏色與尺寸規格化 (Color & Sizing Standardization)
+    - ❌ 嚴禁: 在 Modifier 中使用 color = Color(0xFF...) 或 padding = 16.dp
+      等未定義的數值。
+    - ✅ 必須: 優先使用 MaterialTheme.colorScheme
+      中的顏色。若需自訂，應定義在統一的 Theme.kt 檔案中。
+    - ✅ 必須: 將常用的 dp 或 sp 數值定義在 Theme.kt 的擴充屬性中 (e.g.,
+      MaterialTheme.spacing.medium)。
+    - 理由: 確保 UI 風格一致，並易於進行全域性的主題調整。
+
+2. ViewModel 設計原則 (ViewModel Design Principles)
+
+- 原則: ViewModel 應保持精簡，專注於「狀態管理」與「業務邏輯」，而非資料轉換的細節。
+- 實踐清單:
+  - ✅ 職責單一與邏輯抽取 (Single Responsibility & Logic Extraction)
+    - ❌ 避免: 在 ViewModel 中撰寫複雜、與核心業務無關的輔助邏輯 (e.g.,
+      基於名稱決定圖示的長篇 when 判斷式)。
+    - ✅ 應該: 將可獨立的、純粹的資料轉換或對應邏輯，抽取至獨立的輔助類別
+      (Helper/Mapper Class)，例如 IngredientIconMapper。
+    - 理由: 保持 ViewModel 的簡潔，專注於處理 UI 狀態 (State) 與業務流程
+      (Flow)，並提高輔助邏輯的可重用性與可測試性。
+  - ✅ 函式簡潔化 (Function Simplification)
+    - ❌ 避免: 撰寫單一巨大函式來處理多個步驟的資料載入與轉換 (e.g.,
+      一個函式內同時處理 API 請求、資料庫讀取、多重 map 操作、排序、分組)。
+    - ✅ 應該: 將複雜的資料處理流程，拆分為數個職責單一的私有函式 (e.g., private
+      fun mapToUiModels(), private fun groupAndSortItems())。
+    - 理由: 提升程式碼的可讀性、可維護性，並使邏輯單元更易於獨立理解與測試。
+
+---
+
+🧪 單元測試規範 (Unit Testing Convention)
+
+核心原則 (Core Principles)
+- 隔離 (Isolation): 測試案例必須彼此獨立，且與外部系統 (如網路、真實資料庫) 隔離。
+- 快速 (Fast): 單元測試的執行速度必須要快，以鼓勵頻繁執行。
+- 可重複 (Repeatable): 無論執行幾次，測試結果都必須保持一致。
+- 清晰 (Clear): 測試的意圖應一目了然，測試程式碼本身也需要具備高可讀性。
+
+測試工具 (Testing Tools)
+
+┌────────────────────────────────┬───────────────────────────────────────────┐
+│ 工具                           │ 用途                                      │
+├────────────────────────────────┼───────────────────────────────────────────┤
+│ kotlin.test                    │ 官方斷言庫，用於驗證測試結果 (如 `asse... │
+  │ io.mockk:mockk                 │ 建立 Mock 物件的標準函式庫，用於隔離測... │
+  │ `org.jetbrains.kotlinx:kotl... │ 提供測試 Coroutines 的工具，如 runTest... │
+└────────────────────────────────┴───────────────────────────────────────────┘
+
+
+各層級測試策略 (Testing Strategy by Layer)
+- Data Layer (Repositories)
+  - 策略: 應在整合測試 (Integration Test) 中使用記憶體資料庫 (如 H2)
+    或真實的測試資料庫進行驗證，單元測試的範疇較小。
+- ViewModel/Service Layer
+  - 策略: 使用 MockK 模擬 (Mock) 所有外部依賴 (如 Repositories, Mappers)。
+  - 實作: 將 Mock 物件注入到被測單元中，設定其預期行為與回傳值。
+  - 重點: 專注於測試自身的商業邏輯，驗證其是否根據依賴的回傳值做出正確的判斷與處理。
+- Mappers/Validators
+  - 策略:
+    這些通常是純函式或純邏輯元件，應直接進行測試，驗證輸入與輸出的對應關係是否正確。
+
+  ---
+實作細則與檢查清單 (Implementation Details & Checklist)
+
+- ✅ 檔案與函式命名 (Naming Convention)
+  - 檔案: 測試檔案應以被測試的類別命名，並加上 Test 後綴。
+    - 範例: HomeViewModel.kt → HomeViewModelTest.kt
+  - 函式: 測試函式應使用反引號 (`) 包裝，並清楚描述其測試的情境與預期結果，可遵循 
+         given[情境]_when[動作]_then[預期結果]` 的結構。
+    - 範例: fun \given repository returns empty list, when loadHomeData is
+      called, then uiState is empty\``
+    - 理由: 清晰的命名讓測試失敗時能立刻了解是哪個環節出錯。
+
+- ✅ Mock 的使用 (Usage of Mocks)
+  - 必須: 使用 io.mockk:mockk 來模擬所有外部依賴。
+  - 必須: 在 @BeforeTest (或每個測試函式開頭) 初始化 Mocks，並使用 relaxUnitFun =
+    true 或 relaxed = true 來簡化不需要回傳值的 Mock 設定。
+  - 必須: 使用 every { ... } returns ... 或 coEvery { ... } returns ... (針對
+    suspend 函式) 來定義 Mock 物件的行為。
+  - ❌ 嚴禁: 在單元測試中實例化真正的 Repository 或 Service。
+    - 理由: 確保測試的隔離性，只專注於被測試單元的邏輯。
+
+- ✅ 斷言與驗證 (Assertions & Verification)
+  - 必須: 使用 kotlin.test 中的斷言函式 (assertEquals, assertTrue, assertIs 等)
+    來驗證最終結果。
+  - 建議: 在測試結束時，可使用 verify { ... } 或 coVerify { ... } (MockK)
+    來驗證特定的函式是否被如預期般呼叫。
+    - 理由: 斷言是測試的核心，它驗證了程式碼的行為是否符合預期。
+
+- ✅ ViewModel 與 Coroutine 測試 (ViewModel & Coroutine Testing)
+  - 必須: 測試 ViewModel 時，應專注於驗證 UiState 的變化是否符合預期。
+  - 必須: 由於 ViewModel 中的協程是非同步的，測試函式必須使用
+    kotlinx-coroutines-test 提供的 runTest 來執行。
+  - 必須: 在測試類別中建立一個 TestDispatcher，並在 @BeforeTest 中透過
+    Dispatchers.setMain(testDispatcher) 將其設定為 Main Dispatcher，在 @AfterTest
+    中 Dispatchers.resetMain()。
+    - 理由: 確保能以可控制、同步的方式測試與 viewModelScope (Dispatchers.Main)
+      相關的非同步邏輯。
