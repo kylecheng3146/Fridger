@@ -9,14 +9,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import fridger.com.io.presentation.home.HomeScreen
 import fridger.com.io.presentation.navigation.Screen
 import fridger.com.io.presentation.settings.SettingsManager
 import fridger.com.io.presentation.settings.SettingsScreen
 import fridger.com.io.presentation.settings.ThemeColor
-import fridger.com.io.ui.theme.FridgerTheme
-import androidx.compose.ui.graphics.Color
 import fridger.com.io.presentation.shoppinglist.ShoppingListScreen
+import fridger.com.io.ui.theme.FridgerTheme
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Suppress("ktlint:standard:function-naming")
@@ -46,21 +46,28 @@ fun App() {
                             onClick = { currentScreen = screen },
                             icon = { Icon(screen.icon, contentDescription = screen.title) },
                             label = { Text(screen.title) },
-                            colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
-                                selectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                                selectedTextColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                                indicatorColor = Color.Transparent,
-                                unselectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
-                                unselectedTextColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
-                            ),
-                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                            colors =
+                                androidx.compose.material3.NavigationBarItemDefaults.colors(
+                                    selectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                                    selectedTextColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                                    indicatorColor = Color.Transparent,
+                                    unselectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                                    unselectedTextColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                                ),
+                            interactionSource =
+                                remember {
+                                    androidx.compose.foundation.interaction
+                                        .MutableInteractionSource()
+                                }
                         )
                     }
                 }
             }
         ) { innerPadding ->
             Box(modifier = Modifier.padding(innerPadding)) {
-                val stateHolder = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
+                val stateHolder =
+                    androidx.compose.runtime.saveable
+                        .rememberSaveableStateHolder()
                 stateHolder.SaveableStateProvider(currentScreen.route) {
                     when (currentScreen) {
                         is Screen.Home -> {

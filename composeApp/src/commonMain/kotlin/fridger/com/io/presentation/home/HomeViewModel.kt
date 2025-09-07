@@ -29,40 +29,42 @@ class HomeViewModel(
 
     private fun observeIngredients() {
         viewModelScope.launch {
-            repository.getIngredientsStream()
+            repository
+                .getIngredientsStream()
                 .onStart {
                     _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-                }
-                .catch { e ->
+                }.catch { e ->
                     _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
-                }
-                .collect { ingredients ->
-                    val today = Clock.System
-                        .now()
-                        .toLocalDateTime(TimeZone.currentSystemDefault())
-                        .date
+                }.collect { ingredients ->
+                    val today =
+                        Clock.System
+                            .now()
+                            .toLocalDateTime(TimeZone.currentSystemDefault())
+                            .date
 
                     val refrigerated = mapToRefrigeratedItems(ingredients, today)
                     val (todayExp, weekExp, expiredExp) = groupExpiringItems(refrigerated)
 
                     originalRefrigeratedItems = refrigerated
 
-                    val (sorted, grouped) = applySortAndGroup(
-                        originalRefrigeratedItems,
-                        _uiState.value.sortOption,
-                        _uiState.value.groupOption
-                    )
+                    val (sorted, grouped) =
+                        applySortAndGroup(
+                            originalRefrigeratedItems,
+                            _uiState.value.sortOption,
+                            _uiState.value.groupOption
+                        )
 
-                    _uiState.value = _uiState.value.copy(
-                        todayExpiringItems = todayExp,
-                        weekExpiringItems = weekExp,
-                        expiredItems = expiredExp,
-                        fridgeCapacityPercentage = 0.6f,
-                        refrigeratedItems = sorted,
-                        groupedRefrigeratedItems = grouped,
-                        isLoading = false,
-                        error = null
-                    )
+                    _uiState.value =
+                        _uiState.value.copy(
+                            todayExpiringItems = todayExp,
+                            weekExpiringItems = weekExp,
+                            expiredItems = expiredExp,
+                            fridgeCapacityPercentage = 0.6f,
+                            refrigeratedItems = sorted,
+                            groupedRefrigeratedItems = grouped,
+                            isLoading = false,
+                            error = null
+                        )
                 }
         }
     }
@@ -70,8 +72,8 @@ class HomeViewModel(
     private fun mapToRefrigeratedItems(
         ingredients: List<Ingredient>,
         today: kotlinx.datetime.LocalDate
-    ): List<RefrigeratedItem> {
-        return ingredients.map { ing ->
+    ): List<RefrigeratedItem> =
+        ingredients.map { ing ->
             val daysUntil = ing.expirationDate.toEpochDays() - today.toEpochDays()
             val age = today.toEpochDays() - ing.addDate.toEpochDays()
             RefrigeratedItem(
@@ -85,46 +87,48 @@ class HomeViewModel(
                 hasWarning = ing.freshness != Freshness.Fresh
             )
         }
-    }
 
     private fun groupExpiringItems(
         items: List<RefrigeratedItem>
     ): Triple<List<ExpiringItem>, List<ExpiringItem>, List<ExpiringItem>> {
-        val todayExp = items
-            .filter { it.daysUntilExpiry in IngredientConstants.TodayOrTomorrowRange }
-            .map { item ->
-                ExpiringItem(
-                    id = item.id,
-                    name = item.name,
-                    icon = item.icon,
-                    count = 1,
-                    daysUntil = item.daysUntilExpiry
-                )
-            }
+        val todayExp =
+            items
+                .filter { it.daysUntilExpiry in IngredientConstants.TodayOrTomorrowRange }
+                .map { item ->
+                    ExpiringItem(
+                        id = item.id,
+                        name = item.name,
+                        icon = item.icon,
+                        count = 1,
+                        daysUntil = item.daysUntilExpiry
+                    )
+                }
 
-        val weekExp = items
-            .filter { it.daysUntilExpiry in IngredientConstants.WeekRange }
-            .map { item ->
-                ExpiringItem(
-                    id = item.id + "_w",
-                    name = item.name,
-                    icon = item.icon,
-                    count = 1,
-                    daysUntil = item.daysUntilExpiry
-                )
-            }
+        val weekExp =
+            items
+                .filter { it.daysUntilExpiry in IngredientConstants.WeekRange }
+                .map { item ->
+                    ExpiringItem(
+                        id = item.id + "_w",
+                        name = item.name,
+                        icon = item.icon,
+                        count = 1,
+                        daysUntil = item.daysUntilExpiry
+                    )
+                }
 
-        val expiredExp = items
-            .filter { it.daysUntilExpiry < 0 }
-            .map { item ->
-                ExpiringItem(
-                    id = item.id + "_e",
-                    name = item.name,
-                    icon = item.icon,
-                    count = 1,
-                    daysUntil = item.daysUntilExpiry
-                )
-            }
+        val expiredExp =
+            items
+                .filter { it.daysUntilExpiry < 0 }
+                .map { item ->
+                    ExpiringItem(
+                        id = item.id + "_e",
+                        name = item.name,
+                        icon = item.icon,
+                        count = 1,
+                        daysUntil = item.daysUntilExpiry
+                    )
+                }
 
         return Triple(todayExp, weekExp, expiredExp)
     }
@@ -170,16 +174,20 @@ class HomeViewModel(
         }
     }
 
-    fun updateSortingAndGrouping(sort: SortOption? = null, group: GroupOption? = null) {
+    fun updateSortingAndGrouping(
+        sort: SortOption? = null,
+        group: GroupOption? = null
+    ) {
         val newSort = sort ?: _uiState.value.sortOption
         val newGroup = group ?: _uiState.value.groupOption
         val (sorted, grouped) = applySortAndGroup(originalRefrigeratedItems, newSort, newGroup)
-        _uiState.value = _uiState.value.copy(
-            sortOption = newSort,
-            groupOption = newGroup,
-            refrigeratedItems = sorted,
-            groupedRefrigeratedItems = grouped
-        )
+        _uiState.value =
+            _uiState.value.copy(
+                sortOption = newSort,
+                groupOption = newGroup,
+                refrigeratedItems = sorted,
+                groupedRefrigeratedItems = grouped
+            )
     }
 
     private fun applySortAndGroup(
@@ -188,27 +196,30 @@ class HomeViewModel(
         group: GroupOption
     ): Pair<List<RefrigeratedItem>, Map<Freshness, List<RefrigeratedItem>>> {
         // Sort
-        val sorted = when (sort) {
-            SortOption.EXPIRY -> items.sortedWith(
-                compareBy(
-                    { it.daysUntilExpiry },
-                    { it.name.lowercase() }
-                )
-            )
+        val sorted =
+            when (sort) {
+                SortOption.EXPIRY ->
+                    items.sortedWith(
+                        compareBy(
+                            { it.daysUntilExpiry },
+                            { it.name.lowercase() }
+                        )
+                    )
 
-            SortOption.NAME -> items.sortedBy { it.name.lowercase() }
-            SortOption.ADDED_DATE -> items.sortedByDescending { it.ageDays } // oldest first
-        }
+                SortOption.NAME -> items.sortedBy { it.name.lowercase() }
+                SortOption.ADDED_DATE -> items.sortedByDescending { it.ageDays } // oldest first
+            }
         // Group
-        val grouped = if (group == GroupOption.FRESHNESS) {
-            mapOf(
-                Freshness.Expired to sorted.filter { it.freshness is Freshness.Expired },
-                Freshness.NearingExpiration to sorted.filter { it.freshness is Freshness.NearingExpiration },
-                Freshness.Fresh to sorted.filter { it.freshness is Freshness.Fresh }
-            )
-        } else {
-            emptyMap()
-        }
+        val grouped =
+            if (group == GroupOption.FRESHNESS) {
+                mapOf(
+                    Freshness.Expired to sorted.filter { it.freshness is Freshness.Expired },
+                    Freshness.NearingExpiration to sorted.filter { it.freshness is Freshness.NearingExpiration },
+                    Freshness.Fresh to sorted.filter { it.freshness is Freshness.Fresh }
+                )
+            } else {
+                emptyMap()
+            }
 
         return Pair(sorted, grouped)
     }

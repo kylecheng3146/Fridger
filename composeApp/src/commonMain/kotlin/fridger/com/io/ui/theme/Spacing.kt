@@ -32,21 +32,17 @@ data class Sizing(
     val iconLarge: Dp = 24.dp,
     val iconExtraLarge: Dp = 32.dp,
     val iconHuge: Dp = 48.dp,
-
     // Card and component heights
     val cardHeightSmall: Dp = 80.dp,
     val cardHeightMedium: Dp = 100.dp,
     val cardHeightLarge: Dp = 120.dp,
-
     // Corner radius
     val cornerRadiusSmall: Dp = 4.dp,
     val cornerRadiusMedium: Dp = 8.dp,
     val cornerRadiusLarge: Dp = 12.dp,
     val cornerRadiusExtraLarge: Dp = 16.dp,
-
     // Progress indicators
     val progressBarHeight: Dp = 8.dp,
-
     // Content padding
     val contentPaddingHorizontal: Dp = 20.dp,
     val contentPaddingVertical: Dp = 20.dp,

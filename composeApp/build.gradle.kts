@@ -1,8 +1,6 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -21,7 +19,7 @@ kotlin {
             jvmTarget.set(JvmTarget.JVM_11)
         }
     }
-    
+
     listOf(
         iosX64(),
         iosArm64(),
@@ -38,9 +36,9 @@ kotlin {
             linkerOpts("-lsqlite3")
         }
     }
-    
+
     jvm("desktop")
-    
+
     // Temporarily comment out WASM platform as SQLDelight doesn't support it yet
     // @OptIn(ExperimentalWasmDsl::class)
     // wasmJs {
@@ -61,10 +59,10 @@ kotlin {
     //     }
     //     binaries.executable()
     // }
-    
+
     sourceSets {
         val desktopMain by getting
-        
+
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
@@ -89,7 +87,7 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
-            implementation(libs.mockk)
+            // Removed MockK from commonTest to keep tests multiplatform-compatible
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
@@ -107,12 +105,21 @@ kotlin {
 
 android {
     namespace = "fridger.com.io"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
+    compileSdk =
+        libs.versions.android.compileSdk
+            .get()
+            .toInt()
 
     defaultConfig {
         applicationId = "fridger.com.io"
-        minSdk = libs.versions.android.minSdk.get().toInt()
-        targetSdk = libs.versions.android.targetSdk.get().toInt()
+        minSdk =
+            libs.versions.android.minSdk
+                .get()
+                .toInt()
+        targetSdk =
+            libs.versions.android.targetSdk
+                .get()
+                .toInt()
         versionCode = 1
         versionName = "1.0"
     }
@@ -178,18 +185,20 @@ ktlint {
 tasks.register("ktlintCheckAndroidAndCommon") {
     group = "verification"
     description = "Check Kotlin code style for Android and Common source sets only"
-    
+
     dependsOn(
         tasks.matching { task ->
-            task.name.startsWith("ktlint") && 
-            task.name.contains("Check") &&
-            (task.name.contains("AndroidMain") || 
-             task.name.contains("CommonMain") ||
-             task.name.contains("AndroidTest") ||
-             task.name.contains("CommonTest")) &&
-            !task.name.contains("Ios") &&
-            !task.name.contains("Desktop") &&
-            !task.name.contains("WasmJs")
+            task.name.startsWith("ktlint") &&
+                task.name.contains("Check") &&
+                (
+                    task.name.contains("AndroidMain") ||
+                        task.name.contains("CommonMain") ||
+                        task.name.contains("AndroidTest") ||
+                        task.name.contains("CommonTest")
+                ) &&
+                !task.name.contains("Ios") &&
+                !task.name.contains("Desktop") &&
+                !task.name.contains("WasmJs")
         }
     )
 }
@@ -197,30 +206,35 @@ tasks.register("ktlintCheckAndroidAndCommon") {
 tasks.register("ktlintFormatAndroidAndCommon") {
     group = "formatting"
     description = "Fix Kotlin code style for Android and Common source sets only"
-    
+
     dependsOn(
         tasks.matching { task ->
-            task.name.startsWith("ktlint") && 
-            task.name.contains("Format") &&
-            (task.name.contains("AndroidMain") || 
-             task.name.contains("CommonMain") ||
-             task.name.contains("AndroidTest") ||
-             task.name.contains("CommonTest")) &&
-            !task.name.contains("Ios") &&
-            !task.name.contains("Desktop") &&
-            !task.name.contains("WasmJs")
+            task.name.startsWith("ktlint") &&
+                task.name.contains("Format") &&
+                (
+                    task.name.contains("AndroidMain") ||
+                        task.name.contains("CommonMain") ||
+                        task.name.contains("AndroidTest") ||
+                        task.name.contains("CommonTest")
+                ) &&
+                !task.name.contains("Ios") &&
+                !task.name.contains("Desktop") &&
+                !task.name.contains("WasmJs")
         }
     )
 }
 
 // 禁用不需要的 ktlint 任務
 afterEvaluate {
-    tasks.matching { task ->
-        task.name.contains("ktlint") &&
-        (task.name.contains("Ios") ||
-         task.name.contains("Desktop") ||
-         task.name.contains("WasmJs"))
-    }.configureEach {
-        enabled = false
-    }
+    tasks
+        .matching { task ->
+            task.name.contains("ktlint") &&
+                (
+                    task.name.contains("Ios") ||
+                        task.name.contains("Desktop") ||
+                        task.name.contains("WasmJs")
+                )
+        }.configureEach {
+            enabled = false
+        }
 }

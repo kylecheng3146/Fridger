@@ -1,8 +1,8 @@
 package fridger.com.io.data.settings
 
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
 import kotlinx.cinterop.ExperimentalForeignApi
 import okio.Path.Companion.toPath
 import platform.Foundation.NSDocumentDirectory
@@ -23,7 +23,8 @@ actual fun createDataStore(): DataStore<Preferences> {
         corruptionHandler = null,
         migrations = emptyList(),
         produceFile = {
-            val documentDirectory: NSURL? = NSFileManager.defaultManager.URLForDirectory(
+            val documentDirectory: NSURL? =
+            NSFileManager.defaultManager.URLForDirectory(
                 directory = NSDocumentDirectory,
                 inDomain = NSUserDomainMask,
                 appropriateForURL = null,

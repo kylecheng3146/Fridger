@@ -12,15 +12,22 @@ import kotlin.reflect.KClass
  */
 class ViewModelFactory : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: KClass<T>, extras: CreationExtras): T {
-        return when (modelClass) {
-            HomeViewModel::class -> HomeViewModel(fridger.com.io.data.repository.IngredientRepositoryImpl()) as T
+    override fun <T : ViewModel> create(
+        modelClass: KClass<T>,
+        extras: CreationExtras
+    ): T =
+        when (modelClass) {
+            HomeViewModel::class ->
+                HomeViewModel(
+                    fridger.com.io.data.repository
+                        .IngredientRepositoryImpl()
+                ) as T
             SettingsViewModel::class -> SettingsViewModel() as T
-            fridger.com.io.presentation.shoppinglist.ShoppingListViewModel::class -> fridger.com.io.presentation.shoppinglist.ShoppingListViewModel() as T
+            fridger.com.io.presentation.shoppinglist.ShoppingListViewModel::class ->
+                fridger.com.io.presentation.shoppinglist
+                    .ShoppingListViewModel() as T
             else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.simpleName}")
         }
-    }
-
 }
 
 /**

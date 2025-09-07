@@ -10,10 +10,10 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -23,24 +23,24 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.launch
 import fridger.com.io.data.repository.ShoppingListItem
 import fridger.com.io.presentation.ViewModelFactoryProvider
-import fridger.com.io.ui.theme.spacing
 import fridger.com.io.ui.theme.sizing
+import fridger.com.io.ui.theme.spacing
+import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import androidx.compose.material3.ExperimentalMaterial3Api
 
 @Composable
 fun ShoppingListScreen(
@@ -65,19 +65,21 @@ fun ShoppingListScreen(
 
             // Content padding aligned to Home's horizontal padding
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
-                    .weight(1f)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
+                        .weight(1f)
             ) {
                 if (state.currentList == null) {
                     // Overview: show list of shopping lists
                     Button(
                         onClick = { showCreateListDialog = true },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        )
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
                     ) {
                         Icon(Icons.Default.Add, contentDescription = null)
                         Spacer(Modifier.width(6.dp))
@@ -109,11 +111,11 @@ fun ShoppingListScreen(
                         TextButton(onClick = { vm.backToOverview() }) { Text("← 返回清單") }
                         Spacer(Modifier.width(12.dp))
                         state.currentList?.let { cur ->
-                        Text(
-                            text = "${cur.name}  ·  ${cur.date}",
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
+                            Text(
+                                text = "${cur.name}  ·  ${cur.date}",
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
 
                     Spacer(Modifier.height(8.dp))
@@ -122,10 +124,11 @@ fun ShoppingListScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Button(
                             onClick = { showAddDialog = true },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary
-                            )
+                            colors =
+                                ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                )
                         ) {
                             Icon(Icons.Default.Add, contentDescription = null)
                             Spacer(Modifier.width(6.dp))
@@ -135,9 +138,10 @@ fun ShoppingListScreen(
                         OutlinedButton(
                             onClick = { vm.clearPurchased() },
                             enabled = state.items.any { it.isChecked },
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.primary
-                            )
+                            colors =
+                                ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.primary
+                                )
                         ) { Text("清除清單") }
                     }
 
@@ -242,7 +246,12 @@ fun ShoppingListScreen(
 }
 
 @Composable
-private fun ShoppingListCard(name: String, date: String, onClick: () -> Unit, onDelete: () -> Unit) {
+private fun ShoppingListCard(
+    name: String,
+    date: String,
+    onClick: () -> Unit,
+    onDelete: () -> Unit
+) {
     Card(onClick = onClick, shape = RoundedCornerShape(16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -276,9 +285,13 @@ private fun CreateShoppingListDialog(
     var name by rememberSaveable { mutableStateOf("") }
     var date by rememberSaveable { mutableStateOf(todayDisplay()) }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
-    )
+    val datePickerState =
+        rememberDatePickerState(
+            initialSelectedDateMillis =
+                kotlinx.datetime.Clock.System
+                    .now()
+                    .toEpochMilliseconds()
+        )
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -323,7 +336,9 @@ private fun CreateShoppingListDialog(
             confirmButton = {
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let {
-                        date = fridger.com.io.utils.epochMillisToDateString(it)
+                        date =
+                            fridger.com.io.utils
+                                .epochMillisToDateString(it)
                     }
                     showDatePicker = false
                 }) { Text("確認") }
@@ -334,7 +349,11 @@ private fun CreateShoppingListDialog(
 }
 
 private fun todayDisplay(): String {
-    val now = kotlinx.datetime.Clock.System.now().toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).date
+    val now =
+        kotlinx.datetime.Clock.System
+            .now()
+            .toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
+            .date
     val y = now.year
     val m = now.monthNumber.toString().padStart(2, '0')
     val d = now.dayOfMonth.toString().padStart(2, '0')
@@ -344,14 +363,15 @@ private fun todayDisplay(): String {
 @Composable
 private fun ShoppingHeader() {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(
-                top = MaterialTheme.sizing.contentPaddingTop,
-                bottom = MaterialTheme.spacing.extraSmall,
-                start = MaterialTheme.sizing.contentPaddingHorizontal,
-                end = MaterialTheme.sizing.contentPaddingHorizontal
-            )
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(
+                    top = MaterialTheme.sizing.contentPaddingTop,
+                    bottom = MaterialTheme.spacing.extraSmall,
+                    start = MaterialTheme.sizing.contentPaddingHorizontal,
+                    end = MaterialTheme.sizing.contentPaddingHorizontal
+                )
     ) {
         Text(
             text = "購物清單",
@@ -370,25 +390,28 @@ private fun ShoppingListRow(
 ) {
     Card {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Checkbox(
                 checked = item.isChecked,
                 onCheckedChange = onCheckedChange,
-                colors = CheckboxDefaults.colors(
-                    checkedColor = MaterialTheme.colorScheme.primary
-                )
+                colors =
+                    CheckboxDefaults.colors(
+                        checkedColor = MaterialTheme.colorScheme.primary
+                    )
             )
             Spacer(Modifier.width(8.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = buildString {
-                        append(item.name)
-                        if (!item.quantity.isNullOrBlank()) append("  ·  ${item.quantity}")
-                    },
+                    text =
+                        buildString {
+                            append(item.name)
+                            if (!item.quantity.isNullOrBlank()) append("  ·  ${item.quantity}")
+                        },
                     fontSize = 16.sp,
                     color = if (item.isChecked) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface,
                     textDecoration = if (item.isChecked) TextDecoration.LineThrough else TextDecoration.None
@@ -407,42 +430,46 @@ private fun ShoppingQuickAddTopDialog(
     onAdd: (name: String, quantity: String?) -> Unit
 ) {
     // Suggestions with emoji icons for quick add
-    data class QuickItem(val name: String, val icon: String)
+    data class QuickItem(
+        val name: String,
+        val icon: String
+    )
 
-    val allSuggestions = remember {
-        listOf(
-            QuickItem("牛奶", "🥛"),
-            QuickItem("雞蛋", "🥚"),
-            QuickItem("麵包", "🍞"),
-            QuickItem("蘋果", "🍎"),
-            QuickItem("香蕉", "🍌"),
-            QuickItem("雞胸肉", "🍗"),
-            QuickItem("牛肉", "🥩"),
-            QuickItem("豬肉", "🍖"),
-            QuickItem("鮭魚", "🐟"),
-            QuickItem("蝦子", "🦐"),
-            QuickItem("豆腐", "🧈"),
-            QuickItem("優格", "🥛"),
-            QuickItem("起司", "🧀"),
-            QuickItem("馬鈴薯", "🥔"),
-            QuickItem("胡蘿蔔", "🥕"),
-            QuickItem("番茄", "🍅"),
-            QuickItem("洋蔥", "🧅"),
-            QuickItem("大蒜", "🧄"),
-            QuickItem("生菜", "🥬"),
-            QuickItem("黃瓜", "🥒"),
-            QuickItem("彩椒", "🫑"),
-            QuickItem("米", "🍚"),
-            QuickItem("義大利麵", "🍝"),
-            QuickItem("麵條", "🍜"),
-            QuickItem("醬油", "🧂"),
-            QuickItem("鹽", "🧂"),
-            QuickItem("糖", "🧂"),
-            QuickItem("麵粉", "🌾"),
-            QuickItem("食用油", "🫗"),
-            QuickItem("水", "💧")
-        )
-    }
+    val allSuggestions =
+        remember {
+            listOf(
+                QuickItem("牛奶", "🥛"),
+                QuickItem("雞蛋", "🥚"),
+                QuickItem("麵包", "🍞"),
+                QuickItem("蘋果", "🍎"),
+                QuickItem("香蕉", "🍌"),
+                QuickItem("雞胸肉", "🍗"),
+                QuickItem("牛肉", "🥩"),
+                QuickItem("豬肉", "🍖"),
+                QuickItem("鮭魚", "🐟"),
+                QuickItem("蝦子", "🦐"),
+                QuickItem("豆腐", "🧈"),
+                QuickItem("優格", "🥛"),
+                QuickItem("起司", "🧀"),
+                QuickItem("馬鈴薯", "🥔"),
+                QuickItem("胡蘿蔔", "🥕"),
+                QuickItem("番茄", "🍅"),
+                QuickItem("洋蔥", "🧅"),
+                QuickItem("大蒜", "🧄"),
+                QuickItem("生菜", "🥬"),
+                QuickItem("黃瓜", "🥒"),
+                QuickItem("彩椒", "🫑"),
+                QuickItem("米", "🍚"),
+                QuickItem("義大利麵", "🍝"),
+                QuickItem("麵條", "🍜"),
+                QuickItem("醬油", "🧂"),
+                QuickItem("鹽", "🧂"),
+                QuickItem("糖", "🧂"),
+                QuickItem("麵粉", "🌾"),
+                QuickItem("食用油", "🫗"),
+                QuickItem("水", "💧")
+            )
+        }
 
     var query by rememberSaveable { mutableStateOf("") }
     var qty by rememberSaveable { mutableStateOf("") } // optional quantity
@@ -450,20 +477,27 @@ private fun ShoppingQuickAddTopDialog(
     // Multi-select state
     val selected = remember { mutableStateListOf<String>() }
 
-    val filtered = remember(query) {
-        if (query.isBlank()) allSuggestions else allSuggestions.filter {
-            it.name.contains(
-                query,
-                ignoreCase = true
-            )
+    val filtered =
+        remember(query) {
+            if (query.isBlank()) {
+                allSuggestions
+            } else {
+                allSuggestions.filter {
+                    it.name.contains(
+                        query,
+                        ignoreCase = true
+                    )
+                }
+            }
         }
-    }
 
     // Favorites for quick selection
-    val favorites by fridger.com.io.presentation.settings.SettingsManager.quickFavorites.collectAsState(initial = emptySet())
-    val ordered = remember(filtered, favorites) {
-        filtered.sortedBy { if (favorites.contains(it.name)) 0 else 1 }
-    }
+    val favorites by fridger.com.io.presentation.settings.SettingsManager.quickFavorites
+        .collectAsState(initial = emptySet())
+    val ordered =
+        remember(filtered, favorites) {
+            filtered.sortedBy { if (favorites.contains(it.name)) 0 else 1 }
+        }
 
     val scope = rememberCoroutineScope()
 
@@ -477,27 +511,33 @@ private fun ShoppingQuickAddTopDialog(
     // 完全覆蓋整個螢幕的 dialog
     AnimatedVisibility(
         visible = visible,
-        enter = slideInVertically(
-            initialOffsetY = { fullHeight -> -fullHeight }, // 從螢幕頂部滑入
-            animationSpec = tween(
-                durationMillis = 300,
-                easing = FastOutSlowInEasing
-            )
-        ),
-        exit = slideOutVertically(
-            targetOffsetY = { fullHeight -> -fullHeight }, // 滑出到螢幕頂部
-            animationSpec = tween(
-                durationMillis = 250,
-                easing = FastOutLinearInEasing
-            )
-        ),
+        enter =
+            slideInVertically(
+                initialOffsetY = { fullHeight -> -fullHeight }, // 從螢幕頂部滑入
+                animationSpec =
+                    tween(
+                        durationMillis = 300,
+                        easing = FastOutSlowInEasing
+                    )
+            ),
+        exit =
+            slideOutVertically(
+                targetOffsetY = { fullHeight -> -fullHeight }, // 滑出到螢幕頂部
+                animationSpec =
+                    tween(
+                        durationMillis = 250,
+                        easing = FastOutLinearInEasing
+                    )
+            ),
         modifier = Modifier.fillMaxSize()
     ) {
         // 透明背景，保留可點擊區域以關閉對話框
         Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .clickable(onClick = { visible = false }), // 點擊背景關閉
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .clickable(onClick = { visible = false }),
+            // 點擊背景關閉
             color = Color.Transparent
         ) {
             // Dialog 內容區域 - 只占 60% 左右的大小
@@ -505,28 +545,31 @@ private fun ShoppingQuickAddTopDialog(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight(0.9f) // 改為占螢幕高度的 80%
-                        .clickable { /* 防止點擊穿透 */ },
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(0.9f) // 改為占螢幕高度的 80%
+                            .clickable { /* 防止點擊穿透 */ },
                     color = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f),
                     tonalElevation = 8.dp,
                     shadowElevation = 12.dp,
-                    shape = RoundedCornerShape(
-                        bottomStart = 24.dp,
-                        bottomEnd = 24.dp
-                    )
+                    shape =
+                        RoundedCornerShape(
+                            bottomStart = 24.dp,
+                            bottomEnd = 24.dp
+                        )
                 ) {
                     // 整個 Dialog 內容區域 - 不使用 statusBarsPadding，讓顏色延伸到狀態列
                     Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(
-                                top = 50.dp, // 手動增加頂部空間避開狀態列
-                                start = 20.dp,
-                                end = 20.dp,
-                                bottom = 20.dp
-                            )
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .padding(
+                                    top = 50.dp, // 手動增加頂部空間避開狀態列
+                                    start = 20.dp,
+                                    end = 20.dp,
+                                    bottom = 20.dp
+                                )
                     ) {
                         // Header row
                         Row(
@@ -583,9 +626,11 @@ private fun ShoppingQuickAddTopDialog(
                         // Grid of suggestions - includes headers and sections; uses remaining space
                         LazyVerticalGrid(
                             columns = GridCells.Fixed(3),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f), // 使用剩餘的所有空間
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f),
+                            // 使用剩餘的所有空間
                             horizontalArrangement = Arrangement.spacedBy(16.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp),
                             contentPadding = PaddingValues(bottom = 20.dp) // 底部留白
@@ -608,7 +653,8 @@ private fun ShoppingQuickAddTopDialog(
                                         isSelected = selected.contains(item.name),
                                         onToggleFavorite = {
                                             scope.launch {
-                                                fridger.com.io.presentation.settings.SettingsManager.toggleQuickFavorite(item.name)
+                                                fridger.com.io.presentation.settings.SettingsManager
+                                                    .toggleQuickFavorite(item.name)
                                             }
                                         }
                                     ) {
@@ -646,7 +692,8 @@ private fun ShoppingQuickAddTopDialog(
                                     isSelected = selected.contains(item.name),
                                     onToggleFavorite = {
                                         scope.launch {
-                                            fridger.com.io.presentation.settings.SettingsManager.toggleQuickFavorite(item.name)
+                                            fridger.com.io.presentation.settings.SettingsManager
+                                                .toggleQuickFavorite(item.name)
                                         }
                                     }
                                 ) {
@@ -680,10 +727,11 @@ private fun ShoppingQuickAddTopDialog(
                             },
                             enabled = selected.isNotEmpty(),
                             modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary
-                            ),
+                            colors =
+                                ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                ),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Icon(Icons.Default.Add, contentDescription = null)
@@ -716,51 +764,58 @@ private fun QuickPickCell(
 ) {
     Card(
         onClick = onClick,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp,
-            pressedElevation = 8.dp
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            ),
+        elevation =
+            CardDefaults.cardElevation(
+                defaultElevation = 2.dp,
+                pressedElevation = 8.dp
+            ),
         shape = RoundedCornerShape(16.dp),
         border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 110.dp) // 增加高度以容納更大的內容
-                .padding(6.dp) // 減少外層padding，為星號留出更多margin空間
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 110.dp) // 增加高度以容納更大的內容
+                    .padding(6.dp) // 減少外層padding，為星號留出更多margin空間
         ) {
             // Heart button at top-end with margin - 右上角置頂
             Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(3.dp) // 減少margin，靠近邊框一點
-                    .size(28.dp) // 設定固定點擊區域大小
-                    .clickable(onClick = onToggleFavorite)
+                modifier =
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(3.dp) // 減少margin，靠近邊框一點
+                        .size(28.dp) // 設定固定點擊區域大小
+                        .clickable(onClick = onToggleFavorite)
             ) {
                 Icon(
                     imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                     contentDescription = if (isFavorite) "移除最愛" else "加入最愛",
                     tint = if (isFavorite) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .size(18.dp) // 稍微縮小愛心圖示
+                    modifier =
+                        Modifier
+                            .align(Alignment.Center)
+                            .size(18.dp) // 稍微縮小愛心圖示
                 )
             }
-            
+
             // Center content - 往下移並放大
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 8.dp, vertical = 16.dp), // 調整padding，增加垂直空間
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 8.dp, vertical = 16.dp),
+                // 調整padding，增加垂直空間
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
                 // 往下偏移並放大emoji
                 Text(
-                    text = icon, 
+                    text = icon,
                     fontSize = 44.sp, // 從34sp大幅增加到44sp
                     modifier = Modifier.padding(top = 6.dp) // 往下偏移
                 )

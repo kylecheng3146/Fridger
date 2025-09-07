@@ -1,7 +1,7 @@
 package fridger.com.io.data.database
 
-import app.cash.sqldelight.driver.native.NativeSqliteDriver
 import app.cash.sqldelight.db.SqlDriver
+import app.cash.sqldelight.driver.native.NativeSqliteDriver
 import fridger.com.io.database.FridgerDatabase
 
 internal actual object DriverFactory {

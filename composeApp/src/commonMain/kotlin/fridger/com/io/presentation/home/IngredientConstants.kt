@@ -10,4 +10,3 @@ object IngredientConstants {
     // 2..7 -> Within this week
     val WeekRange: IntRange = 2..7
 }
-

@@ -12,7 +12,9 @@ sealed class Screen(
     val icon: ImageVector
 ) {
     data object Home : Screen("home", "首頁", Icons.Default.Home)
+
     data object ShoppingList : Screen("shopping_list", "購物清單", Icons.Default.ShoppingCart)
+
     // Not shown in bottom bar, but supported for app navigation
     data object Settings : Screen("settings", "設定", Icons.Default.Settings)
 }

@@ -9,11 +9,8 @@ data class HomeUiState(
     val weekExpiringItems: List<ExpiringItem> = emptyList(),
     val expiredItems: List<ExpiringItem> = emptyList(),
     val fridgeCapacityPercentage: Float = 0f,
-    // Sorted (and filtered) list to render when not grouped
     val refrigeratedItems: List<RefrigeratedItem> = emptyList(),
-    // Grouped items by freshness when grouping is enabled
     val groupedRefrigeratedItems: Map<Freshness, List<RefrigeratedItem>> = emptyMap(),
-    // User preferences for sorting and grouping
     val sortOption: SortOption = SortOption.EXPIRY,
     val groupOption: GroupOption = GroupOption.NONE,
     val showAddNewItemDialog: Boolean = false,
@@ -29,9 +26,15 @@ enum class GroupOption { NONE, FRESHNESS }
 
 // Presentation of expiry for i18n-safe mapping in UI layer
 sealed class ExpiryDisplay {
-    data class Overdue(val days: Int) : ExpiryDisplay()
+    data class Overdue(
+        val days: Int
+    ) : ExpiryDisplay()
+
     data object DueToday : ExpiryDisplay()
-    data class Until(val days: Int) : ExpiryDisplay()
+
+    data class Until(
+        val days: Int
+    ) : ExpiryDisplay()
 }
 
 // Items
@@ -42,11 +45,12 @@ data class ExpiringItem(
     val icon: String,
     val count: Int,
     val daysUntil: Int,
-    val expiryDisplay: ExpiryDisplay = when {
-        daysUntil < 0 -> ExpiryDisplay.Overdue(kotlin.math.abs(daysUntil))
-        daysUntil == 0 -> ExpiryDisplay.DueToday
-        else -> ExpiryDisplay.Until(daysUntil)
-    }
+    val expiryDisplay: ExpiryDisplay =
+        when {
+            daysUntil < 0 -> ExpiryDisplay.Overdue(kotlin.math.abs(daysUntil))
+            daysUntil == 0 -> ExpiryDisplay.DueToday
+            else -> ExpiryDisplay.Until(daysUntil)
+        }
 )
 
 data class RefrigeratedItem(
@@ -58,9 +62,10 @@ data class RefrigeratedItem(
     val ageDays: Int,
     val freshness: Freshness,
     val hasWarning: Boolean = false,
-    val expiryDisplay: ExpiryDisplay = when {
-        daysUntilExpiry < 0 -> ExpiryDisplay.Overdue(kotlin.math.abs(daysUntilExpiry))
-        daysUntilExpiry == 0 -> ExpiryDisplay.DueToday
-        else -> ExpiryDisplay.Until(daysUntilExpiry)
-    }
+    val expiryDisplay: ExpiryDisplay =
+        when {
+            daysUntilExpiry < 0 -> ExpiryDisplay.Overdue(kotlin.math.abs(daysUntilExpiry))
+            daysUntilExpiry == 0 -> ExpiryDisplay.DueToday
+            else -> ExpiryDisplay.Until(daysUntilExpiry)
+        }
 )

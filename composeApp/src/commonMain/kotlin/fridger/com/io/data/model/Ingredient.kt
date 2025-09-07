@@ -5,7 +5,9 @@ import kotlinx.datetime.LocalDate
 // Represents freshness status of an ingredient
 sealed class Freshness {
     data object Fresh : Freshness()
+
     data object NearingExpiration : Freshness()
+
     data object Expired : Freshness()
 }
 

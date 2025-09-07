@@ -58,6 +58,7 @@ object SettingsManager {
     suspend fun toggleQuickFavorite(name: String) {
         settingsDataStore.toggleQuickFavorite(name)
     }
+
     suspend fun setQuickFavorites(favorites: Set<String>) {
         settingsDataStore.setQuickFavorites(favorites)
     }

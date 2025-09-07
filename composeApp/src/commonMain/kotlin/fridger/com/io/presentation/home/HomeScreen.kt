@@ -1,18 +1,20 @@
 package fridger.com.io.presentation.home
 
 import AddNewItemDialog
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -23,26 +25,24 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.viewmodel.compose.viewModel
-import fridger.com.io.presentation.ViewModelFactoryProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import fridger.com.io.data.model.Freshness
+import fridger.com.io.presentation.ViewModelFactoryProvider
 import fridger.com.io.ui.theme.AppColors
-import fridger.com.io.ui.theme.spacing
 import fridger.com.io.ui.theme.sizing
+import fridger.com.io.ui.theme.spacing
 import fridger.com.io.utils.stringResourceFormat
+import fridger.composeapp.generated.resources.*
 import fridger.composeapp.generated.resources.Res
 import fridger.composeapp.generated.resources.home_refrigerated
 import fridger.composeapp.generated.resources.home_title
 import org.jetbrains.compose.resources.stringResource
-import androidx.compose.foundation.Image
-import fridger.composeapp.generated.resources.*
-import androidx.compose.foundation.lazy.LazyListScope
 
 @Composable
 fun HomeScreen(
@@ -84,14 +84,17 @@ fun HomeScreen(
             if (uiState.refrigeratedItems.isEmpty()) {
                 item {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
-                            .padding(vertical = MaterialTheme.spacing.large),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
+                                .padding(vertical = MaterialTheme.spacing.large),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Image(
-                            painter = fridger.com.io.presentation.home.resources.emptyFridgePainter(),
+                            painter =
+                                fridger.com.io.presentation.home.resources
+                                    .emptyFridgePainter(),
                             contentDescription = null,
                             modifier = Modifier.size(130.dp)
                         )
@@ -128,11 +131,12 @@ fun HomeScreen(
         // Floating action button: + 新增食材
         ExtendedFloatingActionButton(
             onClick = viewModel::onAddNewItemClick,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(
-                    bottom = MaterialTheme.sizing.contentPaddingVertical
-                ),
+            modifier =
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(
+                        bottom = MaterialTheme.sizing.contentPaddingVertical
+                    ),
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
             icon = { Icon(Icons.Default.Add, contentDescription = null) },
@@ -154,10 +158,11 @@ private fun LazyListScope.refrigeratedSection(
     if (refrigeratedItems.isNotEmpty()) {
         item {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
-                    .padding(bottom = MaterialTheme.spacing.small),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
+                        .padding(bottom = MaterialTheme.spacing.small),
             ) {
                 SectionTitle(title = stringResource(Res.string.home_refrigerated))
                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
@@ -169,30 +174,35 @@ private fun LazyListScope.refrigeratedSection(
                 ) {
                     // Sort options
                     @Composable
-                    fun SortChip(label: String, selected: Boolean, onClick: () -> Unit) {
+                    fun SortChip(
+                        label: String,
+                        selected: Boolean,
+                        onClick: () -> Unit
+                    ) {
                         val bg =
                             if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surface
                         val fg =
                             if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                         Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(bg)
-                                .clickable(onClick = onClick)
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                            modifier =
+                                Modifier
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(bg)
+                                    .clickable(onClick = onClick)
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
                         ) { Text(label, color = fg, fontSize = 12.sp) }
                     }
                     SortChip(
                         stringResource(Res.string.home_sort_expiry),
-                        sortOption==SortOption.EXPIRY
+                        sortOption == SortOption.EXPIRY
                     ) { onSortChange(SortOption.EXPIRY) }
                     SortChip(
                         stringResource(Res.string.home_sort_name),
-                        sortOption==SortOption.NAME
+                        sortOption == SortOption.NAME
                     ) { onSortChange(SortOption.NAME) }
                     SortChip(
                         stringResource(Res.string.home_sort_added_date),
-                        sortOption==SortOption.ADDED_DATE
+                        sortOption == SortOption.ADDED_DATE
                     ) { onSortChange(SortOption.ADDED_DATE) }
 
                     Spacer(modifier = Modifier.width(MaterialTheme.spacing.large))
@@ -203,7 +213,7 @@ private fun LazyListScope.refrigeratedSection(
                         color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 12.sp
                     )
-                    val isGrouped = groupOption==GroupOption.FRESHNESS
+                    val isGrouped = groupOption == GroupOption.FRESHNESS
                     SortChip(stringResource(Res.string.home_group_by_freshness), isGrouped) {
                         onGroupChange(if (isGrouped) GroupOption.NONE else GroupOption.FRESHNESS)
                     }
@@ -213,15 +223,16 @@ private fun LazyListScope.refrigeratedSection(
         }
     }
 
-    if (groupOption==GroupOption.NONE) {
+    if (groupOption == GroupOption.NONE) {
         items(
             items = refrigeratedItems.chunked(3),
             key = { group -> group.joinToString("_") { it.id } }
         ) { rowItems ->
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
                 horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
             ) {
                 rowItems.forEach { item ->
@@ -244,23 +255,25 @@ private fun LazyListScope.refrigeratedSection(
     } else {
         // Grouped by freshness sections
         val groupsOrder = listOf(Freshness.Expired, Freshness.NearingExpiration, Freshness.Fresh)
-        val titles = mapOf(
-            Freshness.Expired to Res.string.home_group_section_expired,
-            Freshness.NearingExpiration to Res.string.home_group_section_nearing,
-            Freshness.Fresh to Res.string.home_group_section_fresh
-        )
+        val titles =
+            mapOf(
+                Freshness.Expired to Res.string.home_group_section_expired,
+                Freshness.NearingExpiration to Res.string.home_group_section_nearing,
+                Freshness.Fresh to Res.string.home_group_section_fresh
+            )
         groupsOrder.forEach { freshness ->
             val itemsInGroup = groupedRefrigeratedItems[freshness].orEmpty()
             if (itemsInGroup.isNotEmpty()) {
                 item {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
-                            .padding(
-                                top = MaterialTheme.spacing.medium,
-                                bottom = MaterialTheme.spacing.small
-                            )
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
+                                .padding(
+                                    top = MaterialTheme.spacing.medium,
+                                    bottom = MaterialTheme.spacing.small
+                                )
                     ) {
                         SectionTitle(title = stringResource(titles[freshness]!!))
                         Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
@@ -271,9 +284,10 @@ private fun LazyListScope.refrigeratedSection(
                     key = { group -> group.joinToString("_") { it.id } + "_" + freshness::class.simpleName }
                 ) { rowItems ->
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
                         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
                     ) {
                         rowItems.forEach { item ->
@@ -473,24 +487,27 @@ private fun ExpiringListItemCard(
     modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = modifier
-            .fillMaxWidth(),
+        modifier =
+            modifier
+                .fillMaxWidth(),
         shape = RoundedCornerShape(MaterialTheme.sizing.cornerRadiusLarge),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(MaterialTheme.spacing.large),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(MaterialTheme.spacing.large),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Icon circle
             Box(
-                modifier = Modifier
-                    .size(MaterialTheme.sizing.iconHuge)
-                    .clip(CircleShape)
-                    .background(AppColors.IconBackground),
+                modifier =
+                    Modifier
+                        .size(MaterialTheme.sizing.iconHuge)
+                        .clip(CircleShape)
+                        .background(AppColors.IconBackground),
                 contentAlignment = Alignment.Center
             ) {
                 Text(text = item.icon, fontSize = MaterialTheme.sizing.iconLarge.value.sp)
@@ -516,16 +533,18 @@ private fun ExpiringListItemCard(
             // Days left badge
             val bg = accentColor.copy(alpha = 0.22f)
             Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(bg)
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                modifier =
+                    Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(bg)
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
-                val daysText = when (val disp = item.expiryDisplay) {
-                    is ExpiryDisplay.Overdue -> stringResourceFormat(Res.string.home_days_overdue, disp.days)
-                    ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
-                    is ExpiryDisplay.Until -> stringResourceFormat(Res.string.home_days_until, disp.days)
-                }
+                val daysText =
+                    when (val disp = item.expiryDisplay) {
+                        is ExpiryDisplay.Overdue -> stringResourceFormat(Res.string.home_days_overdue, disp.days)
+                        ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
+                        is ExpiryDisplay.Until -> stringResourceFormat(Res.string.home_days_until, disp.days)
+                    }
                 Text(
                     text = daysText,
                     color = accentColor,
@@ -561,18 +580,20 @@ private fun RefrigeratedItemCard(
         if (compact) {
             // Compact tile for grid view - mimic QuickPickCell style
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 110.dp)
-                    .padding(6.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 110.dp)
+                        .padding(6.dp)
             ) {
                 // Quick remove button at top-right for compact tiles
                 if (onRemove != null) {
                     IconButton(
                         onClick = onRemove,
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .size(28.dp)
+                        modifier =
+                            Modifier
+                                .align(Alignment.TopEnd)
+                                .size(28.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Delete,
@@ -583,9 +604,10 @@ private fun RefrigeratedItemCard(
                 }
 
                 Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 8.dp, vertical = 16.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 8.dp, vertical = 16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
@@ -629,7 +651,7 @@ private fun RefrigeratedItemCard(
                 Spacer(modifier = Modifier.width(MaterialTheme.spacing.large))
 
                 // Name and Quantity
-                 Column(
+                Column(
                     modifier = Modifier.weight(1f),
                 ) {
                     Text(
@@ -656,24 +678,31 @@ private fun RefrigeratedItemCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
                 ) {
-                    val (tintColor, textDisplay) = when (item.freshness) {
-                        Freshness.Expired -> MaterialTheme.colorScheme.error to when (val d = item.expiryDisplay) {
-                            is ExpiryDisplay.Overdue -> stringResourceFormat(Res.string.home_days_overdue, d.days)
-                            ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
-                            is ExpiryDisplay.Until -> stringResourceFormat(Res.string.home_days_until, d.days)
+                    val (tintColor, textDisplay) =
+                        when (item.freshness) {
+                            Freshness.Expired ->
+                                MaterialTheme.colorScheme.error to
+                                    when (val d = item.expiryDisplay) {
+                                        is ExpiryDisplay.Overdue -> stringResourceFormat(Res.string.home_days_overdue, d.days)
+                                        ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
+                                        is ExpiryDisplay.Until -> stringResourceFormat(Res.string.home_days_until, d.days)
+                                    }
+                            Freshness.NearingExpiration ->
+                                AppColors.Warning to
+                                    when (val d = item.expiryDisplay) {
+                                        is ExpiryDisplay.Overdue -> stringResourceFormat(Res.string.home_days_overdue, d.days)
+                                        ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
+                                        is ExpiryDisplay.Until -> stringResourceFormat(Res.string.home_days_until, d.days)
+                                    }
+                            Freshness.Fresh ->
+                                AppColors.TextSecondary to
+                                    when (val d = item.expiryDisplay) {
+                                        is ExpiryDisplay.Overdue -> stringResourceFormat(Res.string.home_days_overdue, d.days)
+                                        ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
+                                        is ExpiryDisplay.Until -> stringResourceFormat(Res.string.home_days_until, d.days)
+                                    }
                         }
-                        Freshness.NearingExpiration -> AppColors.Warning to when (val d = item.expiryDisplay) {
-                            is ExpiryDisplay.Overdue -> stringResourceFormat(Res.string.home_days_overdue, d.days)
-                            ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
-                            is ExpiryDisplay.Until -> stringResourceFormat(Res.string.home_days_until, d.days)
-                        }
-                        Freshness.Fresh -> AppColors.TextSecondary to when (val d = item.expiryDisplay) {
-                            is ExpiryDisplay.Overdue -> stringResourceFormat(Res.string.home_days_overdue, d.days)
-                            ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
-                            is ExpiryDisplay.Until -> stringResourceFormat(Res.string.home_days_until, d.days)
-                        }
-                    }
-                    if (item.freshness!=Freshness.Fresh) {
+                    if (item.freshness != Freshness.Fresh) {
                         Icon(
                             imageVector = Icons.Default.Warning,
                             contentDescription = null,

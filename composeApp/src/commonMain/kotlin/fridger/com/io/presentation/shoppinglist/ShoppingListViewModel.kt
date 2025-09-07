@@ -5,14 +5,13 @@ import androidx.lifecycle.viewModelScope
 import fridger.com.io.data.repository.ShoppingListItem
 import fridger.com.io.data.repository.ShoppingListRepository
 import fridger.com.io.data.repository.ShoppingListRepositoryImpl
+import fridger.com.io.data.settings.ShoppingListMeta
+import fridger.com.io.data.settings.ShoppingListsManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-
-import fridger.com.io.data.settings.ShoppingListMeta
-import fridger.com.io.data.settings.ShoppingListsManager
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
 data class ShoppingListUiState(
     val lists: List<ShoppingListMeta> = emptyList(),
@@ -25,7 +24,6 @@ data class ShoppingListUiState(
 class ShoppingListViewModel(
     private val repository: ShoppingListRepository = ShoppingListRepositoryImpl()
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow(ShoppingListUiState())
     val uiState: StateFlow<ShoppingListUiState> = _uiState.asStateFlow()
 
@@ -65,7 +63,10 @@ class ShoppingListViewModel(
         }
     }
 
-    fun addItem(name: String, quantity: String?) {
+    fun addItem(
+        name: String,
+        quantity: String?
+    ) {
         val list = _uiState.value.currentList ?: return
         if (name.isBlank()) return
         viewModelScope.launch {
@@ -79,7 +80,10 @@ class ShoppingListViewModel(
         }
     }
 
-    fun toggleChecked(id: Long, checked: Boolean) {
+    fun toggleChecked(
+        id: Long,
+        checked: Boolean
+    ) {
         val list = _uiState.value.currentList ?: return
         viewModelScope.launch {
             try {
@@ -118,7 +122,10 @@ class ShoppingListViewModel(
         }
     }
 
-    fun createNewList(name: String, date: String) {
+    fun createNewList(
+        name: String,
+        date: String
+    ) {
         viewModelScope.launch {
             val id = generateId()
             ShoppingListsManager.addList(ShoppingListMeta(id, name, date))
@@ -127,7 +134,11 @@ class ShoppingListViewModel(
         }
     }
 
-    private fun generateId(): String = kotlinx.datetime.Clock.System.now().toEpochMilliseconds().toString()
+    private fun generateId(): String =
+        kotlinx.datetime.Clock.System
+            .now()
+            .toEpochMilliseconds()
+            .toString()
 
     fun deleteList(listId: String) {
         viewModelScope.launch {

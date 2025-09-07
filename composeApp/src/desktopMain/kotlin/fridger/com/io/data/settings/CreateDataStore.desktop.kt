@@ -1,8 +1,8 @@
 package fridger.com.io.data.settings
 
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
 import okio.Path.Companion.toPath
 import java.io.File
 

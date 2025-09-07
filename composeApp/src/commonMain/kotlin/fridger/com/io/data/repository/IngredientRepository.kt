@@ -1,5 +1,7 @@
 package fridger.com.io.data.repository
 
+import app.cash.sqldelight.coroutines.asFlow
+import app.cash.sqldelight.coroutines.mapToList
 import fridger.com.io.data.database.DatabaseProvider
 import fridger.com.io.data.model.Freshness
 import fridger.com.io.data.model.Ingredient
@@ -12,26 +14,32 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import app.cash.sqldelight.coroutines.asFlow
-import app.cash.sqldelight.coroutines.mapToList
 
 interface IngredientRepository {
     fun getIngredientsStream(): Flow<List<Ingredient>>
-    suspend fun add(name: String, expirationDateDisplay: String)
+
+    suspend fun add(
+        name: String,
+        expirationDateDisplay: String
+    )
+
     suspend fun delete(id: Long)
 }
 
 class IngredientRepositoryImpl(
     private val db: FridgerDatabase = DatabaseProvider.database
 ) : IngredientRepository {
-
-    override fun getIngredientsStream(): Flow<List<Ingredient>> {
-        return db.fridgerDatabaseQueries
+    override fun getIngredientsStream(): Flow<List<Ingredient>> =
+        db.fridgerDatabaseQueries
             .selectAllIngredients()
             .asFlow()
             .mapToList(Dispatchers.Default)
             .map { rows ->
-                val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+                val today =
+                    Clock.System
+                        .now()
+                        .toLocalDateTime(TimeZone.currentSystemDefault())
+                        .date
                 rows.map { row ->
                     val addDate = LocalDate.parse(row.addDate)
                     val expirationDate = LocalDate.parse(row.expirationDate)
@@ -44,10 +52,16 @@ class IngredientRepositoryImpl(
                     )
                 }
             }
-    }
 
-    override suspend fun add(name: String, expirationDateDisplay: String) = withContext(Dispatchers.Default) {
-        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    override suspend fun add(
+        name: String,
+        expirationDateDisplay: String
+    ) = withContext(Dispatchers.Default) {
+        val today =
+            Clock.System
+                .now()
+                .toLocalDateTime(TimeZone.currentSystemDefault())
+                .date
         val expiration = parseDisplayDate(expirationDateDisplay)
         db.fridgerDatabaseQueries.insertIngredient(
             name = name,
@@ -56,11 +70,15 @@ class IngredientRepositoryImpl(
         )
     }
 
-    override suspend fun delete(id: Long) = withContext(Dispatchers.Default) {
-        db.fridgerDatabaseQueries.deleteIngredientById(id)
-    }
+    override suspend fun delete(id: Long) =
+        withContext(Dispatchers.Default) {
+            db.fridgerDatabaseQueries.deleteIngredientById(id)
+        }
 
-    private fun computeFreshness(today: LocalDate, expiration: LocalDate): Freshness {
+    private fun computeFreshness(
+        today: LocalDate,
+        expiration: LocalDate
+    ): Freshness {
         val daysUntil = (expiration.toEpochDay() - today.toEpochDay()).toInt()
         return when {
             daysUntil < 0 -> Freshness.Expired

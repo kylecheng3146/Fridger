@@ -23,16 +23,17 @@ class ShoppingListsStore(
 ) {
     private val KEY = stringPreferencesKey("shopping_lists_registry")
 
-    val lists: Flow<List<ShoppingListMeta>> = dataStore.data.map { prefs ->
-        prefs[KEY]
-            ?.lines()
-            ?.filter { it.isNotBlank() }
-            ?.mapNotNull { line ->
-                val parts = line.split("|")
-                if (parts.size >= 3) ShoppingListMeta(parts[0], parts[1], parts[2]) else null
-            }
-            ?: emptyList()
-    }
+    val lists: Flow<List<ShoppingListMeta>> =
+        dataStore.data.map { prefs ->
+            prefs[KEY]
+                ?.lines()
+                ?.filter { it.isNotBlank() }
+                ?.mapNotNull { line ->
+                    val parts = line.split("|")
+                    if (parts.size >= 3) ShoppingListMeta(parts[0], parts[1], parts[2]) else null
+                }
+                ?: emptyList()
+        }
 
     suspend fun addList(meta: ShoppingListMeta) {
         dataStore.edit { prefs ->
@@ -58,6 +59,8 @@ class ShoppingListsStore(
 object ShoppingListsManager {
     private val store by lazy { ShoppingListsStore(SharedDataStoreProvider.instance) }
     val lists: Flow<List<ShoppingListMeta>> = store.lists
+
     suspend fun addList(meta: ShoppingListMeta) = store.addList(meta)
+
     suspend fun removeList(id: String) = store.removeList(id)
 }
