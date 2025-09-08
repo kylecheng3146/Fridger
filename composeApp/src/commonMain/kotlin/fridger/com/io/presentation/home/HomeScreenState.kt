@@ -1,8 +1,14 @@
 package fridger.com.io.presentation.home
 
 import fridger.com.io.data.model.Freshness
+import kotlinx.coroutines.Job
 
 // UI state for Home screen
+
+data class PendingDeletion(
+    val item: RefrigeratedItem,
+    val job: Job
+)
 
 data class HomeUiState(
     val todayExpiringItems: List<ExpiringItem> = emptyList(),
@@ -15,7 +21,8 @@ data class HomeUiState(
     val groupOption: GroupOption = GroupOption.NONE,
     val showAddNewItemDialog: Boolean = false,
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val pendingDeletion: PendingDeletion? = null
 )
 
 // Sorting and grouping options
