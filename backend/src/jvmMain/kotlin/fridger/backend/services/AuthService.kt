@@ -49,8 +49,9 @@ class AuthService(
         val newRefreshRaw = generateRefreshToken()
         val newHash = hashRefresh(newRefreshRaw)
         val newExpiresAt = Instant.now().plusMillis(refreshTtl.inWholeMilliseconds)
-        val rotated = refreshTokenRepository.rotate(oldHash, newHash, newExpiresAt)
-            ?: throw IllegalArgumentException(ErrorMessages.INVALID_REFRESH_TOKEN)
+        val rotated =
+            refreshTokenRepository.rotate(oldHash, newHash, newExpiresAt)
+                ?: throw IllegalArgumentException(ErrorMessages.INVALID_REFRESH_TOKEN)
         val newAccess = createAccessToken(rotated.userId)
         return AuthTokens(accessToken = newAccess, refreshToken = newRefreshRaw)
     }

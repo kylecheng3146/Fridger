@@ -9,4 +9,7 @@ object IngredientConstants {
 
     // 2..7 -> Within this week
     val WeekRange: IntRange = 2..7
+
+    // Default days offset for quick-add expiry
+    const val DEFAULT_QUICK_ADD_EXPIRY_DAYS: Int = 7
 }

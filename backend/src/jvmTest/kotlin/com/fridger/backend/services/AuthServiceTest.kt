@@ -11,13 +11,12 @@ import fridger.backend.services.AuthService
 import io.mockk.*
 import io.mockk.impl.annotations.RelaxedMockK
 import kotlinx.coroutines.test.runTest
+import org.junit.Before
 import java.time.Instant
 import java.util.UUID
 import kotlin.test.*
-import org.junit.Before
 
 class AuthServiceTest {
-
     @RelaxedMockK
     private lateinit var userRepository: UserRepository
 
@@ -47,51 +46,56 @@ class AuthServiceTest {
     }
 
     @Test
-    fun `signInWithGoogle should return tokens for valid google token`() = runTest {
-        val googleProfile = GoogleProfile("google123", "test@test.com", "Test User", null)
-        coEvery { googleValidator.validate(any()) } returns googleProfile
-        coEvery { userRepository.findOrCreateUserByGoogle(googleProfile) } returns testUser
-        coEvery { refreshTokenRepository.store(any(), any(), any()) } returns mockk()
+    fun `signInWithGoogle should return tokens for valid google token`() =
+        runTest {
+            val googleProfile = GoogleProfile("google123", "test@test.com", "Test User", null)
+            coEvery { googleValidator.validate(any()) } returns googleProfile
+            coEvery { userRepository.findOrCreateUserByGoogle(googleProfile) } returns testUser
+            coEvery { refreshTokenRepository.store(any(), any(), any()) } returns mockk()
 
-        val tokens = authService.signInWithGoogle("valid-id-token")
+            val tokens = authService.signInWithGoogle("valid-id-token")
 
-        assertNotNull(tokens)
-        assertTrue(tokens.accessToken.isNotEmpty())
-        assertTrue(tokens.refreshToken.isNotEmpty())
-        coVerify(exactly = 1) { refreshTokenRepository.store(eq(testUser.id), any(), any()) }
-    }
-
-    @Test
-    fun `refreshAccessToken should return new tokens on valid rotation`() = runTest {
-        val oldRefreshToken = "old-refresh-token"
-        val rotatedRecord = RefreshTokenRecord(UUID.randomUUID(), testUser.id, "new-hash", Instant.now(), Instant.now())
-        coEvery { refreshTokenRepository.rotate(any(), any(), any(), any()) } returns rotatedRecord
-
-        val tokens = authService.refreshAccessToken(oldRefreshToken)
-
-        assertNotNull(tokens)
-        assertTrue(tokens.accessToken.isNotEmpty())
-        assertTrue(tokens.refreshToken.isNotEmpty())
-        assertNotEquals(oldRefreshToken, tokens.refreshToken)
-        coVerify(exactly = 1) { refreshTokenRepository.rotate(any(), any(), any(), any()) }
-    }
-
-    @Test
-    fun `refreshAccessToken should throw exception on invalid rotation`() = runTest {
-        coEvery { refreshTokenRepository.rotate(any(), any(), any(), any()) } returns null
-
-        assertFailsWith<IllegalArgumentException> {
-            authService.refreshAccessToken("invalid-token")
+            assertNotNull(tokens)
+            assertTrue(tokens.accessToken.isNotEmpty())
+            assertTrue(tokens.refreshToken.isNotEmpty())
+            coVerify(exactly = 1) { refreshTokenRepository.store(eq(testUser.id), any(), any()) }
         }
-    }
 
     @Test
-    fun `logout should call repository to revoke token`() = runTest {
-        val refreshToken = "token-to-revoke"
-        coEvery { refreshTokenRepository.revokeByHash(any()) } returns true
+    fun `refreshAccessToken should return new tokens on valid rotation`() =
+        runTest {
+            val oldRefreshToken = "old-refresh-token"
+            val rotatedRecord =
+                RefreshTokenRecord(UUID.randomUUID(), testUser.id, "new-hash", Instant.now(), Instant.now())
+            coEvery { refreshTokenRepository.rotate(any(), any(), any(), any()) } returns rotatedRecord
 
-        authService.logout(refreshToken)
+            val tokens = authService.refreshAccessToken(oldRefreshToken)
 
-        coVerify(exactly = 1) { refreshTokenRepository.revokeByHash(any()) }
-    }
+            assertNotNull(tokens)
+            assertTrue(tokens.accessToken.isNotEmpty())
+            assertTrue(tokens.refreshToken.isNotEmpty())
+            assertNotEquals(oldRefreshToken, tokens.refreshToken)
+            coVerify(exactly = 1) { refreshTokenRepository.rotate(any(), any(), any(), any()) }
+        }
+
+    @Test
+    fun `refreshAccessToken should throw exception on invalid rotation`() =
+        runTest {
+            coEvery { refreshTokenRepository.rotate(any(), any(), any(), any()) } returns null
+
+            assertFailsWith<IllegalArgumentException> {
+                authService.refreshAccessToken("invalid-token")
+            }
+        }
+
+    @Test
+    fun `logout should call repository to revoke token`() =
+        runTest {
+            val refreshToken = "token-to-revoke"
+            coEvery { refreshTokenRepository.revokeByHash(any()) } returns true
+
+            authService.logout(refreshToken)
+
+            coVerify(exactly = 1) { refreshTokenRepository.revokeByHash(any()) }
+        }
 }

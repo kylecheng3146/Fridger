@@ -20,6 +20,8 @@ data class HomeUiState(
     val sortOption: SortOption = SortOption.EXPIRY,
     val groupOption: GroupOption = GroupOption.NONE,
     val showAddNewItemDialog: Boolean = false,
+    val quickAddSearchText: String = "",
+    val quickAddSuggestions: List<String> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
     val pendingDeletion: PendingDeletion? = null
@@ -75,4 +77,12 @@ data class RefrigeratedItem(
             daysUntilExpiry == 0 -> ExpiryDisplay.DueToday
             else -> ExpiryDisplay.Until(daysUntilExpiry)
         }
+)
+
+// Model for batch quick-add
+
+data class NewItem(
+    val name: String,
+    val quantity: String? = null,
+    val expiryDateDisplay: String? = null
 )

@@ -14,4 +14,3 @@ class DatabaseHelperSanityTest : BaseDbTest() {
         assertTrue(true)
     }
 }
-

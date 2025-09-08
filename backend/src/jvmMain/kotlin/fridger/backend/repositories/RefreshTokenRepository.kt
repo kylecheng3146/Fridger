@@ -40,7 +40,8 @@ class RefreshTokenRepository {
     ): RefreshTokenRecord? =
         withContext(Dispatchers.IO) {
             transaction {
-                RefreshTokensTable.select { RefreshTokensTable.tokenHash eq tokenHash }.limit(1).firstOrNull()?.let { row ->
+                RefreshTokensTable.select { RefreshTokensTable.tokenHash eq tokenHash }.limit(1).firstOrNull()?.let {
+                        row ->
                     val rec = row.toRecord()
                     if (rec.expiresAt.isAfter(now)) rec else null
                 }
@@ -56,34 +57,39 @@ class RefreshTokenRepository {
         newTokenHash: String,
         newExpiresAt: Instant,
         now: Instant = Instant.now()
-    ): RefreshTokenRecord? = withContext(Dispatchers.IO) {
-        transaction {
-            val row = RefreshTokensTable.select { RefreshTokensTable.tokenHash eq oldTokenHash }.limit(1).firstOrNull()
-            if (row == null) return@transaction null
-            val existing = row.toRecord()
-            if (!existing.expiresAt.isAfter(now)) return@transaction null
-            // delete old; ensure exactly one row deleted to prevent race creating multiple new tokens
-            val deleted = RefreshTokensTable.deleteWhere { RefreshTokensTable.tokenHash eq oldTokenHash }
-            if (deleted != 1) return@transaction null
-            val id = UUID.randomUUID()
-            val createdAt = Instant.now()
-            RefreshTokensTable.insert { r ->
-                r[RefreshTokensTable.id] = id
-                r[RefreshTokensTable.userId] = existing.userId
-                r[RefreshTokensTable.tokenHash] = newTokenHash
-                r[RefreshTokensTable.expiresAt] = newExpiresAt
-                r[RefreshTokensTable.createdAt] = createdAt
+    ): RefreshTokenRecord? =
+        withContext(Dispatchers.IO) {
+            transaction {
+                val row =
+                    RefreshTokensTable.select { RefreshTokensTable.tokenHash eq oldTokenHash }.limit(
+                        1
+                    ).firstOrNull()
+                if (row == null) return@transaction null
+                val existing = row.toRecord()
+                if (!existing.expiresAt.isAfter(now)) return@transaction null
+                // delete old; ensure exactly one row deleted to prevent race creating multiple new tokens
+                val deleted = RefreshTokensTable.deleteWhere { RefreshTokensTable.tokenHash eq oldTokenHash }
+                if (deleted != 1) return@transaction null
+                val id = UUID.randomUUID()
+                val createdAt = Instant.now()
+                RefreshTokensTable.insert { r ->
+                    r[RefreshTokensTable.id] = id
+                    r[RefreshTokensTable.userId] = existing.userId
+                    r[RefreshTokensTable.tokenHash] = newTokenHash
+                    r[RefreshTokensTable.expiresAt] = newExpiresAt
+                    r[RefreshTokensTable.createdAt] = createdAt
+                }
+                RefreshTokenRecord(id, existing.userId, newTokenHash, newExpiresAt, createdAt)
             }
-            RefreshTokenRecord(id, existing.userId, newTokenHash, newExpiresAt, createdAt)
         }
-    }
 
     /** Revoke (delete) a refresh token by its hash. Returns true if a row was deleted. */
-    suspend fun revokeByHash(tokenHash: String): Boolean = withContext(Dispatchers.IO) {
-        transaction {
-            RefreshTokensTable.deleteWhere { RefreshTokensTable.tokenHash eq tokenHash } > 0
+    suspend fun revokeByHash(tokenHash: String): Boolean =
+        withContext(Dispatchers.IO) {
+            transaction {
+                RefreshTokensTable.deleteWhere { RefreshTokensTable.tokenHash eq tokenHash } > 0
+            }
         }
-    }
 
     private fun ResultRow.toRecord() =
         RefreshTokenRecord(

@@ -1,21 +1,20 @@
 package com.fridger.backend.security
 
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import fridger.backend.security.GoogleTokenValidator
 import io.mockk.mockk
+import org.junit.Before
 import org.slf4j.Logger
 import java.security.KeyPairGenerator
 import java.security.interfaces.RSAPrivateKey
 import java.security.interfaces.RSAPublicKey
 import java.time.Instant
 import java.util.*
-import kotlin.test.*
-import com.auth0.jwt.algorithms.Algorithm
-import com.auth0.jwt.JWT
 import java.util.Date
-import org.junit.Before
+import kotlin.test.*
 
 class GoogleTokenValidatorTest {
-
     private lateinit var validator: GoogleTokenValidator
     private lateinit var keyPair: java.security.KeyPair
     private lateinit var rsaAlgorithm: Algorithm
@@ -30,9 +29,10 @@ class GoogleTokenValidatorTest {
         validator = GoogleTokenValidator(logger, setOf(clientId), "http://dummy.url", 6)
 
         // Generate a real RSA key pair for signing and verification
-        keyPair = KeyPairGenerator.getInstance("RSA").apply {
-            initialize(2048)
-        }.genKeyPair()
+        keyPair =
+            KeyPairGenerator.getInstance("RSA").apply {
+                initialize(2048)
+            }.genKeyPair()
 
         val publicKey = keyPair.public as RSAPublicKey
         val privateKey = keyPair.private as RSAPrivateKey
@@ -76,18 +76,20 @@ class GoogleTokenValidatorTest {
     @Test
     fun `validate should fail for an expired token`() {
         val token = createTestToken(expiresInSeconds = -10) // Expired 10 seconds ago
-        val exception = assertFailsWith<IllegalArgumentException> {
-            validator.validate(token)
-        }
+        val exception =
+            assertFailsWith<IllegalArgumentException> {
+                validator.validate(token)
+            }
         assertTrue(exception.message?.contains("Token expired") ?: false)
     }
 
     @Test
     fun `validate should fail for a wrong audience`() {
         val token = createTestToken(audience = "wrong-client-id")
-        val exception = assertFailsWith<IllegalArgumentException> {
-            validator.validate(token)
-        }
+        val exception =
+            assertFailsWith<IllegalArgumentException> {
+                validator.validate(token)
+            }
         assertTrue(exception.message?.contains("aud mismatch") ?: false)
     }
 

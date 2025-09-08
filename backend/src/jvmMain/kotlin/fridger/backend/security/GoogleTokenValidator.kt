@@ -100,14 +100,15 @@ class GoogleTokenValidator(
         // Verify signature
         val data = parts[0] + "." + parts[1]
         val signature = Base64.getUrlDecoder().decode(parts[2])
-        val sigOk = try {
-            java.security.Signature.getInstance("SHA256withRSA").apply {
-                initVerify(key)
-                update(data.toByteArray())
-            }.verify(signature)
-        } catch (ex: Exception) {
-            false
-        }
+        val sigOk =
+            try {
+                java.security.Signature.getInstance("SHA256withRSA").apply {
+                    initVerify(key)
+                    update(data.toByteArray())
+                }.verify(signature)
+            } catch (ex: Exception) {
+                false
+            }
         if (!sigOk) throw IllegalArgumentException(ErrorMessages.BAD_SIGNATURE)
         // exp
         val exp = payload["exp"]?.jsonPrimitive?.content?.toLongOrNull() ?: throw IllegalArgumentException(ErrorMessages.EXP_MISSING)

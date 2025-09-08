@@ -69,4 +69,18 @@
     <string name="mock_quantity_ten">x10</string>
     <string name="mock_quantity_one_bundle">x1 束</string>
     <string name="mock_quantity_one_bottle">x1 瓶</string>
+
+    <!-- Quick Add Dialog (ShoppingQuickAddTopDialog) -->
+    <string name="quick_add_title">新增食材</string>
+    <string name="quick_add_search_hint">搜尋或直接輸入食材</string>
+    <string name="quick_add_pick_query">選取 "%s"</string>
+    <string name="quick_add_favorites">最愛</string>
+    <string name="quick_add_quick_pick">快速選擇</string>
+    <string name="quick_add_none_selected">未選取項目</string>
+    <string name="quick_add_selected_prefix">已選取 </string>
+    <string name="quick_add_clear_selection">清除選取</string>
+    <string name="quick_add_add_selected">加入選取</string>
+    <string name="quick_add_close">關閉</string>
+    <string name="quick_add_fav_add">加入最愛</string>
+    <string name="quick_add_fav_remove">移除最愛</string>
 </resources>

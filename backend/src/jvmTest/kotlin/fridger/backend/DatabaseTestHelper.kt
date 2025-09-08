@@ -42,4 +42,3 @@ open class BaseDbTest {
     @kotlin.test.AfterTest
     fun after() = DatabaseTestHelper.teardown()
 }
-
