@@ -63,7 +63,6 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Use a Box to allow the dialog to overlay the content
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
@@ -76,7 +75,6 @@ fun HomeScreen(
                     .padding(innerPadding),
                 contentPadding = PaddingValues(bottom = MaterialTheme.sizing.contentPaddingVertical),
             ) {
-                // Header
                 item {
                     HomeHeader(onSettingsClick = onSettingsClick)
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
@@ -102,7 +100,6 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
                 }
 
-                // Expiry Section
                 item {
                     ExpirySection(
                         todayItems = uiState.todayExpiringItems,
@@ -112,7 +109,6 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraHuge))
                 }
 
-                // Empty State when no items
                 if (uiState.refrigeratedItems.isEmpty()) {
                     item {
                         Column(
@@ -148,7 +144,6 @@ fun HomeScreen(
                     }
                 }
 
-                // Refrigerated Items
                 refrigeratedSection(
                     refrigeratedItems = uiState.refrigeratedItems,
                     groupedRefrigeratedItems = uiState.groupedRefrigeratedItems,
@@ -162,7 +157,6 @@ fun HomeScreen(
             }
         }
 
-        // Show undo snackbar whenever a new pending deletion is set
         LaunchedEffect(uiState.pendingDeletion) {
             val pendingItem = uiState.pendingDeletion?.item
             if (pendingItem != null) {
@@ -178,7 +172,6 @@ fun HomeScreen(
             }
         }
 
-        // Dialog is placed here, outside the Scaffold, to overlay everything
         if (uiState.showAddNewItemDialog) {
             ShoppingQuickAddTopDialog(
                 onDismiss = viewModel::onDismissDialog,
@@ -212,13 +205,11 @@ private fun LazyListScope.refrigeratedSection(
             ) {
                 SectionTitle(title = stringResource(Res.string.home_refrigerated))
                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
-                // Sorting & Grouping controls
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Sort options
                     @Composable
                     fun SortChip(
                         label: String,
@@ -253,7 +244,6 @@ private fun LazyListScope.refrigeratedSection(
 
                     Spacer(modifier = Modifier.width(MaterialTheme.spacing.large))
 
-                    // Grouping toggle
                     Text(
                         stringResource(Res.string.home_group_label),
                         color = MaterialTheme.colorScheme.onBackground,
@@ -300,7 +290,6 @@ private fun LazyListScope.refrigeratedSection(
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
         }
     } else {
-        // Grouped by freshness sections
         val groupsOrder = listOf(Freshness.Expired, Freshness.NearingExpiration, Freshness.Fresh)
         val titles =
             mapOf(
@@ -380,7 +369,6 @@ private fun HomeHeader(onSettingsClick: () -> Unit) {
             color = MaterialTheme.colorScheme.onBackground,
         )
 
-        // Settings button
         IconButton(
             onClick = onSettingsClick,
             modifier = Modifier.align(Alignment.CenterEnd)
@@ -406,7 +394,6 @@ private fun ExpirySection(
                 .fillMaxWidth()
                 .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
     ) {
-        // Title: 快到期了！
         SectionTitle(title = stringResource(Res.string.home_section_soon_title))
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
         Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)) {
@@ -414,10 +401,8 @@ private fun ExpirySection(
                 ExpiringListItemCard(item = item, accentColor = MaterialTheme.colorScheme.error)
             }
             if (todayItems.isEmpty()) {
-                // Show an empty placeholder card
                 ExpiryCard(
                     icon = "⚠️",
-                    count = null,
                     label = stringResource(Res.string.home_today_none),
                     isEmpty = true
                 )
@@ -426,7 +411,6 @@ private fun ExpirySection(
 
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
 
-        // Title: 這週需要注意
         SectionTitle(title = stringResource(Res.string.home_section_week_title))
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
         Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)) {
@@ -435,10 +419,8 @@ private fun ExpirySection(
             }
 
             if (weekItems.isEmpty()) {
-                // Show an empty placeholder card
                 ExpiryCard(
                     icon = "⚠️",
-                    count = null,
                     label = stringResource(Res.string.home_week_none),
                     isEmpty = true
                 )
@@ -447,7 +429,6 @@ private fun ExpirySection(
 
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
 
-        // Title: 已過期
         SectionTitle(title = stringResource(Res.string.home_section_expired_title))
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
         Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)) {
@@ -458,7 +439,6 @@ private fun ExpirySection(
             if (expiredItems.isEmpty()) {
                 ExpiryCard(
                     icon = "❄️",
-                    count = null,
                     label = stringResource(Res.string.home_expired_none),
                     isEmpty = true
                 )
@@ -470,7 +450,6 @@ private fun ExpirySection(
 @Composable
 private fun ExpiryCard(
     icon: String,
-    count: Int?,
     label: String,
     modifier: Modifier = Modifier,
     isEmpty: Boolean = false,
@@ -549,7 +528,6 @@ private fun ExpiringListItemCard(
                     .padding(MaterialTheme.spacing.large),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icon circle
             Box(
                 modifier =
                     Modifier
@@ -563,7 +541,6 @@ private fun ExpiringListItemCard(
 
             Spacer(modifier = Modifier.width(MaterialTheme.spacing.large))
 
-            // Texts
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = item.name,
@@ -578,7 +555,6 @@ private fun ExpiringListItemCard(
                 )
             }
 
-            // Days left badge
             val bg = accentColor.copy(alpha = 0.22f)
             Box(
                 modifier =
@@ -626,7 +602,6 @@ private fun RefrigeratedItemCard(
         onClick = onClick,
     ) {
         if (compact) {
-            // Compact tile for grid view - mimic QuickPickCell style
             Box(
                 modifier =
                     Modifier
@@ -634,7 +609,6 @@ private fun RefrigeratedItemCard(
                         .heightIn(min = 110.dp)
                         .padding(6.dp)
             ) {
-                // Quick remove button at top-right for compact tiles
                 if (onRemove != null) {
                     IconButton(
                         onClick = onRemove,
@@ -681,7 +655,6 @@ private fun RefrigeratedItemCard(
                         .padding(MaterialTheme.spacing.large),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Icon
                 Box(
                     modifier =
                         Modifier
@@ -698,7 +671,6 @@ private fun RefrigeratedItemCard(
 
                 Spacer(modifier = Modifier.width(MaterialTheme.spacing.large))
 
-                // Name and Quantity
                 Column(
                     modifier = Modifier.weight(1f),
                 ) {
@@ -713,7 +685,6 @@ private fun RefrigeratedItemCard(
                         fontSize = 14.sp,
                         color = AppColors.TextSecondary,
                     )
-                    // Age info
                     Text(
                         text = stringResourceFormat(Res.string.home_age_days, item.ageDays),
                         fontSize = 12.sp,
@@ -721,7 +692,6 @@ private fun RefrigeratedItemCard(
                     )
                 }
 
-                // Expiry info
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
