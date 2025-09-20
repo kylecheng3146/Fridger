@@ -25,10 +25,7 @@ data class HomeUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val pendingDeletion: PendingDeletion? = null,
-    val selectedItemIds: Set<String> = emptySet(),
-    val isRecipeSheetVisible: Boolean = false,
-    val isGeneratingRecipe: Boolean = false,
-    val generatedRecipe: RecipeSuggestion? = null
+    val selectedItemIds: Set<String> = emptySet()
 )
 
 // Sorting and grouping options

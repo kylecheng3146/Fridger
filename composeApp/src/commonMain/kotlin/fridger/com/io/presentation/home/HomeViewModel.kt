@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import fridger.com.io.data.QuickAddCatalog
 import fridger.com.io.data.model.Freshness
 import fridger.com.io.data.repository.IngredientRepository
-import fridger.com.io.presentation.settings.SettingsManager
 import fridger.com.io.utils.todayPlusDaysDisplay
 import fridger.com.io.data.repository.RecipeRepository
 import fridger.com.domain.translator.Translator
@@ -235,87 +234,50 @@ class HomeViewModel(
 
     // Recipe generation functions
     fun onGenerateRecipeClick() {
-        if (_uiState.value.selectedItemIds.size < 2) return
+        if (_uiState.value.selectedItemIds.isEmpty()) {
+            return
+        }
+        
+        // Get the first selected item's name to search for recipes
+        val selectedItem = originalRefrigeratedItems.find { it.id in _uiState.value.selectedItemIds }
+        selectedItem?.let { item ->
+//            generateRecipeFromIngredient(item.name)
+            generateRecipeFromIngredient("tofu")
+        }
+    }
 
+    fun generateRecipeFromIngredient(ingredientName: String) {
+        
         viewModelScope.launch {
+            _recipeState.value = RecipeUiState.Loading
+            
             try {
-                // Show loading state and bottom sheet
-                _uiState.update { current ->
-                    current.copy(
-                        isGeneratingRecipe = true,
-                        isRecipeSheetVisible = true
-                    )
-                }
+                recipeRepository.getRecipesByIngredient(ingredientName)
+                    .onSuccess { mealDtos ->
+                        
+                        val translatedMeals = mealDtos.map { mealDto ->
+                            val originalTitle = mealDto.strMeal.orEmpty()
+                            val originalInstructions = mealDto.strInstructions.orEmpty()
+                            
+                            val translatedTitle = translator.translate(originalTitle)
+                            val translatedInstructions = translator.translate(originalInstructions)
 
-                // Simulate API call delay (replace with actual recipe generation)
-                delay(2000)
+                            
+                            mealDto.copy(
+                                strMeal = translatedTitle,
+                                strInstructions = translatedInstructions
+                            )
+                        }
 
-                // Mock recipe generation based on selected items
-                val selectedItems = originalRefrigeratedItems.filter { it.id in _uiState.value.selectedItemIds }
-                val mockRecipe = generateMockRecipe(selectedItems)
-
-                _uiState.update { current ->
-                    current.copy(
-                        isGeneratingRecipe = false,
-                        generatedRecipe = mockRecipe
-                    )
-                }
+                        _recipeState.value = RecipeUiState.Success(translatedMeals)
+                    }
+                    .onFailure { e ->
+                        _recipeState.value = RecipeUiState.Error(e.message ?: "Unknown error")
+                    }
             } catch (e: Exception) {
-                _uiState.update { current ->
-                    current.copy(
-                        isGeneratingRecipe = false,
-                        error = e.message
-                    )
-                }
+                _recipeState.value = RecipeUiState.Error(e.message ?: "Unknown error")
             }
         }
-    }
-
-    fun onRecipeSheetDismiss() {
-        _uiState.update { current ->
-            current.copy(
-                isRecipeSheetVisible = false,
-                isGeneratingRecipe = false,
-                generatedRecipe = null
-            )
-        }
-    }
-
-    fun onTryAgainRecipe() {
-        _uiState.update { current ->
-            current.copy(
-                isGeneratingRecipe = false,
-                generatedRecipe = null
-            )
-        }
-        onGenerateRecipeClick()
-    }
-
-    private fun generateMockRecipe(selectedItems: List<RefrigeratedItem>): RecipeSuggestion {
-        val itemNames = selectedItems.map { it.name }
-        val title = when {
-            itemNames.any { it.contains("肉") || it.contains("雞") } -> "清炒時蔬配肉"
-            itemNames.any { it.contains("魚") } -> "清蒸魚配蔬菜"
-            itemNames.any { it.contains("奶") } -> "蔬菜沙拉配優格醬"
-            else -> "時蔬沙拉"
-        }
-
-        return RecipeSuggestion(
-            title = title,
-            description = "根據您選擇的食材 ${itemNames.joinToString("、")} 推薦的簡單食譜",
-            ingredients = itemNames.map { "新鮮的 $it" },
-            instructions = listOf(
-                "將所有食材洗淨備用",
-                "熱鍋加入適量油",
-                "放入主要食材翻炒",
-                "加入調味料調味",
-                "最後加入蔬菜一起翻炒至熟",
-                "裝盤享用！"
-            ),
-            cookingTime = "15 分鐘",
-            difficulty = "簡單",
-            servings = 2
-        )
     }
 
     fun resetRecipeState() {
@@ -323,16 +285,27 @@ class HomeViewModel(
     }
 
     fun fetchRandomRecipe() {
+        
         viewModelScope.launch {
             _recipeState.value = RecipeUiState.Loading
+            
             try {
                 recipeRepository.getRemoteRandomRecipe()
                     .onSuccess { mealDto ->
+                        
+                        val originalTitle = mealDto.strMeal.orEmpty()
+                        val originalInstructions = mealDto.strInstructions.orEmpty()
+                        
+                        val translatedTitle = translator.translate(originalTitle)
+                        val translatedInstructions = translator.translate(originalInstructions)
+
+                        
                         val translated = mealDto.copy(
-                            strMeal = translator.translate(mealDto.strMeal.orEmpty()),
-                            strInstructions = translator.translate(mealDto.strInstructions.orEmpty())
+                            strMeal = translatedTitle,
+                            strInstructions = translatedInstructions
                         )
-                        _recipeState.value = RecipeUiState.Success(translated)
+
+                        _recipeState.value = RecipeUiState.Success(listOf(translated))
                     }
                     .onFailure { e ->
                         _recipeState.value = RecipeUiState.Error(e.message ?: "Unknown error")
@@ -347,7 +320,7 @@ class HomeViewModel(
 sealed interface RecipeUiState {
     data object Idle : RecipeUiState
     data object Loading : RecipeUiState
-    data class Success(val meal: MealDto) : RecipeUiState
+    data class Success(val meals: List<MealDto>) : RecipeUiState
     data class Error(val message: String) : RecipeUiState
 }
 

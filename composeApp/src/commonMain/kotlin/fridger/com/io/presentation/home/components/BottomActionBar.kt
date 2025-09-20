@@ -62,7 +62,7 @@ fun BottomActionBar(
                 }
 
                 val buttonContainerColor by animateColorAsState(
-                    targetValue = if (selectedCount > 1)
+                    targetValue = if (selectedCount > 0)
                         MaterialTheme.colorScheme.primary
                     else
                         MaterialTheme.colorScheme.surfaceVariant,
@@ -70,7 +70,7 @@ fun BottomActionBar(
                 )
 
                 val buttonContentColor by animateColorAsState(
-                    targetValue = if (selectedCount > 1)
+                    targetValue = if (selectedCount > 0)
                         MaterialTheme.colorScheme.onPrimary
                     else
                         MaterialTheme.colorScheme.onSurfaceVariant,
@@ -79,7 +79,7 @@ fun BottomActionBar(
 
                 Button(
                     onClick = onGenerateRecipeClick,
-                    enabled = selectedCount > 1,
+                    enabled = selectedCount > 0,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = buttonContainerColor,
                         contentColor = buttonContentColor

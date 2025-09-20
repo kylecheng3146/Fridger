@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
@@ -56,6 +57,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.ContentScale
 import androidx.lifecycle.viewmodel.compose.viewModel
 import fridger.com.io.data.model.Freshness
 import fridger.com.io.presentation.ViewModelFactoryProvider
@@ -73,6 +75,8 @@ import fridger.composeapp.generated.resources.Res
 import fridger.composeapp.generated.resources.home_refrigerated
 import fridger.composeapp.generated.resources.home_title
 import org.jetbrains.compose.resources.stringResource
+import coil3.compose.AsyncImage
+import androidx.compose.foundation.layout.Box
 
 @Composable
 private fun SectionTitle(title: String) {
@@ -94,31 +98,10 @@ fun HomeScreen(
     val recipeState by viewModel.recipeState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val sheetState = rememberModalBottomSheetState()
-    val isSheetVisible by remember(uiState.isRecipeSheetVisible) {
-        androidx.compose.runtime.mutableStateOf(uiState.isRecipeSheetVisible)
-    }
-
     // Random recipe bottom sheet state
     val randomRecipeSheetState = rememberModalBottomSheetState()
     val isRandomRecipeSheetVisible by remember(recipeState) {
         androidx.compose.runtime.mutableStateOf(recipeState !is RecipeUiState.Idle)
-    }
-
-    // Handle sheet visibility changes
-    LaunchedEffect(uiState.isRecipeSheetVisible) {
-        if (uiState.isRecipeSheetVisible) {
-            sheetState.show()
-        } else {
-            sheetState.hide()
-        }
-    }
-
-    // Handle sheet dismissal
-    LaunchedEffect(sheetState.isVisible) {
-        if (!sheetState.isVisible && uiState.isRecipeSheetVisible) {
-            viewModel.onRecipeSheetDismiss()
-        }
     }
 
     // Handle random recipe sheet visibility changes
@@ -298,62 +281,98 @@ fun HomeScreen(
         }
 
         // Modal Bottom Sheet for recipe results
-        if (uiState.isRecipeSheetVisible) {
-            ModalBottomSheet(
-                onDismissRequest = viewModel::onRecipeSheetDismiss,
-                sheetState = sheetState
-            ) {
-                RecipeResultSheet(
-                    isGenerating = uiState.isGeneratingRecipe,
-                    recipe = uiState.generatedRecipe,
-                    onTryAgain = viewModel::onTryAgainRecipe,
-                    onDismiss = viewModel::onRecipeSheetDismiss
-                )
-            }
-        }
-
-        // Modal Bottom Sheet for random recipe
         if (isRandomRecipeSheetVisible) {
             ModalBottomSheet(
                 onDismissRequest = { viewModel.resetRecipeState() },
                 sheetState = randomRecipeSheetState
             ) {
-                when (val state = recipeState) {
-                    is RecipeUiState.Loading -> {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(200.dp),
-                            contentAlignment = Alignment.Center
+                Column(modifier = Modifier.padding(16.dp)) {
+                    // Header with close button
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "食譜建議",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        
+                        IconButton(
+                            onClick = { viewModel.resetRecipeState() },
+                            modifier = Modifier.size(32.dp)
                         ) {
-                            CircularProgressIndicator()
-                        }
-                    }
-                    is RecipeUiState.Success -> {
-                        Box(modifier = Modifier.padding(20.dp)) {
-                            RecipeDetails(meal = state.meal)
-                        }
-                    }
-                    is RecipeUiState.Error -> {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(20.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                "載入失敗: ${state.message}",
-                                color = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.padding(bottom = 16.dp)
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "關閉",
+                                tint = MaterialTheme.colorScheme.onSurface
                             )
-                            Button(onClick = { viewModel.fetchRandomRecipe() }) {
-                                Text("重試")
+                        }
+                    }
+                    
+                    when (val state = recipeState) {
+                        is RecipeUiState.Loading -> {
+                            println("🎨 UI: Displaying loading state")
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(200.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator()
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text("正在搜尋食譜...")
                             }
                         }
-                    }
-                    is RecipeUiState.Idle -> {
-                        // This shouldn't happen when sheet is visible, but just in case
-                        Box(modifier = Modifier.fillMaxWidth().height(100.dp))
+                        is RecipeUiState.Success -> {
+                            println("🎨 UI: Displaying success state with ${state.meals.size} meals")
+                            LazyColumn {
+                                if (state.meals.isNotEmpty()) {
+                                    items(state.meals) { meal ->
+                                        println("🎨 UI: Rendering meal: ${meal.strMeal}")
+                                        RecipeDetails(meal = meal)
+                                        if (state.meals.size > 1) {
+                                            Spacer(Modifier.height(24.dp))
+                                        }
+                                    }
+                                } else {
+                                    item {
+                                        println("🎨 UI: Displaying no recipes found message")
+                                        Text(
+                                            "沒有找到相關食譜",
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            modifier = Modifier.padding(16.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        is RecipeUiState.Error -> {
+                            println("🎨 UI: Displaying error state: ${state.message}")
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(20.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    "載入失敗: ${state.message}",
+                                    color = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.padding(bottom = 16.dp)
+                                )
+                                Button(onClick = { viewModel.fetchRandomRecipe() }) {
+                                    Text("重試")
+                                }
+                            }
+                        }
+                        is RecipeUiState.Idle -> {
+                            println("🎨 UI: Displaying idle state")
+                            // This shouldn't happen when sheet is visible, but just in case
+                            Box(modifier = Modifier.fillMaxWidth().height(100.dp))
+                        }
                     }
                 }
             }
@@ -1017,9 +1036,143 @@ private fun RefrigeratedItemCard(
 @Composable
 fun RecipeDetails(meal: MealDto) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text(meal.strMeal ?: "無標題", style = MaterialTheme.typography.headlineMedium)
-        Spacer(Modifier.height(4.dp))
-        Text(meal.strInstructions ?: "無說明", style = MaterialTheme.typography.bodyMedium)
+        // 食譜圖片
+        if (!meal.strMealThumb.isNullOrBlank()) {
+            println("🖼️ UI: Loading recipe image: ${meal.strMealThumb}")
+            
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp),
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                AsyncImage(
+                    model = meal.strMealThumb,
+                    contentDescription = meal.strMeal ?: "Recipe image",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    onLoading = { 
+                        println("🖼️ COIL: Loading image ${meal.strMealThumb}")
+                    },
+                    onSuccess = { 
+                        println("✅ COIL: Successfully loaded image ${meal.strMealThumb}")
+                    },
+                    onError = { error ->
+                        println("❌ COIL: Failed to load image ${meal.strMealThumb} - ${error.result.throwable.message}")
+                    }
+                )
+            }
+            
+            Spacer(Modifier.height(16.dp))
+        }
+        
+        // 食譜標題
+        Text(
+            text = meal.strMeal ?: "無標題",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold
+        )
+        
+        Spacer(Modifier.height(8.dp))
+        
+        // 分類和地區資訊
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            meal.strCategory?.let { category ->
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                    ),
+                    modifier = Modifier.padding(vertical = 2.dp)
+                ) {
+                    Text(
+                        text = "🏷️ $category",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+            meal.strArea?.let { area ->
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)
+                    ),
+                    modifier = Modifier.padding(vertical = 2.dp)
+                ) {
+                    Text(
+                        text = "🌍 $area",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+        }
+        
+        Spacer(Modifier.height(12.dp))
+        
+        // 作法說明
+        if (!meal.strInstructions.isNullOrBlank()) {
+            Text(
+                text = "作法說明：",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = meal.strInstructions,
+                style = MaterialTheme.typography.bodyMedium,
+                lineHeight = 20.sp
+            )
+        } else {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "點擊查看詳細作法...",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+        }
+        
+        // YouTube 連結（如果有的話）
+        if (!meal.strYoutube.isNullOrBlank()) {
+            Spacer(Modifier.height(12.dp))
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "📺",
+                        fontSize = 20.sp
+                    )
+                    Text(
+                        text = "YouTube 影片教學可用",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
+        }
     }
 }
 

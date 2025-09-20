@@ -31,6 +31,8 @@ java-jwt = "4.4.0"
 mockk = "1.13.12"
 h2 = "2.2.224"
 kover = "0.8.2"
+kamel = "1.0.0"
+coil = "3.0.4"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -79,6 +81,9 @@ java-jwt = { module = "com.auth0:java-jwt", version.ref = "java-jwt" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 h2 = { module = "com.h2database:h2", version.ref = "h2" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
+kamel-image = { module = "media.kamel:kamel-image", version.ref = "kamel" }
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+coil-network-ktor3 = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

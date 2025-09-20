@@ -86,10 +86,14 @@ kotlin {
             implementation(libs.datastore.preferences)
             implementation(libs.okio)
             implementation(libs.sqldelight.coroutines)
-            // Ktor Core + Serialization
+            // Ktor Core + Serialization + Logging
             implementation("io.ktor:ktor-client-core:3.0.2")
             implementation("io.ktor:ktor-client-content-negotiation:3.0.2")
             implementation("io.ktor:ktor-serialization-kotlinx-json:3.0.2")
+            implementation("io.ktor:ktor-client-logging:3.0.2")
+            // Image loading
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network.ktor3)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
