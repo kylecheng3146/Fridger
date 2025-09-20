@@ -1,8 +1,9 @@
-@file:OptIn(ExperimentalFoundationApi::class)
+@file:OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 
 package fridger.com.io.presentation.home
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,8 +16,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -30,14 +31,27 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -45,6 +59,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import fridger.com.io.data.model.Freshness
 import fridger.com.io.presentation.ViewModelFactoryProvider
 import fridger.com.io.presentation.components.ShoppingQuickAddTopDialog
+import fridger.com.io.presentation.home.components.BottomActionBar
+import fridger.com.io.presentation.home.components.RecipeResultSheet
 import fridger.com.io.presentation.util.animateItemPlacementCompat
 import fridger.com.io.ui.theme.AppColors
 import fridger.com.io.ui.theme.sizing
@@ -57,6 +73,16 @@ import fridger.composeapp.generated.resources.home_title
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
+private fun SectionTitle(title: String) {
+    Text(
+        text = title,
+        fontSize = 20.sp,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onBackground,
+    )
+}
+
+@Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
     onSettingsClick: () -> Unit = {}
@@ -65,10 +91,36 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val sheetState = rememberModalBottomSheetState()
+    val isSheetVisible by remember(uiState.isRecipeSheetVisible) {
+        androidx.compose.runtime.mutableStateOf(uiState.isRecipeSheetVisible)
+    }
+
+    // Handle sheet visibility changes
+    LaunchedEffect(uiState.isRecipeSheetVisible) {
+        if (uiState.isRecipeSheetVisible) {
+            sheetState.show()
+        } else {
+            sheetState.hide()
+        }
+    }
+
+    // Handle sheet dismissal
+    LaunchedEffect(sheetState.isVisible) {
+        if (!sheetState.isVisible && uiState.isRecipeSheetVisible) {
+            viewModel.onRecipeSheetDismiss()
+        }
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-            snackbarHost = { SnackbarHost(snackbarHostState, modifier = Modifier.padding(bottom = 8.dp)) }
+            snackbarHost = {
+                SnackbarHost(
+                    snackbarHostState,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
         ) { innerPadding ->
             LazyColumn(
                 modifier =
@@ -102,14 +154,16 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
                 }
 
+                expirySection(
+                    todayItems = uiState.todayExpiringItems,
+                    weekItems = uiState.weekExpiringItems,
+                    expiredItems = uiState.expiredItems,
+                )
+
                 item {
-                    ExpirySection(
-                        todayItems = uiState.todayExpiringItems,
-                        weekItems = uiState.weekExpiringItems,
-                        expiredItems = uiState.expiredItems,
-                    )
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraHuge))
                 }
+
 
                 if (uiState.refrigeratedItems.isEmpty()) {
                     item {
@@ -141,7 +195,7 @@ fun HomeScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                                 fontSize = 14.sp
                             )
-                            Spacer(Modifier.height(MaterialTheme.spacing.extraHuge))
+                            Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraHuge))
                         }
                     }
                 }
@@ -154,21 +208,23 @@ fun HomeScreen(
                     onSortChange = { sort -> viewModel.updateSortingAndGrouping(sort = sort) },
                     onGroupChange = { group -> viewModel.updateSortingAndGrouping(group = group) },
                     onItemClick = { id -> viewModel.onItemClick(id) },
-                    onRemoveItem = { id -> viewModel.onRemoveItemInitiated(id) }
+                    onRemoveItem = { id -> viewModel.onRemoveItemInitiated(id) },
+                    selectedItemIds = uiState.selectedItemIds,
+                    onToggleItemSelection = { id -> viewModel.onToggleItemSelection(id) }
                 )
             }
         }
 
         LaunchedEffect(uiState.pendingDeletion) {
             val pendingItem = uiState.pendingDeletion?.item
-            if (pendingItem != null) {
+            if (pendingItem!=null) {
                 val result =
                     snackbarHostState.showSnackbar(
                         message = "${pendingItem.name} 已被移除",
                         actionLabel = "復原",
                         duration = SnackbarDuration.Short
                     )
-                if (result == SnackbarResult.ActionPerformed) {
+                if (result==SnackbarResult.ActionPerformed) {
                     viewModel.undoRemoveItem()
                 }
             }
@@ -183,6 +239,40 @@ fun HomeScreen(
                 suggestions = uiState.quickAddSuggestions
             )
         }
+
+        // Bottom Action Bar for multi-selection mode
+        androidx.compose.animation.AnimatedVisibility(
+            visible = uiState.selectedItemIds.isNotEmpty(),
+            enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
+            exit = fadeOut() + slideOutVertically(targetOffsetY = { it }),
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            BottomActionBar(
+                selectedCount = uiState.selectedItemIds.size,
+                onCancelClick = {
+                    // Clear all selections by toggling each selected item
+                    uiState.selectedItemIds.forEach { itemId ->
+                        viewModel.onToggleItemSelection(itemId)
+                    }
+                },
+                onGenerateRecipeClick = viewModel::onGenerateRecipeClick
+            )
+        }
+
+        // Modal Bottom Sheet for recipe results
+        if (uiState.isRecipeSheetVisible) {
+            ModalBottomSheet(
+                onDismissRequest = viewModel::onRecipeSheetDismiss,
+                sheetState = sheetState
+            ) {
+                RecipeResultSheet(
+                    isGenerating = uiState.isGeneratingRecipe,
+                    recipe = uiState.generatedRecipe,
+                    onTryAgain = viewModel::onTryAgainRecipe,
+                    onDismiss = viewModel::onRecipeSheetDismiss
+                )
+            }
+        }
     }
 }
 
@@ -194,7 +284,9 @@ private fun LazyListScope.refrigeratedSection(
     onSortChange: (SortOption) -> Unit,
     onGroupChange: (GroupOption) -> Unit,
     onItemClick: (String) -> Unit,
-    onRemoveItem: (String) -> Unit
+    onRemoveItem: (String) -> Unit,
+    selectedItemIds: Set<String>,
+    onToggleItemSelection: (String) -> Unit
 ) {
     if (refrigeratedItems.isNotEmpty()) {
         item {
@@ -218,10 +310,21 @@ private fun LazyListScope.refrigeratedSection(
                         selected: Boolean,
                         onClick: () -> Unit
                     ) {
-                        val bg =
-                            if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surface
-                        val fg =
-                            if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        val bg by animateColorAsState(
+                            targetValue = if (selected)
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                            else
+                                MaterialTheme.colorScheme.surface,
+                            label = "sort_chip_bg"
+                        )
+                        val fg by animateColorAsState(
+                            targetValue = if (selected)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurface,
+                            label = "sort_chip_fg"
+                        )
+
                         Box(
                             modifier =
                                 Modifier
@@ -233,15 +336,15 @@ private fun LazyListScope.refrigeratedSection(
                     }
                     SortChip(
                         stringResource(Res.string.home_sort_expiry),
-                        sortOption == SortOption.EXPIRY
+                        sortOption==SortOption.EXPIRY
                     ) { onSortChange(SortOption.EXPIRY) }
                     SortChip(
                         stringResource(Res.string.home_sort_name),
-                        sortOption == SortOption.NAME
+                        sortOption==SortOption.NAME
                     ) { onSortChange(SortOption.NAME) }
                     SortChip(
                         stringResource(Res.string.home_sort_added_date),
-                        sortOption == SortOption.ADDED_DATE
+                        sortOption==SortOption.ADDED_DATE
                     ) { onSortChange(SortOption.ADDED_DATE) }
 
                     Spacer(modifier = Modifier.width(MaterialTheme.spacing.large))
@@ -251,7 +354,7 @@ private fun LazyListScope.refrigeratedSection(
                         color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 12.sp
                     )
-                    val isGrouped = groupOption == GroupOption.FRESHNESS
+                    val isGrouped = groupOption==GroupOption.FRESHNESS
                     SortChip(stringResource(Res.string.home_group_by_freshness), isGrouped) {
                         onGroupChange(if (isGrouped) GroupOption.NONE else GroupOption.FRESHNESS)
                     }
@@ -261,34 +364,23 @@ private fun LazyListScope.refrigeratedSection(
         }
     }
 
-    if (groupOption == GroupOption.NONE) {
+    if (groupOption==GroupOption.NONE) {
         items(
-            items = refrigeratedItems.chunked(3),
-            key = { group -> group.joinToString("_") { it.id } }
-        ) { rowItems ->
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .animateItemPlacementCompat()
-                        .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
-                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
-            ) {
-                rowItems.forEach { item ->
-                    Box(modifier = Modifier.weight(1f)) {
-                        RefrigeratedItemCard(
-                            item = item,
-                            onClick = { onItemClick(item.id) },
-                            modifier = Modifier.fillMaxWidth(),
-                            compact = true,
-                            onRemove = { onRemoveItem(item.id) }
-                        )
-                    }
-                }
-                repeat(3 - rowItems.size) {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
-            }
+            items = refrigeratedItems,
+            key = { it.id }
+        ) { item ->
+            RefrigeratedItemCard(
+                item = item,
+                onClick = { onToggleItemSelection(item.id) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .animateItemPlacementCompat()
+                    .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
+                compact = false,
+                onRemove = { onRemoveItem(item.id) },
+                selectedItemIds = selectedItemIds,
+                onItemClick = onItemClick
+            )
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
         }
     } else {
@@ -318,32 +410,21 @@ private fun LazyListScope.refrigeratedSection(
                     }
                 }
                 items(
-                    items = itemsInGroup.chunked(3),
-                    key = { group -> group.joinToString("_") { it.id } + "_" + freshness::class.simpleName }
-                ) { rowItems ->
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .animateItemPlacementCompat()
-                                .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
-                        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
-                    ) {
-                        rowItems.forEach { item ->
-                            Box(modifier = Modifier.weight(1f)) {
-                                RefrigeratedItemCard(
-                                    item = item,
-                                    onClick = { onItemClick(item.id) },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    compact = true,
-                                    onRemove = { onRemoveItem(item.id) }
-                                )
-                            }
-                        }
-                        repeat(3 - rowItems.size) {
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
-                    }
+                    items = itemsInGroup,
+                    key = { it.id + "_" + freshness::class.simpleName }
+                ) { item ->
+                    RefrigeratedItemCard(
+                        item = item,
+                        onClick = { onToggleItemSelection(item.id) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .animateItemPlacementCompat()
+                            .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
+                        compact = false,
+                        onRemove = { onRemoveItem(item.id) },
+                        selectedItemIds = selectedItemIds,
+                        onItemClick = onItemClick
+                    )
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
                 }
             }
@@ -384,70 +465,113 @@ private fun HomeHeader(onSettingsClick: () -> Unit) {
     }
 }
 
-@Composable
-private fun ExpirySection(
+private fun LazyListScope.expirySection(
     todayItems: List<ExpiringItem>,
     weekItems: List<ExpiringItem>,
     expiredItems: List<ExpiringItem>,
 ) {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
-    ) {
-        SectionTitle(title = stringResource(Res.string.home_section_soon_title))
-        Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
-        Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)) {
-            todayItems.forEach { item ->
-                ExpiringListItemCard(item = item, accentColor = MaterialTheme.colorScheme.error)
-            }
-            if (todayItems.isEmpty()) {
-                ExpiryCard(
-                    icon = "⚠️",
-                    label = stringResource(Res.string.home_today_none),
-                    isEmpty = true
-                )
-            }
+    item {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
+        ) {
+            SectionTitle(title = stringResource(Res.string.home_section_soon_title))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
         }
+    }
 
-        Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
-
-        SectionTitle(title = stringResource(Res.string.home_section_week_title))
-        Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
-        Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)) {
-            weekItems.forEach { item ->
-                ExpiringListItemCard(item = item, accentColor = AppColors.Warning)
-            }
-
-            if (weekItems.isEmpty()) {
-                ExpiryCard(
-                    icon = "⚠️",
-                    label = stringResource(Res.string.home_week_none),
-                    isEmpty = true
-                )
-            }
+    if (todayItems.isEmpty()) {
+        item {
+            ExpiryCard(
+                icon = "⚠️",
+                label = stringResource(Res.string.home_today_none),
+                isEmpty = true,
+                modifier = Modifier.padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
+            )
         }
+    } else {
+        items(todayItems, key = { "today_${it.id}" }) { item ->
+            ExpiringListItemCard(
+                item = item,
+                accentColor = MaterialTheme.colorScheme.error,
+                modifier = Modifier
+                    .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
+                    .padding(bottom = MaterialTheme.spacing.medium)
+            )
+        }
+    }
 
-        Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
+    item {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
+        ) {
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
+            SectionTitle(title = stringResource(Res.string.home_section_week_title))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
+        }
+    }
 
-        SectionTitle(title = stringResource(Res.string.home_section_expired_title))
-        Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
-        Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)) {
-            expiredItems.forEach { item ->
-                ExpiringListItemCard(item = item, accentColor = MaterialTheme.colorScheme.error)
-            }
+    if (weekItems.isEmpty()) {
+        item {
+            ExpiryCard(
+                icon = "⚠️",
+                label = stringResource(Res.string.home_week_none),
+                isEmpty = true,
+                modifier = Modifier.padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
+            )
+        }
+    } else {
+        items(weekItems, key = { "week_${it.id}" }) { item ->
+            ExpiringListItemCard(
+                item = item,
+                accentColor = AppColors.Warning,
+                modifier = Modifier
+                    .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
+                    .padding(bottom = MaterialTheme.spacing.medium)
+            )
+        }
+    }
 
-            if (expiredItems.isEmpty()) {
-                ExpiryCard(
-                    icon = "❄️",
-                    label = stringResource(Res.string.home_expired_none),
-                    isEmpty = true
-                )
-            }
+    item {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
+        ) {
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
+            SectionTitle(title = stringResource(Res.string.home_section_expired_title))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
+        }
+    }
+
+    if (expiredItems.isEmpty()) {
+        item {
+            ExpiryCard(
+                icon = "❄️",
+                label = stringResource(Res.string.home_expired_none),
+                isEmpty = true,
+                modifier = Modifier.padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
+            )
+        }
+    } else {
+        items(expiredItems, key = { "expired_${it.id}" }) { item ->
+            ExpiringListItemCard(
+                item = item,
+                accentColor = MaterialTheme.colorScheme.error,
+                modifier = Modifier
+                    .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
+                    .padding(bottom = MaterialTheme.spacing.medium)
+            )
         }
     }
 }
+
 
 @Composable
 private fun ExpiryCard(
@@ -551,7 +675,10 @@ private fun ExpiringListItemCard(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = stringResourceFormat(Res.string.home_item_quantity, item.count.toString()),
+                    text = stringResourceFormat(
+                        Res.string.home_item_quantity,
+                        item.count.toString()
+                    ),
                     fontSize = 14.sp,
                     color = AppColors.TextSecondary
                 )
@@ -567,9 +694,16 @@ private fun ExpiringListItemCard(
             ) {
                 val daysText =
                     when (val disp = item.expiryDisplay) {
-                        is ExpiryDisplay.Overdue -> stringResourceFormat(Res.string.home_days_overdue, disp.days)
+                        is ExpiryDisplay.Overdue -> stringResourceFormat(
+                            Res.string.home_days_overdue,
+                            disp.days
+                        )
+
                         ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
-                        is ExpiryDisplay.Until -> stringResourceFormat(Res.string.home_days_until, disp.days)
+                        is ExpiryDisplay.Until -> stringResourceFormat(
+                            Res.string.home_days_until,
+                            disp.days
+                        )
                     }
                 Text(
                     text = daysText,
@@ -589,7 +723,20 @@ private fun RefrigeratedItemCard(
     modifier: Modifier = Modifier,
     compact: Boolean = false,
     onRemove: (() -> Unit)? = null,
+    selectedItemIds: Set<String> = emptySet(),
+    onItemClick: ((String) -> Unit)? = null,
 ) {
+    val borderWidth by animateDpAsState(
+        targetValue = if (selectedItemIds.contains(item.id)) 2.dp else 0.dp,
+        label = "borderWidthAnimation"
+    )
+
+    val borderColor by animateColorAsState(
+        targetValue = if (selectedItemIds.contains(item.id))
+            MaterialTheme.colorScheme.primary else Color.Transparent,
+        label = "borderColorAnimation"
+    )
+
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(MaterialTheme.sizing.cornerRadiusLarge),
@@ -601,152 +748,186 @@ private fun RefrigeratedItemCard(
             CardDefaults.cardElevation(
                 defaultElevation = if (compact) 2.dp else 1.dp,
             ),
-        onClick = onClick,
+        border = BorderStroke(borderWidth, borderColor)
     ) {
-        if (compact) {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 110.dp)
-                        .padding(6.dp)
-            ) {
-                if (onRemove != null) {
-                    IconButton(
-                        onClick = onRemove,
-                        modifier =
-                            Modifier
-                                .align(Alignment.TopEnd)
-                                .size(28.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = stringResource(Res.string.home_remove_ingredient),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                Column(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 8.dp, vertical = 16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = item.icon,
-                        fontSize = 44.sp,
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    Text(
-                        text = item.name,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            }
-        } else {
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(MaterialTheme.spacing.large),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+        ) {
+            if (compact) {
                 Box(
                     modifier =
                         Modifier
-                            .size(MaterialTheme.sizing.iconHuge)
-                            .clip(CircleShape)
-                            .background(AppColors.IconBackground),
-                    contentAlignment = Alignment.Center,
+                            .fillMaxWidth()
+                            .heightIn(min = 110.dp)
+                            .padding(6.dp)
                 ) {
-                    Text(
-                        text = item.icon,
-                        fontSize = MaterialTheme.sizing.iconLarge.value.sp,
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(MaterialTheme.spacing.large))
-
-                Column(
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(
-                        text = item.name,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Text(
-                        text = item.quantity,
-                        fontSize = 14.sp,
-                        color = AppColors.TextSecondary,
-                    )
-                    Text(
-                        text = stringResourceFormat(Res.string.home_age_days, item.ageDays),
-                        fontSize = 12.sp,
-                        color = AppColors.TextSecondary,
-                    )
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
-                ) {
-                    val (tintColor, textDisplay) =
-                        when (item.freshness) {
-                            Freshness.Expired ->
-                                MaterialTheme.colorScheme.error to
-                                    when (val d = item.expiryDisplay) {
-                                        is ExpiryDisplay.Overdue -> stringResourceFormat(Res.string.home_days_overdue, d.days)
-                                        ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
-                                        is ExpiryDisplay.Until -> stringResourceFormat(Res.string.home_days_until, d.days)
-                                    }
-                            Freshness.NearingExpiration ->
-                                AppColors.Warning to
-                                    when (val d = item.expiryDisplay) {
-                                        is ExpiryDisplay.Overdue -> stringResourceFormat(Res.string.home_days_overdue, d.days)
-                                        ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
-                                        is ExpiryDisplay.Until -> stringResourceFormat(Res.string.home_days_until, d.days)
-                                    }
-                            Freshness.Fresh ->
-                                AppColors.TextSecondary to
-                                    when (val d = item.expiryDisplay) {
-                                        is ExpiryDisplay.Overdue -> stringResourceFormat(Res.string.home_days_overdue, d.days)
-                                        ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
-                                        is ExpiryDisplay.Until -> stringResourceFormat(Res.string.home_days_until, d.days)
-                                    }
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = onRemove != null && selectedItemIds.isEmpty(),
+                        enter = fadeIn() + slideInVertically(initialOffsetY = { -it / 2 }),
+                        exit = fadeOut() + slideOutVertically(targetOffsetY = { -it / 2 }),
+                        modifier = Modifier.align(Alignment.TopEnd)
+                    ) {
+                        IconButton(
+                            onClick = onRemove ?: {},
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = stringResource(Res.string.home_remove_ingredient),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
-                    if (item.freshness != Freshness.Fresh) {
-                        Icon(
-                            imageVector = Icons.Default.Warning,
-                            contentDescription = null,
-                            modifier = Modifier.size(MaterialTheme.sizing.iconSmall),
-                            tint = tintColor,
+                    }
+
+
+                    Column(
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 8.dp, vertical = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = item.icon,
+                            fontSize = 44.sp,
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            text = item.name,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
-                    Text(
-                        text = textDisplay,
-                        fontSize = 14.sp,
-                        color = tintColor,
-                    )
+                }
+            } else {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(MaterialTheme.spacing.large),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .size(MaterialTheme.sizing.iconHuge)
+                                .clip(CircleShape)
+                                .background(AppColors.IconBackground),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = item.icon,
+                            fontSize = MaterialTheme.sizing.iconLarge.value.sp,
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(MaterialTheme.spacing.large))
+
+                    Column(
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(
+                            text = item.name,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            text = item.quantity,
+                            fontSize = 14.sp,
+                            color = AppColors.TextSecondary,
+                        )
+                        Text(
+                            text = stringResourceFormat(Res.string.home_age_days, item.ageDays),
+                            fontSize = 12.sp,
+                            color = AppColors.TextSecondary,
+                        )
+                    }
+
+                    AnimatedVisibility(
+                        visible = !selectedItemIds.contains(item.id),
+                        enter = slideInHorizontally(initialOffsetX = { it / 2 }) + fadeIn(),
+                        exit = slideOutHorizontally(targetOffsetX = { it / 2 }) + fadeOut(),
+                    ) {
+                        IconButton(
+                            onClick = { onItemClick?.invoke(item.id) },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                        }
+                    }
+
+                    AnimatedVisibility(
+                        visible = selectedItemIds.isEmpty(),
+                        enter = slideInHorizontally(initialOffsetX = { it / 2 }) + fadeIn(),
+                        exit = slideOutHorizontally(targetOffsetX = { it / 2 }) + fadeOut(),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
+                        ) {
+                            val (tintColor, textDisplay) =
+                                when (item.freshness) {
+                                    Freshness.Expired ->
+                                        MaterialTheme.colorScheme.error to
+                                                when (val d = item.expiryDisplay) {
+                                                    is ExpiryDisplay.Overdue -> stringResourceFormat(
+                                                        Res.string.home_days_overdue,
+                                                        d.days
+                                                    )
+
+                                                    ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
+                                                    is ExpiryDisplay.Until -> stringResourceFormat(
+                                                        Res.string.home_days_until,
+                                                        d.days
+                                                    )
+                                                }
+
+                                    Freshness.NearingExpiration ->
+                                        AppColors.Warning to
+                                                when (val d = item.expiryDisplay) {
+                                                    is ExpiryDisplay.Overdue -> stringResourceFormat(
+                                                        Res.string.home_days_overdue,
+                                                        d.days
+                                                    )
+
+                                                    ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
+                                                    is ExpiryDisplay.Until -> stringResourceFormat(
+                                                        Res.string.home_days_until,
+                                                        d.days
+                                                    )
+                                                }
+
+                                    Freshness.Fresh ->
+                                        AppColors.TextSecondary to
+                                                when (val d = item.expiryDisplay) {
+                                                    is ExpiryDisplay.Overdue -> stringResourceFormat(
+                                                        Res.string.home_days_overdue,
+                                                        d.days
+                                                    )
+
+                                                    ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
+                                                    is ExpiryDisplay.Until -> stringResourceFormat(
+                                                        Res.string.home_days_until,
+                                                        d.days
+                                                    )
+                                                }
+                                }
+                            Text(
+                                text = textDisplay,
+                                fontSize = 14.sp,
+                                color = tintColor,
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 }
 
-@Composable
-private fun SectionTitle(title: String) {
-    Text(
-        text = title,
-        fontSize = 20.sp,
-        fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.onBackground,
-    )
-}
+
+

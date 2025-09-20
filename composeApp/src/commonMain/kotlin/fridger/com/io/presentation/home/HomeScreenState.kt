@@ -24,7 +24,11 @@ data class HomeUiState(
     val quickAddSuggestions: List<String> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
-    val pendingDeletion: PendingDeletion? = null
+    val pendingDeletion: PendingDeletion? = null,
+    val selectedItemIds: Set<String> = emptySet(),
+    val isRecipeSheetVisible: Boolean = false,
+    val isGeneratingRecipe: Boolean = false,
+    val generatedRecipe: RecipeSuggestion? = null
 )
 
 // Sorting and grouping options
@@ -85,4 +89,15 @@ data class NewItem(
     val name: String,
     val quantity: String? = null,
     val expiryDateDisplay: String? = null
+)
+
+// Recipe suggestion data class
+data class RecipeSuggestion(
+    val title: String,
+    val description: String,
+    val ingredients: List<String>,
+    val instructions: List<String>,
+    val cookingTime: String,
+    val difficulty: String,
+    val servings: Int
 )

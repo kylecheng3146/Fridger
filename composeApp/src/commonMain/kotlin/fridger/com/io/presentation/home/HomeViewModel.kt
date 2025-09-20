@@ -94,10 +94,6 @@ class HomeViewModel(
         _uiState.update { it.copy(quickAddSearchText = text, quickAddSuggestions = suggestions) }
     }
 
-    suspend fun toggleQuickFavorite(name: String) {
-        SettingsManager.toggleQuickFavorite(name)
-    }
-
     // Batch add from dialog
     fun onItemsAdded(items: List<NewItem>) {
         viewModelScope.launch {
@@ -114,33 +110,11 @@ class HomeViewModel(
         }
     }
 
-    // Single quick add support (used by current dialog integration)
-    fun onQuickAddItem(
-        name: String,
-        quantity: String?
-    ) {
-        viewModelScope.launch {
-            try {
-                val defaultExpiry = todayPlusDaysDisplay(IngredientConstants.DEFAULT_QUICK_ADD_EXPIRY_DAYS)
-                repository.add(name = name, expirationDateDisplay = defaultExpiry)
-            } catch (e: Exception) {
-                _uiState.update { it.copy(error = e.message) }
-            }
-        }
-    }
-
     fun onItemClick(itemId: String) {
         // TODO: Navigate to item detail screen
     }
 
-    fun removeItem(itemId: String) {
-        // Delegate to undoable flow
-        onRemoveItemInitiated(itemId)
-    }
-
-    // Start undoable deletion countdown, immediately hide item in UI
     fun onRemoveItemInitiated(itemId: String) {
-        // Finalize any previous pending deletion
         _uiState.value.pendingDeletion
             ?.job
             ?.cancel()
@@ -148,7 +122,6 @@ class HomeViewModel(
 
         val itemToRemove = originalRefrigeratedItems.find { it.id == itemId } ?: return
 
-        // Schedule actual deletion after delay
         val deletionJob =
             viewModelScope.launch {
                 delay(4000L)
@@ -238,5 +211,102 @@ class HomeViewModel(
         val grouped =
             if (group == GroupOption.FRESHNESS) sorted.groupBy { it.freshness } else emptyMap()
         return sorted to grouped
+    }
+
+    // Selection mode functions
+    fun onToggleItemSelection(itemId: String) {
+        _uiState.update { current ->
+            val newSelectedIds = if (current.selectedItemIds.contains(itemId)) {
+                current.selectedItemIds - itemId
+            } else {
+                current.selectedItemIds + itemId
+            }
+            current.copy(selectedItemIds = newSelectedIds)
+        }
+    }
+
+    // Recipe generation functions
+    fun onGenerateRecipeClick() {
+        if (_uiState.value.selectedItemIds.size < 2) return
+
+        viewModelScope.launch {
+            try {
+                // Show loading state and bottom sheet
+                _uiState.update { current ->
+                    current.copy(
+                        isGeneratingRecipe = true,
+                        isRecipeSheetVisible = true
+                    )
+                }
+
+                // Simulate API call delay (replace with actual recipe generation)
+                delay(2000)
+
+                // Mock recipe generation based on selected items
+                val selectedItems = originalRefrigeratedItems.filter { it.id in _uiState.value.selectedItemIds }
+                val mockRecipe = generateMockRecipe(selectedItems)
+
+                _uiState.update { current ->
+                    current.copy(
+                        isGeneratingRecipe = false,
+                        generatedRecipe = mockRecipe
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update { current ->
+                    current.copy(
+                        isGeneratingRecipe = false,
+                        error = e.message
+                    )
+                }
+            }
+        }
+    }
+
+    fun onRecipeSheetDismiss() {
+        _uiState.update { current ->
+            current.copy(
+                isRecipeSheetVisible = false,
+                isGeneratingRecipe = false,
+                generatedRecipe = null
+            )
+        }
+    }
+
+    fun onTryAgainRecipe() {
+        _uiState.update { current ->
+            current.copy(
+                isGeneratingRecipe = false,
+                generatedRecipe = null
+            )
+        }
+        onGenerateRecipeClick()
+    }
+
+    private fun generateMockRecipe(selectedItems: List<RefrigeratedItem>): RecipeSuggestion {
+        val itemNames = selectedItems.map { it.name }
+        val title = when {
+            itemNames.any { it.contains("肉") || it.contains("雞") } -> "清炒時蔬配肉"
+            itemNames.any { it.contains("魚") } -> "清蒸魚配蔬菜"
+            itemNames.any { it.contains("奶") } -> "蔬菜沙拉配優格醬"
+            else -> "時蔬沙拉"
+        }
+
+        return RecipeSuggestion(
+            title = title,
+            description = "根據您選擇的食材 ${itemNames.joinToString("、")} 推薦的簡單食譜",
+            ingredients = itemNames.map { "新鮮的 $it" },
+            instructions = listOf(
+                "將所有食材洗淨備用",
+                "熱鍋加入適量油",
+                "放入主要食材翻炒",
+                "加入調味料調味",
+                "最後加入蔬菜一起翻炒至熟",
+                "裝盤享用！"
+            ),
+            cookingTime = "15 分鐘",
+            difficulty = "簡單",
+            servings = 2
+        )
     }
 }

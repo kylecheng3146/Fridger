@@ -35,6 +35,9 @@
     <string name="home_days_until">還剩 %d 天到期</string>
     <string name="home_age_days">已放入 %d 天</string>
     <string name="home_remove_ingredient">移除食材</string>
+    <string name="home_item_detail">查看詳情</string>
+    <string name="home_selection_cancel">取消</string>
+    <string name="home_selection_generate_recipe">生成食譜</string>
     <string name="settings">設定</string>
 
     <!-- Common -->
@@ -83,4 +86,16 @@
     <string name="quick_add_close">關閉</string>
     <string name="quick_add_fav_add">加入最愛</string>
     <string name="quick_add_fav_remove">移除最愛</string>
+
+    <!-- Recipe Sheet -->
+    <string name="recipe_sheet_title">食譜建議</string>
+    <string name="recipe_sheet_generating">生成食譜中…</string>
+    <string name="recipe_sheet_description">根據您選擇的食材為您推薦</string>
+    <string name="recipe_sheet_ingredients_title">食材</string>
+    <string name="recipe_sheet_instructions_title">做法</string>
+    <string name="recipe_sheet_cooking_time">烹飪時間：%s</string>
+    <string name="recipe_sheet_difficulty">難度：%s</string>
+    <string name="recipe_sheet_servings">%d 人份</string>
+    <string name="recipe_sheet_try_again">重新生成</string>
+    <string name="recipe_sheet_close">關閉</string>
 </resources>
