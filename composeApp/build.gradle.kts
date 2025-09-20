@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.sqldelight)
     alias(libs.plugins.ktlint)
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 kotlin {
@@ -67,6 +68,8 @@ kotlin {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.sqldelight.androidDriver)
+            // Ktor engine for Android
+            implementation("io.ktor:ktor-client-android:3.0.2")
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -83,6 +86,10 @@ kotlin {
             implementation(libs.datastore.preferences)
             implementation(libs.okio)
             implementation(libs.sqldelight.coroutines)
+            // Ktor Core + Serialization
+            implementation("io.ktor:ktor-client-core:3.0.2")
+            implementation("io.ktor:ktor-client-content-negotiation:3.0.2")
+            implementation("io.ktor:ktor-serialization-kotlinx-json:3.0.2")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -93,9 +100,13 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
             implementation(libs.sqldelight.sqliteDriver)
+            // Ktor engine for Desktop
+            implementation("io.ktor:ktor-client-cio:3.0.2")
         }
         iosMain.dependencies {
             implementation(libs.sqldelight.nativeDriver)
+            // Ktor engine for iOS
+            implementation("io.ktor:ktor-client-darwin:3.0.2")
         }
         // wasmJsMain.dependencies {
         //     // SQLDelight doesn't support WASM yet

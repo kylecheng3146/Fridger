@@ -7,6 +7,9 @@ import fridger.com.io.data.model.Freshness
 import fridger.com.io.data.repository.IngredientRepository
 import fridger.com.io.presentation.settings.SettingsManager
 import fridger.com.io.utils.todayPlusDaysDisplay
+import fridger.com.io.data.repository.RecipeRepository
+import fridger.com.domain.translator.Translator
+import fridger.com.data.model.remote.MealDto
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,8 +23,13 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
 class HomeViewModel(
-    private val repository: IngredientRepository
+    private val repository: IngredientRepository,
+    private val recipeRepository: RecipeRepository,
+    private val translator: Translator
 ) : ViewModel() {
+    // Recipe translation-driven state
+    private val _recipeState = MutableStateFlow<RecipeUiState>(RecipeUiState.Idle)
+    val recipeState = _recipeState.asStateFlow()
     private val _uiState = MutableStateFlow(HomeUiState(isLoading = true))
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
@@ -309,4 +317,38 @@ class HomeViewModel(
             servings = 2
         )
     }
+
+    fun resetRecipeState() {
+        _recipeState.value = RecipeUiState.Idle
+    }
+
+    fun fetchRandomRecipe() {
+        viewModelScope.launch {
+            _recipeState.value = RecipeUiState.Loading
+            try {
+                recipeRepository.getRemoteRandomRecipe()
+                    .onSuccess { mealDto ->
+                        val translated = mealDto.copy(
+                            strMeal = translator.translate(mealDto.strMeal.orEmpty()),
+                            strInstructions = translator.translate(mealDto.strInstructions.orEmpty())
+                        )
+                        _recipeState.value = RecipeUiState.Success(translated)
+                    }
+                    .onFailure { e ->
+                        _recipeState.value = RecipeUiState.Error(e.message ?: "Unknown error")
+                    }
+            } catch (e: Exception) {
+                _recipeState.value = RecipeUiState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
 }
+
+sealed interface RecipeUiState {
+    data object Idle : RecipeUiState
+    data object Loading : RecipeUiState
+    data class Success(val meal: MealDto) : RecipeUiState
+    data class Error(val message: String) : RecipeUiState
+}
+
+

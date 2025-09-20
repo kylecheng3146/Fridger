@@ -108,18 +108,6 @@ fun ShoppingQuickAddTopDialog(
                     Column(
                         modifier = Modifier.fillMaxSize().padding(top = 50.dp, start = 20.dp, end = 20.dp, bottom = 20.dp)
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                            Text(
-                                stringResource(Res.string.quick_add_title),
-                                style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.weight(1f)
-                            )
-                            IconButton(onClick = { visible = false }) {
-                                Icon(Icons.Default.Close, contentDescription = stringResource(Res.string.quick_add_close))
-                            }
-                        }
-                        Spacer(Modifier.height(20.dp))
                         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             OutlinedTextField(
                                 value = query,
@@ -130,6 +118,9 @@ fun ShoppingQuickAddTopDialog(
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(12.dp)
                             )
+                            IconButton(onClick = { visible = false }) {
+                                Icon(Icons.Default.Close, contentDescription = stringResource(Res.string.quick_add_close))
+                            }
                         }
                         Spacer(Modifier.height(20.dp))
                         if (query.isNotBlank()) {

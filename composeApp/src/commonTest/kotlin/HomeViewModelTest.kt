@@ -1,8 +1,11 @@
 package fridger.com.io.presentation.home
 
+import fridger.com.data.model.remote.MealDto
+import fridger.com.domain.translator.Translator
 import fridger.com.io.data.model.Freshness
 import fridger.com.io.data.model.Ingredient
 import fridger.com.io.data.repository.IngredientRepository
+import fridger.com.io.data.repository.RecipeRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -30,6 +33,8 @@ class HomeViewModelTest {
 
     private lateinit var viewModel: HomeViewModel
     private lateinit var repository: IngredientRepository
+    private lateinit var recipeRepository: RecipeRepository
+    private lateinit var translator: Translator
 
     // Simple fake to return a provided flow
     private class FakeIngredientRepository(
@@ -45,10 +50,42 @@ class HomeViewModelTest {
         override suspend fun delete(id: Long) { /* no-op for tests */ }
     }
 
+    // Fake RecipeRepository for tests
+    private class FakeRecipeRepository : RecipeRepository {
+        override suspend fun getRemoteRandomRecipe(): Result<MealDto> =
+            Result.success(
+                MealDto(
+                    idMeal = "1",
+                    strMeal = "Test Meal",
+                    strCategory = "Test Category",
+                    strArea = "Test Area",
+                    strInstructions = "Test instructions",
+                    strMealThumb = null,
+                    strTags = null,
+                    strYoutube = null,
+                    strIngredient1 = "Ingredient 1",
+                    strIngredient2 = null,
+                    strMeasure1 = "Measure 1",
+                    strMeasure2 = null
+                )
+            )
+    }
+
+    // Fake Translator for tests
+    private class FakeTranslator : Translator {
+        override suspend fun translate(
+            text: String,
+            sourceLang: String,
+            targetLang: String
+        ): String = "$text [translated]"
+    }
+
     @BeforeTest
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         repository = FakeIngredientRepository(flowOf(emptyList()))
+        recipeRepository = FakeRecipeRepository()
+        translator = FakeTranslator()
     }
 
     @AfterTest
@@ -109,7 +146,7 @@ class HomeViewModelTest {
             repository = FakeIngredientRepository(flowOf(ingredients))
 
             // Act (init triggers observe)
-            viewModel = HomeViewModel(repository)
+            viewModel = HomeViewModel(repository, recipeRepository, translator)
             advanceUntilIdle()
 
             // Assert
@@ -129,7 +166,7 @@ class HomeViewModelTest {
             repository = FakeIngredientRepository(flowOf(emptyList()))
 
             // Act
-            viewModel = HomeViewModel(repository)
+            viewModel = HomeViewModel(repository, recipeRepository, translator)
             advanceUntilIdle()
 
             // Assert
@@ -179,7 +216,7 @@ class HomeViewModelTest {
             repository = FakeIngredientRepository(flowOf(ingredients))
 
             // Act
-            viewModel = HomeViewModel(repository)
+            viewModel = HomeViewModel(repository, recipeRepository, translator)
             advanceUntilIdle() // ensure initial collect complete
             viewModel.updateSortingAndGrouping(sort = SortOption.NAME)
 
@@ -197,7 +234,7 @@ class HomeViewModelTest {
             repository = FakeIngredientRepository(flow { throw Exception("Test Exception") })
 
             // Act
-            viewModel = HomeViewModel(repository)
+            viewModel = HomeViewModel(repository, recipeRepository, translator)
             advanceUntilIdle()
 
             // Assert

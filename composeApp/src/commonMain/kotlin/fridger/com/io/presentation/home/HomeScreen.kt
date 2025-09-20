@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -61,6 +62,7 @@ import fridger.com.io.presentation.ViewModelFactoryProvider
 import fridger.com.io.presentation.components.ShoppingQuickAddTopDialog
 import fridger.com.io.presentation.home.components.BottomActionBar
 import fridger.com.io.presentation.home.components.RecipeResultSheet
+import fridger.com.data.model.remote.MealDto
 import fridger.com.io.presentation.util.animateItemPlacementCompat
 import fridger.com.io.ui.theme.AppColors
 import fridger.com.io.ui.theme.sizing
@@ -89,11 +91,18 @@ fun HomeScreen(
 ) {
     val viewModel: HomeViewModel = viewModel(factory = ViewModelFactoryProvider.factory)
     val uiState by viewModel.uiState.collectAsState()
+    val recipeState by viewModel.recipeState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
     val sheetState = rememberModalBottomSheetState()
     val isSheetVisible by remember(uiState.isRecipeSheetVisible) {
         androidx.compose.runtime.mutableStateOf(uiState.isRecipeSheetVisible)
+    }
+
+    // Random recipe bottom sheet state
+    val randomRecipeSheetState = rememberModalBottomSheetState()
+    val isRandomRecipeSheetVisible by remember(recipeState) {
+        androidx.compose.runtime.mutableStateOf(recipeState !is RecipeUiState.Idle)
     }
 
     // Handle sheet visibility changes
@@ -109,6 +118,23 @@ fun HomeScreen(
     LaunchedEffect(sheetState.isVisible) {
         if (!sheetState.isVisible && uiState.isRecipeSheetVisible) {
             viewModel.onRecipeSheetDismiss()
+        }
+    }
+
+    // Handle random recipe sheet visibility changes
+    LaunchedEffect(isRandomRecipeSheetVisible) {
+        if (isRandomRecipeSheetVisible) {
+            randomRecipeSheetState.show()
+        } else {
+            randomRecipeSheetState.hide()
+        }
+    }
+
+    // Handle random recipe sheet dismissal
+    LaunchedEffect(randomRecipeSheetState.isVisible) {
+        if (!randomRecipeSheetState.isVisible && isRandomRecipeSheetVisible) {
+            // Reset to Idle state when dismissed
+            viewModel.resetRecipeState()
         }
     }
 
@@ -151,6 +177,18 @@ fun HomeScreen(
                             Text(stringResource(Res.string.home_add_ingredient))
                         }
                     }
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
+                    ) {
+                        Button(onClick = { viewModel.fetchRandomRecipe() }) {
+                            Text("給我一個隨機食譜")
+                        }
+                    }
+
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
                 }
 
@@ -271,6 +309,53 @@ fun HomeScreen(
                     onTryAgain = viewModel::onTryAgainRecipe,
                     onDismiss = viewModel::onRecipeSheetDismiss
                 )
+            }
+        }
+
+        // Modal Bottom Sheet for random recipe
+        if (isRandomRecipeSheetVisible) {
+            ModalBottomSheet(
+                onDismissRequest = { viewModel.resetRecipeState() },
+                sheetState = randomRecipeSheetState
+            ) {
+                when (val state = recipeState) {
+                    is RecipeUiState.Loading -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                    is RecipeUiState.Success -> {
+                        Box(modifier = Modifier.padding(20.dp)) {
+                            RecipeDetails(meal = state.meal)
+                        }
+                    }
+                    is RecipeUiState.Error -> {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(20.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                "載入失敗: ${state.message}",
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.padding(bottom = 16.dp)
+                            )
+                            Button(onClick = { viewModel.fetchRandomRecipe() }) {
+                                Text("重試")
+                            }
+                        }
+                    }
+                    is RecipeUiState.Idle -> {
+                        // This shouldn't happen when sheet is visible, but just in case
+                        Box(modifier = Modifier.fillMaxWidth().height(100.dp))
+                    }
+                }
             }
         }
     }
@@ -929,5 +1014,12 @@ private fun RefrigeratedItemCard(
     }
 }
 
-
+@Composable
+fun RecipeDetails(meal: MealDto) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(meal.strMeal ?: "無標題", style = MaterialTheme.typography.headlineMedium)
+        Spacer(Modifier.height(4.dp))
+        Text(meal.strInstructions ?: "無說明", style = MaterialTheme.typography.bodyMedium)
+    }
+}
 

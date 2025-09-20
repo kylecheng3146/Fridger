@@ -4,9 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.CreationExtras
 import fridger.com.io.data.repository.IngredientRepositoryImpl
+import fridger.com.io.data.repository.RecipeRepositoryImpl
 import fridger.com.io.presentation.home.HomeViewModel
 import fridger.com.io.presentation.settings.SettingsViewModel
 import fridger.com.io.presentation.shoppinglist.ShoppingListViewModel
+import fridger.com.data.remote.RecipeApiService
+import fridger.com.domain.translator.MockTranslator
 import kotlin.reflect.KClass
 
 /**
@@ -21,7 +24,9 @@ class ViewModelFactory : ViewModelProvider.Factory {
         when (modelClass) {
             HomeViewModel::class ->
                 HomeViewModel(
-                    IngredientRepositoryImpl()
+                    IngredientRepositoryImpl(),
+                    RecipeRepositoryImpl(RecipeApiService()),
+                    MockTranslator()
                 ) as T
             SettingsViewModel::class -> SettingsViewModel() as T
             ShoppingListViewModel::class ->
