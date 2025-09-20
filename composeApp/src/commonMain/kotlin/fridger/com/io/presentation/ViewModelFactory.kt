@@ -3,8 +3,10 @@ package fridger.com.io.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.CreationExtras
+import fridger.com.io.data.repository.IngredientRepositoryImpl
 import fridger.com.io.presentation.home.HomeViewModel
 import fridger.com.io.presentation.settings.SettingsViewModel
+import fridger.com.io.presentation.shoppinglist.ShoppingListViewModel
 import kotlin.reflect.KClass
 
 /**
@@ -19,13 +21,11 @@ class ViewModelFactory : ViewModelProvider.Factory {
         when (modelClass) {
             HomeViewModel::class ->
                 HomeViewModel(
-                    fridger.com.io.data.repository
-                        .IngredientRepositoryImpl()
+                    IngredientRepositoryImpl()
                 ) as T
             SettingsViewModel::class -> SettingsViewModel() as T
-            fridger.com.io.presentation.shoppinglist.ShoppingListViewModel::class ->
-                fridger.com.io.presentation.shoppinglist
-                    .ShoppingListViewModel() as T
+            ShoppingListViewModel::class ->
+                ShoppingListViewModel() as T
             else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.simpleName}")
         }
 }

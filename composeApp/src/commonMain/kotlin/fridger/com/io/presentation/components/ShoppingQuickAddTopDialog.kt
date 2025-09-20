@@ -27,10 +27,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import fridger.com.io.presentation.settings.SettingsManager
-import fridger.com.io.presentation.home.NewItem
+import fridger.com.io.data.QuickAddCatalog
 import fridger.com.io.presentation.home.IngredientIconMapper
-import org.jetbrains.compose.resources.stringResource
+import fridger.com.io.presentation.home.NewItem
+import fridger.com.io.presentation.settings.SettingsManager
+import fridger.com.io.ui.theme.sizing
 import fridger.composeapp.generated.resources.Res
 import fridger.composeapp.generated.resources.quick_add_add_selected
 import fridger.composeapp.generated.resources.quick_add_clear_selection
@@ -44,9 +45,9 @@ import fridger.composeapp.generated.resources.quick_add_quick_pick
 import fridger.composeapp.generated.resources.quick_add_search_hint
 import fridger.composeapp.generated.resources.quick_add_selected_prefix
 import fridger.composeapp.generated.resources.quick_add_title
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import fridger.com.io.data.QuickAddCatalog
-import fridger.com.io.ui.theme.sizing
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun ShoppingQuickAddTopDialog(
@@ -57,22 +58,30 @@ fun ShoppingQuickAddTopDialog(
     onSearchTextChange: ((String) -> Unit)? = null,
     suggestions: List<String>? = null
 ) {
-    data class QuickItem(val name: String, val icon: String)
+    data class QuickItem(
+        val name: String,
+        val icon: String
+    )
 
     var localQuery by rememberSaveable { mutableStateOf("") }
     val query = searchText ?: localQuery
 
-    val baseSuggestions: List<QuickItem> = remember(suggestions) {
-        when {
-            suggestions != null && suggestions.isNotEmpty() -> suggestions.map { name -> QuickItem(name, IngredientIconMapper.getIcon(name)) }
-            else -> QuickAddCatalog.allNames.map { name -> QuickItem(name, IngredientIconMapper.getIcon(name)) }
+    val baseSuggestions: List<QuickItem> =
+        remember(suggestions) {
+            when {
+                suggestions != null && suggestions.isNotEmpty() -> suggestions.map { name -> QuickItem(name, IngredientIconMapper.getIcon(name)) }
+                else -> QuickAddCatalog.allNames.map { name -> QuickItem(name, IngredientIconMapper.getIcon(name)) }
+            }
         }
-    }
 
-    val filtered = remember(query, baseSuggestions) {
-        if (query.isBlank()) baseSuggestions
-        else baseSuggestions.filter { it.name.contains(query, ignoreCase = true) }
-    }
+    val filtered =
+        remember(query, baseSuggestions) {
+            if (query.isBlank()) {
+                baseSuggestions
+            } else {
+                baseSuggestions.filter { it.name.contains(query, ignoreCase = true) }
+            }
+        }
 
     val favorites by SettingsManager.quickFavorites.collectAsState(initial = emptySet())
     val selected = remember { mutableStateListOf<String>() }
@@ -200,11 +209,12 @@ fun ShoppingQuickAddTopDialog(
 
                         Spacer(Modifier.height(8.dp))
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                            val statusText = if (selected.isEmpty()) {
-                                stringResource(Res.string.quick_add_none_selected)
-                            } else {
-                                stringResource(Res.string.quick_add_selected_prefix) + selected.joinToString("、")
-                            }
+                            val statusText =
+                                if (selected.isEmpty()) {
+                                    stringResource(Res.string.quick_add_none_selected)
+                                } else {
+                                    stringResource(Res.string.quick_add_selected_prefix) + selected.joinToString("、")
+                                }
                             Text(text = statusText, modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant)
                             if (selected.isNotEmpty()) {
                                 TextButton(onClick = { selected.clear() }) { Text(stringResource(Res.string.quick_add_clear_selection)) }
@@ -225,10 +235,11 @@ fun ShoppingQuickAddTopDialog(
                             },
                             enabled = selected.isNotEmpty(),
                             modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary
-                            ),
+                            colors =
+                                ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                ),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Icon(Icons.Default.Add, contentDescription = null)
@@ -243,7 +254,7 @@ fun ShoppingQuickAddTopDialog(
 
     LaunchedEffect(visible) {
         if (!visible) {
-            kotlinx.coroutines.delay(250)
+            delay(250)
             onDismiss()
         }
     }
@@ -266,7 +277,14 @@ private fun QuickPickCell(
         border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
     ) {
         Box(modifier = Modifier.fillMaxWidth().heightIn(min = 110.dp).padding(6.dp)) {
-            Box(modifier = Modifier.align(Alignment.TopEnd).padding(3.dp).size(28.dp).clickable(onClick = onToggleFavorite)) {
+            Box(
+                modifier =
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(3.dp)
+                        .size(28.dp)
+                        .clickable(onClick = onToggleFavorite)
+            ) {
                 Icon(
                     imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                     contentDescription = stringResource(if (isFavorite) Res.string.quick_add_fav_remove else Res.string.quick_add_fav_add),

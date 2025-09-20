@@ -17,6 +17,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -70,9 +72,9 @@ fun HomeScreen(
         ) { innerPadding ->
             LazyColumn(
                 modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
+                    Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
                 contentPadding = PaddingValues(bottom = MaterialTheme.sizing.contentPaddingVertical),
             ) {
                 item {
@@ -80,17 +82,17 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
                     Row(
                         modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
                     ) {
-                        androidx.compose.material3.Button(
+                        Button(
                             onClick = viewModel::onShowAddItemDialog,
                             colors =
-                            androidx.compose.material3.ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary
-                            )
+                                ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                )
                         ) {
                             Icon(Icons.Default.Add, contentDescription = null)
                             Spacer(Modifier.width(6.dp))
@@ -113,16 +115,16 @@ fun HomeScreen(
                     item {
                         Column(
                             modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
-                                .padding(vertical = MaterialTheme.spacing.large),
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
+                                    .padding(vertical = MaterialTheme.spacing.large),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Image(
                                 painter =
-                                fridger.com.io.presentation.home.resources
-                                    .emptyFridgePainter(),
+                                    fridger.com.io.presentation.home.resources
+                                        .emptyFridgePainter(),
                                 contentDescription = null,
                                 modifier = Modifier.size(130.dp)
                             )

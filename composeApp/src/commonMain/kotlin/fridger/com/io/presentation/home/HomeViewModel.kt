@@ -2,8 +2,8 @@ package fridger.com.io.presentation.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import fridger.com.io.data.QuickAddCatalog
 import fridger.com.io.data.model.Freshness
-import fridger.com.io.data.model.Ingredient
 import fridger.com.io.data.repository.IngredientRepository
 import fridger.com.io.presentation.settings.SettingsManager
 import fridger.com.io.utils.todayPlusDaysDisplay
@@ -16,10 +16,8 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
-import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import fridger.com.io.data.QuickAddCatalog
 
 class HomeViewModel(
     private val repository: IngredientRepository

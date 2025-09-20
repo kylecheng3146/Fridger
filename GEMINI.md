@@ -116,6 +116,24 @@ composeApp/
 - ✅ Log 訊息是否避免漏露機故資訊？
 - ✅ 是否包裝並格式化平臺錯誤堆疊與錯誤轉譯？
 
+### 🔹 程式碼風格與導入規範 (Code Style & Import Convention)
+
+- ✅ **完全限定名稱 (FQN) 禁用**: 是否完全避免在業務邏輯中使用完全限定名稱？
+  - ❌ 嚴禁: 在程式碼中直接使用 `androidx.compose.material3.Button`、`kotlinx.coroutines.delay` 等 FQN
+  - ✅ 必須: 透過 import 語句引入後使用簡單名稱 `Button`、`delay`
+  - ✅ 例外: import 語句和 package 宣告中的 FQN 是合法的
+  - 理由: 提升程式碼可讀性、改善 IDE 支援、統一程式碼風格
+
+- ✅ **Import 組織規範**: 是否遵循統一的 import 排序與分組？
+  - ✅ 標準函式庫 import 在最前
+  - ✅ 第三方函式庫 import 在中間  
+  - ✅ 專案內部 import 在最後
+  - ✅ 使用 import alias (`as`) 解決命名衝突
+
+- ✅ **平臺特定 Import**: 是否正確處理跨平臺 import？
+  - ✅ 共用程式碼僅 import 跨平臺相容的函式庫
+  - ✅ 平臺特定程式碼可 import 對應平臺的專用 API
+
 ### 🔹 KMP 專用建議
 
 - ✅ 共用與平臺邏輯是否明確分層？（不混用 Android / iOS API）
@@ -169,7 +187,7 @@ composeApp/
      - **數字 (Numbers)**：如分頁大小、超時時間、重試次數。應定義為具名常數。
      - **金鑰與憑證 (Keys & Credentials)**：絕對禁止！必須透過環境變數、安全的設定檔或 Secret Management 服務載入。
 
-5. 避免使用魔法值 (Avoid Magic Values)：
+5. **避免使用魔法值 (Avoid Magic Values)**：
   - ❌ 嚴禁: 在業務邏輯、資料查詢或設定中，直接使用缺乏上下文的數值或字串，這些被稱
     為「魔法值」(Magic Values)。
     - 範例 (Bad): items.filter { it.daysUntilExpiry in 2..7 }
@@ -187,6 +205,36 @@ composeApp/
       更容易理解。
     - 可維護性: 當需要調整數值時（例如，即將到期的定義從 7 天改為 5 天），只需在
       Constants.kt 中修改常數定義，無需在整個專案中搜索和替換數值。
+
+6. **禁止完全限定名稱 (FQN) 在業務邏輯中使用**：
+   - **❌ 嚴禁**：在 Kotlin 程式碼的業務邏輯中直接使用完全限定名稱
+     - 範例 (Bad): `androidx.compose.material3.Button(...)`
+     - 範例 (Bad): `kotlinx.coroutines.delay(250)`
+     - 範例 (Bad): `fridger.com.io.data.repository.IngredientRepositoryImpl()`
+
+   - **✅ 必須**：透過 import 語句引入後使用簡單名稱
+     ```kotlin
+     // 正確方式：
+     import androidx.compose.material3.Button
+     import kotlinx.coroutines.delay
+     import fridger.com.io.data.repository.IngredientRepositoryImpl
+     
+     // 然後在程式碼中使用：
+     Button(...)
+     delay(250)
+     IngredientRepositoryImpl()
+     ```
+
+   - **✅ 例外情況**：以下情況允許使用 FQN
+     - import 語句：`import androidx.compose.material3.Button`
+     - package 宣告：`package fridger.com.io.presentation.home`
+     - 解決命名衝突時使用 import alias：`import androidx.compose.material3.Text as ComposeText`
+
+   - **理由**：
+     - **可讀性**：簡單名稱更容易閱讀與理解
+     - **IDE 支援**：更好的自動完成、重構與導航功能
+     - **維護性**：統一的程式碼風格，便於團隊協作
+     - **效能**：避免編譯器重複解析長名稱路徑
 
 ---
 

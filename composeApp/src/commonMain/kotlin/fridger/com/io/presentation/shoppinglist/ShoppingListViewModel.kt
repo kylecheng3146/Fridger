@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 
 data class ShoppingListUiState(
     val lists: List<ShoppingListMeta> = emptyList(),
@@ -135,7 +136,7 @@ class ShoppingListViewModel(
     }
 
     private fun generateId(): String =
-        kotlinx.datetime.Clock.System
+        Clock.System
             .now()
             .toEpochMilliseconds()
             .toString()
