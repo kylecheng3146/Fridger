@@ -212,7 +212,7 @@ class HomeViewModel(
         val sorted =
             when (sort) {
                 SortOption.EXPIRY -> items.sortedBy { it.daysUntilExpiry }
-                SortOption.NAME -> items.sortedBy { it.name }
+                SortOption.NAME -> items.sortedBy { it.name.lowercase() }
                 SortOption.ADDED_DATE -> items.sortedBy { it.ageDays }
             }
         val grouped =

@@ -8,6 +8,7 @@ import fridger.com.io.data.repository.RecipeRepositoryImpl
 import fridger.com.io.presentation.home.HomeViewModel
 import fridger.com.io.presentation.settings.SettingsViewModel
 import fridger.com.io.presentation.shoppinglist.ShoppingListViewModel
+import fridger.com.io.presentation.recipes.RecipesViewModel
 import fridger.com.data.remote.RecipeApiService
 import fridger.com.domain.translator.MockTranslator
 import kotlin.reflect.KClass
@@ -31,6 +32,10 @@ class ViewModelFactory : ViewModelProvider.Factory {
             SettingsViewModel::class -> SettingsViewModel() as T
             ShoppingListViewModel::class ->
                 ShoppingListViewModel() as T
+            RecipesViewModel::class ->
+                RecipesViewModel(
+                    RecipeRepositoryImpl(RecipeApiService())
+                ) as T
             else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.simpleName}")
         }
 }

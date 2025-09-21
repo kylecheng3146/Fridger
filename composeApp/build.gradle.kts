@@ -86,6 +86,10 @@ kotlin {
             implementation(libs.datastore.preferences)
             implementation(libs.okio)
             implementation(libs.sqldelight.coroutines)
+            // Voyager navigation
+            implementation(libs.voyager.navigator)
+            implementation(libs.voyager.bottom.sheet.navigator)
+            implementation(libs.voyager.tab.navigator)
             // Ktor Core + Serialization + Logging
             implementation("io.ktor:ktor-client-core:3.0.2")
             implementation("io.ktor:ktor-client-content-negotiation:3.0.2")

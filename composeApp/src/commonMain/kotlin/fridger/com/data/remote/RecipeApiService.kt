@@ -63,7 +63,35 @@ class RecipeApiService {
             throw e
         }
     }
+    
+    suspend fun getRecipesByCategory(category: String): MealApiResponse {
+        println("📞 API CALL: Getting recipes by category '$category'")
+        return try {
+            val response = client.get("$baseUrl/filter.php") {
+                url { parameters.append("c", category) }
+            }.body<MealApiResponse>()
+            println("✅ API SUCCESS: Recipes by category received")
+            response
+        } catch (e: Exception) {
+            println("❌ API ERROR: Failed to get recipes for category '$category' - ${'$'}{e.message}")
+            throw e
+        }
+    }
 
+    suspend fun searchRecipesByName(query: String): MealApiResponse {
+        println("📞 API CALL: Searching recipes by name '$query'")
+        return try {
+            val response = client.get("$baseUrl/search.php") {
+                url { parameters.append("s", query) }
+            }.body<MealApiResponse>()
+            println("✅ API SUCCESS: Search results received")
+            response
+        } catch (e: Exception) {
+            println("❌ API ERROR: Failed to search recipes by name '$query' - ${'$'}{e.message}")
+            throw e
+        }
+    }
+    
     suspend fun getRecipeById(id: String): MealApiResponse {
         println("📞 API CALL: Getting recipe details by ID '$id'")
         
@@ -76,6 +104,18 @@ class RecipeApiService {
             response
         } catch (e: Exception) {
             println("❌ API ERROR: Failed to get recipe details for ID '$id' - ${e.message}")
+            throw e
+        }
+    }
+
+    suspend fun getRecipeCategories(): fridger.com.data.model.remote.CategoriesApiResponse {
+        println("📞 API CALL: Getting recipe categories")
+        return try {
+            val response = client.get("$baseUrl/categories.php").body<fridger.com.data.model.remote.CategoriesApiResponse>()
+            println("✅ API SUCCESS: Categories received: ${'$'}{response.categories.size}")
+            response
+        } catch (e: Exception) {
+            println("❌ API ERROR: Failed to get categories - ${'$'}{e.message}")
             throw e
         }
     }

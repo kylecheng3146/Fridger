@@ -36,22 +36,14 @@ fun ShoppingListScreen(
 ) {
     val vm: ShoppingListViewModel = viewModel(factory = ViewModelFactoryProvider.factory)
     val state by vm.uiState.collectAsState()
-
-    // Dialog flags
     var showAddDialog by rememberSaveable { mutableStateOf(false) } // add item dialog (detail view)
     var showCreateListDialog by rememberSaveable { mutableStateOf(false) } // create list dialog (overview)
-
-    // Pending delete list confirmation
     var pendingDeleteList by remember { mutableStateOf<fridger.com.io.data.settings.ShoppingListMeta?>(null) }
 
-    // 使用 Box 作為最外層容器，讓 dialog 可以覆蓋整個螢幕
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Header - align with Home header style
             ShoppingHeader()
             Spacer(Modifier.height(MaterialTheme.spacing.small))
-
-            // Content padding aligned to Home's horizontal padding
             Column(
                 modifier =
                     Modifier
@@ -60,7 +52,6 @@ fun ShoppingListScreen(
                         .weight(1f)
             ) {
                 if (state.currentList == null) {
-                    // Overview: show list of shopping lists
                     Button(
                         onClick = { showCreateListDialog = true },
                         colors =
@@ -192,7 +183,6 @@ fun ShoppingListScreen(
             }
         }
 
-        // Dialogs overlay
         if (showAddDialog) {
             // Use the imported ShoppingQuickAddTopDialog
             ShoppingQuickAddTopDialog(
@@ -349,24 +339,7 @@ private fun todayDisplay(): String {
 
 @Composable
 private fun ShoppingHeader() {
-    Box(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(
-                    top = MaterialTheme.sizing.contentPaddingTop,
-                    bottom = MaterialTheme.spacing.extraSmall,
-                    start = MaterialTheme.sizing.contentPaddingHorizontal,
-                    end = MaterialTheme.sizing.contentPaddingHorizontal
-                )
-    ) {
-        Text(
-            text = "購物清單",
-            fontSize = 32.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-    }
+    fridger.com.io.presentation.components.AppTopTitle(title = "購物清單")
 }
 
 @Composable

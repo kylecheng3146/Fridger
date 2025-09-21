@@ -69,6 +69,21 @@ class HomeViewModelTest {
                     strMeasure2 = null
                 )
             )
+
+        override suspend fun getRecipesByIngredient(ingredient: String): Result<List<MealDto>> =
+            Result.success(emptyList())
+
+        override suspend fun getRecipeById(id: String): Result<MealDto> =
+            Result.failure(UnsupportedOperationException("Not needed in this test"))
+
+        override suspend fun getRecipeCategories(): Result<List<fridger.com.data.model.remote.RecipeCategoryDto>> =
+            Result.success(emptyList())
+
+        override suspend fun getRecipesByCategory(category: String): Result<List<MealDto>> =
+            Result.success(emptyList())
+
+        override suspend fun searchRecipesByName(query: String): Result<List<MealDto>> =
+            Result.success(emptyList())
     }
 
     // Fake Translator for tests
@@ -100,7 +115,7 @@ class HomeViewModelTest {
         }
 
     @Test
-    fun `given repository returns ingredients, when loads, then uiState is updated correctly`() =
+    fun `given repository returns ingredients when loads then uiState is updated correctly`() =
         runTest(testDispatcher) {
             // Arrange
             val today =
@@ -160,7 +175,7 @@ class HomeViewModelTest {
         }
 
     @Test
-    fun `given repository is empty, when loads, then uiState shows empty`() =
+    fun `given repository is empty when loads then uiState shows empty`() =
         runTest(testDispatcher) {
             // Arrange
             repository = FakeIngredientRepository(flowOf(emptyList()))
@@ -181,7 +196,7 @@ class HomeViewModelTest {
         }
 
     @Test
-    fun `given items loaded, when sort by name, then refrigeratedItems are sorted by name`() =
+    fun `given items loaded when sort by name then refrigeratedItems are sorted by name`() =
         runTest(testDispatcher) {
             // Arrange
             val today =
@@ -228,7 +243,7 @@ class HomeViewModelTest {
         }
 
     @Test
-    fun `given repository throws exception, when loads, then uiState contains error`() =
+    fun `given repository throws exception when loads then uiState contains error`() =
         runTest(testDispatcher) {
             // Arrange
             repository = FakeIngredientRepository(flow { throw Exception("Test Exception") })

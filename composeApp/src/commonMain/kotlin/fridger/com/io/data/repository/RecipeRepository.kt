@@ -7,6 +7,9 @@ interface RecipeRepository {
     suspend fun getRemoteRandomRecipe(): Result<MealDto>
     suspend fun getRecipesByIngredient(ingredient: String): Result<List<MealDto>>
     suspend fun getRecipeById(id: String): Result<MealDto>
+    suspend fun getRecipeCategories(): Result<List<fridger.com.data.model.remote.RecipeCategoryDto>>
+    suspend fun getRecipesByCategory(category: String): Result<List<MealDto>>
+    suspend fun searchRecipesByName(query: String): Result<List<MealDto>>
 }
 
 class RecipeRepositoryImpl(
@@ -90,6 +93,55 @@ class RecipeRepositoryImpl(
             }
         } catch (e: Exception) {
             println("❌ REPOSITORY: Error getting random recipe - ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getRecipeCategories(): Result<List<fridger.com.data.model.remote.RecipeCategoryDto>> {
+        println("🏪 REPOSITORY: Starting getRecipeCategories")
+        return try {
+            val response = apiService.getRecipeCategories()
+            val categories = response.categories
+            println("✅ REPOSITORY: Successfully got ${'$'}{categories.size} categories")
+            Result.success(categories)
+        } catch (e: Exception) {
+            println("❌ REPOSITORY: Error getting categories - ${'$'}{e.message}")
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getRecipesByCategory(category: String): Result<List<MealDto>> {
+        println("🏪 REPOSITORY: Starting getRecipesByCategory for '$category'")
+        return try {
+            val response = apiService.getRecipesByCategory(category)
+            val meals = response.meals ?: emptyList()
+            if (meals.isNotEmpty()) {
+                println("✅ REPOSITORY: Got ${'$'}{meals.size} meals for category '$category'")
+                Result.success(meals)
+            } else {
+                println("⚠️ REPOSITORY: No meals found for category '$category'")
+                Result.failure(Exception("No meals found for the category"))
+            }
+        } catch (e: Exception) {
+            println("❌ REPOSITORY: Error getting meals for category '$category' - ${'$'}{e.message}")
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun searchRecipesByName(query: String): Result<List<MealDto>> {
+        println("🏪 REPOSITORY: Starting searchRecipesByName for '$query'")
+        return try {
+            val response = apiService.searchRecipesByName(query)
+            val meals = response.meals ?: emptyList()
+            if (meals.isNotEmpty()) {
+                println("✅ REPOSITORY: Found ${'$'}{meals.size} meals for query '$query'")
+                Result.success(meals)
+            } else {
+                println("⚠️ REPOSITORY: No meals found for query '$query'")
+                Result.success(emptyList())
+            }
+        } catch (e: Exception) {
+            println("❌ REPOSITORY: Error searching meals for '$query' - ${'$'}{e.message}")
             Result.failure(e)
         }
     }

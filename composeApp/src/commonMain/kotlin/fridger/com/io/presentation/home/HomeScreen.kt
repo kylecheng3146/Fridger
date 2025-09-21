@@ -261,7 +261,6 @@ fun HomeScreen(
             )
         }
 
-        // Bottom Action Bar for multi-selection mode
         androidx.compose.animation.AnimatedVisibility(
             visible = uiState.selectedItemIds.isNotEmpty(),
             enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
@@ -543,7 +542,7 @@ private fun HomeHeader(onSettingsClick: () -> Unit) {
             Modifier
                 .fillMaxWidth()
                 .padding(
-                    top = MaterialTheme.sizing.contentPaddingTop,
+                    top = MaterialTheme.spacing.large,
                     bottom = MaterialTheme.spacing.extraSmall,
                     start = MaterialTheme.sizing.contentPaddingHorizontal,
                     end = MaterialTheme.sizing.contentPaddingHorizontal
@@ -1175,4 +1174,3 @@ fun RecipeDetails(meal: MealDto) {
         }
     }
 }
-
