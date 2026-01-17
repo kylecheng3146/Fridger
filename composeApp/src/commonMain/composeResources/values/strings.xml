@@ -30,9 +30,10 @@
     <string name="home_today_none">今天/明天沒有到期食材</string>
     <string name="home_week_none">本週沒有快到期食材</string>
     <string name="home_expired_none">沒有已過期食材</string>
-    <string name="home_days_overdue">已過期 %d 天</string>
-    <string name="home_days_due_today">今天到期了</string>
-    <string name="home_days_until">還剩 %d 天到期</string>
+    <string name="home_days_overdue">喔不！已經過期 %d 天了...😢</string>
+    <string name="home_days_due_today">嘿！這項食材今天到期喔！🥗</string>
+    <string name="home_days_until">再過 %d 天就要過期囉✨</string>
+    <string name="home_eat_it_soon">我們快把它煮掉吧！</string>
     <string name="home_age_days">已放入 %d 天</string>
     <string name="home_remove_ingredient">移除食材</string>
     <string name="home_item_detail">查看詳情</string>

@@ -38,8 +38,11 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -65,6 +68,8 @@ import fridger.com.io.presentation.components.ShoppingQuickAddTopDialog
 import fridger.com.io.presentation.home.components.BottomActionBar
 import fridger.com.io.presentation.home.components.RecipeResultSheet
 import fridger.com.data.model.remote.MealDto
+import fridger.com.io.presentation.home.dashboard.HealthDashboardDetailSheet
+import fridger.com.io.presentation.home.dashboard.HealthDashboardSummaryCard
 import fridger.com.io.presentation.util.animateItemPlacementCompat
 import fridger.com.io.ui.theme.AppColors
 import fridger.com.io.ui.theme.sizing
@@ -97,12 +102,12 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsState()
     val recipeState by viewModel.recipeState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    var showDashboardDetails by remember { mutableStateOf(false) }
+    val dashboardState = uiState.healthDashboard
 
     // Random recipe bottom sheet state
     val randomRecipeSheetState = rememberModalBottomSheetState()
-    val isRandomRecipeSheetVisible by remember(recipeState) {
-        androidx.compose.runtime.mutableStateOf(recipeState !is RecipeUiState.Idle)
-    }
+    val isRandomRecipeSheetVisible = recipeState !is RecipeUiState.Idle
 
     // Handle random recipe sheet visibility changes
     LaunchedEffect(isRandomRecipeSheetVisible) {
@@ -122,6 +127,13 @@ fun HomeScreen(
     }
 
     Box(modifier = modifier.fillMaxSize()) {
+        if (showDashboardDetails) {
+            HealthDashboardDetailSheet(
+                state = dashboardState,
+                onDismiss = { showDashboardDetails = false },
+                onRefresh = viewModel::refreshHealthDashboard,
+            )
+        }
         Scaffold(
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
             snackbarHost = {
@@ -159,6 +171,20 @@ fun HomeScreen(
                             Spacer(Modifier.width(6.dp))
                             Text(stringResource(Res.string.home_add_ingredient))
                         }
+                    }
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
+
+                    Column(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
+                    ) {
+                        HealthDashboardSummaryCard(
+                            state = dashboardState,
+                            onRefresh = viewModel::refreshHealthDashboard,
+                            onViewDetails = { showDashboardDetails = true },
+                        )
                     }
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
 
@@ -472,17 +498,15 @@ private fun LazyListScope.refrigeratedSection(
             items = refrigeratedItems,
             key = { it.id }
         ) { item ->
-            RefrigeratedItemCard(
+            fridger.com.io.presentation.home.components.IngredientItem(
                 item = item,
+                isSelected = selectedItemIds.contains(item.id),
                 onClick = { onToggleItemSelection(item.id) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .animateItemPlacementCompat()
                     .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
-                compact = false,
-                onRemove = { onRemoveItem(item.id) },
-                selectedItemIds = selectedItemIds,
-                onItemClick = onItemClick
+                onRemove = { onRemoveItem(item.id) }
             )
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
         }
@@ -516,17 +540,15 @@ private fun LazyListScope.refrigeratedSection(
                     items = itemsInGroup,
                     key = { it.id + "_" + freshness::class.simpleName }
                 ) { item ->
-                    RefrigeratedItemCard(
+                    fridger.com.io.presentation.home.components.IngredientItem(
                         item = item,
+                        isSelected = selectedItemIds.contains(item.id),
                         onClick = { onToggleItemSelection(item.id) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .animateItemPlacementCompat()
                             .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
-                        compact = false,
-                        onRemove = { onRemoveItem(item.id) },
-                        selectedItemIds = selectedItemIds,
-                        onItemClick = onItemClick
+                        onRemove = { onRemoveItem(item.id) }
                     )
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
                 }

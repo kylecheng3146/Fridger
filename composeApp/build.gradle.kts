@@ -98,6 +98,7 @@ kotlin {
             // Image loading
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor3)
+            implementation(project(":shared"))
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

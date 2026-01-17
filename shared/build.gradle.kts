@@ -16,6 +16,7 @@ kotlin {
         commonMain.dependencies {
             // JSON serialization runtime
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+            implementation(libs.kotlinx.datetime)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

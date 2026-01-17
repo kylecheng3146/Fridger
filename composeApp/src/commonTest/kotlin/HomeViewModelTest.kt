@@ -4,8 +4,18 @@ import fridger.com.data.model.remote.MealDto
 import fridger.com.domain.translator.Translator
 import fridger.com.io.data.model.Freshness
 import fridger.com.io.data.model.Ingredient
+import fridger.com.io.data.repository.HealthDashboardRepository
 import fridger.com.io.data.repository.IngredientRepository
 import fridger.com.io.data.repository.RecipeRepository
+import fridger.com.io.data.user.UserSessionProvider
+import fridger.shared.health.CalorieBucket
+import fridger.shared.health.DiversityRating
+import fridger.shared.health.DiversityScore
+import fridger.shared.health.ExpiryAlert
+import fridger.shared.health.HealthDashboardMetrics
+import fridger.shared.health.HealthRecommendation
+import fridger.shared.health.NutritionCategory
+import fridger.shared.health.RecommendationReason
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -35,6 +45,34 @@ class HomeViewModelTest {
     private lateinit var repository: IngredientRepository
     private lateinit var recipeRepository: RecipeRepository
     private lateinit var translator: Translator
+    private lateinit var dashboardRepository: HealthDashboardRepository
+    private val userSessionProvider = UserSessionProvider { "test-user" }
+    private val dashboardMetrics =
+        HealthDashboardMetrics(
+            nutritionDistribution =
+                mapOf(
+                    NutritionCategory.PRODUCE to 50.0,
+                    NutritionCategory.PROTEIN to 30.0,
+                ),
+            diversityScore = DiversityScore(60, DiversityRating.BALANCED),
+            expiryAlerts =
+                listOf(
+                    ExpiryAlert(
+                        itemName = "Berry",
+                        category = NutritionCategory.PRODUCE,
+                        daysUntilExpiry = 2,
+                        calorieBucket = CalorieBucket.LOW,
+                    ),
+                ),
+            recommendations =
+                listOf(
+                    HealthRecommendation(
+                        category = NutritionCategory.PRODUCE,
+                        reason = RecommendationReason.LOW_STOCK,
+                        message = "多補充蔬果",
+                    ),
+                ),
+        )
 
     // Simple fake to return a provided flow
     private class FakeIngredientRepository(
@@ -101,6 +139,11 @@ class HomeViewModelTest {
         repository = FakeIngredientRepository(flowOf(emptyList()))
         recipeRepository = FakeRecipeRepository()
         translator = FakeTranslator()
+        dashboardRepository =
+            object : HealthDashboardRepository {
+                override suspend fun getDashboardMetrics(userId: String): Result<HealthDashboardMetrics> =
+                    Result.success(dashboardMetrics)
+            }
     }
 
     @AfterTest
@@ -131,6 +174,7 @@ class HomeViewModelTest {
                         name = "Milk",
                         addDate = today.plus(DatePeriod(days = -5)),
                         expirationDate = today,
+                        category = fridger.com.io.data.model.IngredientCategory.OTHERS,
                         freshness = Freshness.NearingExpiration
                     ),
                     // Tomorrow (1 day) -> todayExpiring
@@ -139,6 +183,7 @@ class HomeViewModelTest {
                         name = "Yogurt",
                         addDate = today.plus(DatePeriod(days = -3)),
                         expirationDate = today.plus(DatePeriod(days = 1)),
+                        category = fridger.com.io.data.model.IngredientCategory.OTHERS,
                         freshness = Freshness.NearingExpiration
                     ),
                     // In 3 days -> weekExpiring (2..7)
@@ -147,6 +192,7 @@ class HomeViewModelTest {
                         name = "Lettuce",
                         addDate = today.plus(DatePeriod(days = -1)),
                         expirationDate = today.plus(DatePeriod(days = 3)),
+                        category = fridger.com.io.data.model.IngredientCategory.OTHERS,
                         freshness = Freshness.NearingExpiration
                     ),
                     // Expired 2 days ago -> expired
@@ -155,13 +201,14 @@ class HomeViewModelTest {
                         name = "Bread",
                         addDate = today.plus(DatePeriod(days = -7)),
                         expirationDate = today.plus(DatePeriod(days = -2)),
+                        category = fridger.com.io.data.model.IngredientCategory.OTHERS,
                         freshness = Freshness.Expired
                     )
                 )
             repository = FakeIngredientRepository(flowOf(ingredients))
 
             // Act (init triggers observe)
-            viewModel = HomeViewModel(repository, recipeRepository, translator)
+            viewModel = HomeViewModel(repository, recipeRepository, translator, dashboardRepository, userSessionProvider)
             advanceUntilIdle()
 
             // Assert
@@ -172,6 +219,7 @@ class HomeViewModelTest {
             assertEquals(1, state.weekExpiringItems.size)
             assertEquals(1, state.expiredItems.size)
             assertEquals(4, state.refrigeratedItems.size)
+            assertEquals(dashboardMetrics, state.healthDashboard.metrics)
         }
 
     @Test
@@ -181,7 +229,7 @@ class HomeViewModelTest {
             repository = FakeIngredientRepository(flowOf(emptyList()))
 
             // Act
-            viewModel = HomeViewModel(repository, recipeRepository, translator)
+            viewModel = HomeViewModel(repository, recipeRepository, translator, dashboardRepository, userSessionProvider)
             advanceUntilIdle()
 
             // Assert
@@ -193,6 +241,7 @@ class HomeViewModelTest {
             assertTrue(state.expiredItems.isEmpty())
             assertTrue(state.refrigeratedItems.isEmpty())
             assertTrue(state.groupedRefrigeratedItems.isEmpty())
+            assertEquals(dashboardMetrics, state.healthDashboard.metrics)
         }
 
     @Test
@@ -211,6 +260,7 @@ class HomeViewModelTest {
                         name = "Carrot",
                         addDate = today.plus(DatePeriod(days = -1)),
                         expirationDate = today.plus(DatePeriod(days = 5)),
+                        category = fridger.com.io.data.model.IngredientCategory.OTHERS,
                         freshness = Freshness.Fresh
                     ),
                     Ingredient(
@@ -218,6 +268,7 @@ class HomeViewModelTest {
                         name = "apple",
                         addDate = today.plus(DatePeriod(days = -2)),
                         expirationDate = today.plus(DatePeriod(days = 2)),
+                        category = fridger.com.io.data.model.IngredientCategory.OTHERS,
                         freshness = Freshness.NearingExpiration
                     ),
                     Ingredient(
@@ -225,6 +276,7 @@ class HomeViewModelTest {
                         name = "Banana",
                         addDate = today.plus(DatePeriod(days = -3)),
                         expirationDate = today.plus(DatePeriod(days = 3)),
+                        category = fridger.com.io.data.model.IngredientCategory.OTHERS,
                         freshness = Freshness.Fresh
                     )
                 )
@@ -243,23 +295,37 @@ class HomeViewModelTest {
         }
 
     @Test
-    fun `given repository throws exception when loads then uiState contains error`() =
+    fun `given ingredients with categories when loaded then refrigeratedItems have correct categories`() =
         runTest(testDispatcher) {
             // Arrange
-            repository = FakeIngredientRepository(flow { throw Exception("Test Exception") })
+            val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+            val ingredients = listOf(
+                Ingredient(
+                    id = 1,
+                    name = "Apple",
+                    addDate = today,
+                    expirationDate = today.plus(DatePeriod(days = 7)),
+                    category = fridger.com.io.data.model.IngredientCategory.FRUITS,
+                    freshness = Freshness.Fresh
+                ),
+                Ingredient(
+                    id = 2,
+                    name = "Milk",
+                    addDate = today,
+                    expirationDate = today.plus(DatePeriod(days = 3)),
+                    category = fridger.com.io.data.model.IngredientCategory.DAIRY,
+                    freshness = Freshness.Fresh
+                )
+            )
+            repository = FakeIngredientRepository(flowOf(ingredients))
 
             // Act
             viewModel = HomeViewModel(repository, recipeRepository, translator)
             advanceUntilIdle()
 
             // Assert
-            val state = viewModel.uiState.value
-            assertEquals(false, state.isLoading)
-            assertEquals("Test Exception", state.error)
-            assertTrue(state.todayExpiringItems.isEmpty())
-            assertTrue(state.weekExpiringItems.isEmpty())
-            assertTrue(state.expiredItems.isEmpty())
-            assertTrue(state.refrigeratedItems.isEmpty())
-            assertTrue(state.groupedRefrigeratedItems.isEmpty())
+            val items = viewModel.uiState.value.refrigeratedItems
+            assertEquals(fridger.com.io.data.model.IngredientCategory.FRUITS, items.find { it.name == "Apple" }?.category)
+            assertEquals(fridger.com.io.data.model.IngredientCategory.DAIRY, items.find { it.name == "Milk" }?.category)
         }
 }

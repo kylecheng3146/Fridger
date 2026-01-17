@@ -24,6 +24,18 @@ object RefreshTokensTable : Table("refresh_tokens") {
     override val primaryKey = PrimaryKey(id)
 }
 
+object FridgeItemsTable : Table("fridge_items") {
+    val id = uuid("id")
+    val userId = uuid("user_id")
+    val name = text("name")
+    val category = text("category")
+    val quantity = double("quantity")
+    val caloriesPerPortion = integer("calories_per_portion")
+    val expiryDate = date("expiry_date").nullable()
+    val createdAt = timestamp("created_at")
+    override val primaryKey = PrimaryKey(id)
+}
+
 data class User(
     val id: UUID,
     val name: String,

@@ -25,7 +25,15 @@ data class HomeUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val pendingDeletion: PendingDeletion? = null,
-    val selectedItemIds: Set<String> = emptySet()
+    val selectedItemIds: Set<String> = emptySet(),
+    val healthDashboard: HealthDashboardUiState = HealthDashboardUiState(),
+)
+
+data class HealthDashboardUiState(
+    val isLoading: Boolean = true,
+    val metrics: fridger.shared.health.HealthDashboardMetrics? = null,
+    val error: String? = null,
+    val lastUpdatedEpochMillis: Long? = null,
 )
 
 // Sorting and grouping options
@@ -70,7 +78,8 @@ data class RefrigeratedItem(
     val quantity: String,
     val daysUntilExpiry: Int,
     val ageDays: Int,
-    val freshness: Freshness,
+    val category: fridger.com.io.data.model.IngredientCategory,
+    val freshness: fridger.com.io.data.model.Freshness,
     val hasWarning: Boolean = false,
     val expiryDisplay: ExpiryDisplay =
         when {

@@ -19,5 +19,6 @@ data class Ingredient(
     val name: String,
     val addDate: LocalDate,
     val expirationDate: LocalDate,
+    val category: IngredientCategory,
     val freshness: Freshness
 )

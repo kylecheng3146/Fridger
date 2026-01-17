@@ -8,6 +8,7 @@ object ApiPaths {
     const val AUTH_REFRESH = "/refresh"
     const val AUTH_LOGOUT = "/logout"
     const val HEALTH = "/health"
+    const val HEALTH_DASHBOARD = "$API_V1/health/dashboard"
     const val ROOT = "/"
 }
 

@@ -3,8 +3,11 @@ package fridger.com.io.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.CreationExtras
+import fridger.com.io.data.remote.HealthDashboardApiService
+import fridger.com.io.data.repository.HealthDashboardRepositoryImpl
 import fridger.com.io.data.repository.IngredientRepositoryImpl
 import fridger.com.io.data.repository.RecipeRepositoryImpl
+import fridger.com.io.data.user.DemoUserSessionProvider
 import fridger.com.io.presentation.home.HomeViewModel
 import fridger.com.io.presentation.settings.SettingsViewModel
 import fridger.com.io.presentation.shoppinglist.ShoppingListViewModel
@@ -27,7 +30,9 @@ class ViewModelFactory : ViewModelProvider.Factory {
                 HomeViewModel(
                     IngredientRepositoryImpl(),
                     RecipeRepositoryImpl(RecipeApiService()),
-                    MockTranslator()
+                    MockTranslator(),
+                    HealthDashboardRepositoryImpl(HealthDashboardApiService()),
+                    DemoUserSessionProvider,
                 ) as T
             SettingsViewModel::class -> SettingsViewModel() as T
             ShoppingListViewModel::class ->

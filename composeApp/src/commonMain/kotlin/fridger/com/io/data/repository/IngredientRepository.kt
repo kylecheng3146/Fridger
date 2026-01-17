@@ -48,6 +48,7 @@ class IngredientRepositoryImpl(
                         name = row.name,
                         addDate = addDate,
                         expirationDate = expirationDate,
+                        category = fridger.com.io.data.model.IngredientCategory.OTHERS,
                         freshness = computeFreshness(today, expirationDate)
                     )
                 }

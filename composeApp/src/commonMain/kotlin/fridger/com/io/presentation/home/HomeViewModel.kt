@@ -4,11 +4,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import fridger.com.io.data.QuickAddCatalog
 import fridger.com.io.data.model.Freshness
+import fridger.com.io.data.repository.HealthDashboardRepository
 import fridger.com.io.data.repository.IngredientRepository
-import fridger.com.io.utils.todayPlusDaysDisplay
 import fridger.com.io.data.repository.RecipeRepository
+import fridger.com.io.data.user.UserSessionProvider
+import fridger.com.io.utils.todayPlusDaysDisplay
 import fridger.com.domain.translator.Translator
 import fridger.com.data.model.remote.MealDto
+import fridger.shared.health.HealthDashboardCalculator
+import fridger.shared.health.HealthDashboardMetrics
+import fridger.shared.health.InventoryItem
+import fridger.shared.health.NutritionCategory
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,13 +24,17 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 
 class HomeViewModel(
     private val repository: IngredientRepository,
     private val recipeRepository: RecipeRepository,
-    private val translator: Translator
+    private val translator: Translator,
+    private val healthDashboardRepository: HealthDashboardRepository,
+    private val userSessionProvider: UserSessionProvider,
 ) : ViewModel() {
     // Recipe translation-driven state
     private val _recipeState = MutableStateFlow<RecipeUiState>(RecipeUiState.Idle)
@@ -34,8 +44,11 @@ class HomeViewModel(
 
     private var originalRefrigeratedItems: List<RefrigeratedItem> = emptyList()
 
+    private val dashboardCalculator = HealthDashboardCalculator()
+
     init {
         observeIngredients()
+        refreshHealthDashboard()
     }
 
     private fun observeIngredients() {
@@ -86,6 +99,76 @@ class HomeViewModel(
                 }
         }
     }
+
+    fun refreshHealthDashboard() {
+        viewModelScope.launch {
+            _uiState.update { state ->
+                state.copy(
+                    healthDashboard =
+                        state.healthDashboard.copy(
+                            isLoading = true,
+                            error = null,
+                        ),
+                )
+            }
+            val userId = userSessionProvider.userId()
+            val result = healthDashboardRepository.getDashboardMetrics(userId)
+            val fallbackMetrics = computeLocalDashboardMetrics()
+            _uiState.update { state ->
+                state.copy(
+                    healthDashboard =
+                        state.healthDashboard.copy(
+                            isLoading = false,
+                            metrics = result.getOrNull() ?: fallbackMetrics,
+                            error = if (result.isSuccess) null else null,
+                            lastUpdatedEpochMillis =
+                                if (result.isSuccess) Clock.System.now().toEpochMilliseconds() else state.healthDashboard.lastUpdatedEpochMillis,
+                        ),
+                )
+            }
+        }
+    }
+
+    private fun computeLocalDashboardMetrics(): HealthDashboardMetrics {
+        val today =
+            Clock.System
+                .now()
+                .toLocalDateTime(TimeZone.currentSystemDefault())
+                .date
+        val items =
+            originalRefrigeratedItems.map { item ->
+                val category = mapIngredientCategory(item.category)
+                InventoryItem(
+                    id = item.id,
+                    name = item.name,
+                    category = category,
+                    quantity = 1.0,
+                    caloriesPerPortion = defaultCaloriesFor(category),
+                    expiryDate = today.plus(DatePeriod(days = item.daysUntilExpiry)),
+                    ownerId = null,
+                )
+            }
+        return dashboardCalculator.compute(items)
+    }
+
+    private fun mapIngredientCategory(category: fridger.com.io.data.model.IngredientCategory): NutritionCategory =
+        when (category) {
+            fridger.com.io.data.model.IngredientCategory.VEGETABLES,
+            fridger.com.io.data.model.IngredientCategory.FRUITS -> NutritionCategory.PRODUCE
+            fridger.com.io.data.model.IngredientCategory.MEAT,
+            fridger.com.io.data.model.IngredientCategory.SEAFOOD,
+            fridger.com.io.data.model.IngredientCategory.DAIRY -> NutritionCategory.PROTEIN
+            fridger.com.io.data.model.IngredientCategory.GRAINS -> NutritionCategory.REFINED_GRAIN
+            fridger.com.io.data.model.IngredientCategory.OTHERS -> NutritionCategory.OTHER
+        }
+
+    private fun defaultCaloriesFor(category: NutritionCategory): Int =
+        when (category) {
+            NutritionCategory.PRODUCE -> 50
+            NutritionCategory.PROTEIN -> 250
+            NutritionCategory.REFINED_GRAIN -> 180
+            NutritionCategory.OTHER -> 120
+        }
 
     // Dialog visibility
     fun onShowAddItemDialog() {
@@ -323,5 +406,3 @@ sealed interface RecipeUiState {
     data class Success(val meals: List<MealDto>) : RecipeUiState
     data class Error(val message: String) : RecipeUiState
 }
-
-

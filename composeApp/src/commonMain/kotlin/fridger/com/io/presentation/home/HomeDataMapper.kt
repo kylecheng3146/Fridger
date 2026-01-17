@@ -19,6 +19,7 @@ object HomeDataMapper {
                 quantity = "x1", // Quantity not yet stored; default
                 daysUntilExpiry = daysUntil,
                 ageDays = age,
+                category = ing.category,
                 freshness = ing.freshness,
                 hasWarning = ing.freshness != Freshness.Fresh
             )

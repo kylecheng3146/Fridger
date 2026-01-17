@@ -76,6 +76,7 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.h2)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.ktor.server.tests)
 
     implementation(project(":shared"))
 
