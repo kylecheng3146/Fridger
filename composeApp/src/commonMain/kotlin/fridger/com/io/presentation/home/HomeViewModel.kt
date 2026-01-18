@@ -96,11 +96,15 @@ class HomeViewModel(
                             error = null
                         )
                     }
+                    updateDashboardWithLocalSnapshot()
                 }
         }
     }
 
-    fun refreshHealthDashboard() {
+    fun refreshHealthDashboard(
+        includeTrends: Boolean = false,
+        trendRangeDays: Int? = null,
+    ) {
         viewModelScope.launch {
             _uiState.update { state ->
                 state.copy(
@@ -112,15 +116,28 @@ class HomeViewModel(
                 )
             }
             val userId = userSessionProvider.userId()
-            val result = healthDashboardRepository.getDashboardMetrics(userId)
-            val fallbackMetrics = computeLocalDashboardMetrics()
+            val trendRange = if (includeTrends) trendRangeDays ?: DEFAULT_TREND_RANGE_DAYS else null
+            val result = healthDashboardRepository.getDashboardMetrics(userId, includeTrends, trendRange)
+            val localMetrics = computeLocalDashboardMetrics()
             _uiState.update { state ->
+                val remoteMetrics = result.getOrNull()
+                val resolvedMetrics =
+                    when {
+                        remoteMetrics == null -> localMetrics
+                        shouldUseLocalMetrics(remoteMetrics, localMetrics) -> localMetrics
+                        else -> remoteMetrics
+                    }
+                val errorMessage = result.exceptionOrNull()?.message
+                val shouldSurfaceError =
+                    result.isFailure &&
+                        remoteMetrics == null &&
+                        !localMetrics.hasMeaningfulData()
                 state.copy(
                     healthDashboard =
                         state.healthDashboard.copy(
                             isLoading = false,
-                            metrics = result.getOrNull() ?: fallbackMetrics,
-                            error = if (result.isSuccess) null else null,
+                            metrics = resolvedMetrics,
+                            error = if (shouldSurfaceError) errorMessage else null,
                             lastUpdatedEpochMillis =
                                 if (result.isSuccess) Clock.System.now().toEpochMilliseconds() else state.healthDashboard.lastUpdatedEpochMillis,
                         ),
@@ -149,6 +166,42 @@ class HomeViewModel(
                 )
             }
         return dashboardCalculator.compute(items)
+    }
+
+    private fun updateDashboardWithLocalSnapshot() {
+        val localMetrics = computeLocalDashboardMetrics()
+        _uiState.update { state ->
+            if (!shouldUseLocalMetrics(state.healthDashboard.metrics, localMetrics)) {
+                return@update state
+            }
+            state.copy(
+                healthDashboard =
+                    state.healthDashboard.copy(
+                        isLoading = false,
+                        error = null,
+                        metrics = localMetrics,
+                    ),
+            )
+        }
+    }
+
+    private fun shouldUseLocalMetrics(
+        current: HealthDashboardMetrics?,
+        local: HealthDashboardMetrics
+    ): Boolean {
+        val localTotal = local.nutritionDistribution.totalPercent()
+        if (localTotal <= 0.0) return false
+        val currentTotal = current?.nutritionDistribution?.totalPercent() ?: 0.0
+        return current == null || currentTotal <= 0.0
+    }
+
+    private fun Map<NutritionCategory, Double>.totalPercent(): Double = values.sum()
+    private fun HealthDashboardMetrics.hasMeaningfulData(): Boolean =
+        nutritionDistribution.values.any { it > 0.0 } ||
+            expiryAlerts.isNotEmpty() ||
+            recommendations.isNotEmpty()
+    companion object {
+        private const val DEFAULT_TREND_RANGE_DAYS = 30
     }
 
     private fun mapIngredientCategory(category: fridger.com.io.data.model.IngredientCategory): NutritionCategory =
@@ -194,6 +247,7 @@ class HomeViewModel(
                     repository.add(name = item.name, expirationDateDisplay = date)
                 }
                 _uiState.update { it.copy(showAddNewItemDialog = false) }
+                refreshHealthDashboard()
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = e.message, showAddNewItemDialog = false) }
             }

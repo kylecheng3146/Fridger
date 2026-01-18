@@ -28,6 +28,10 @@ data class HealthDashboardMetrics(
     val diversityScore: DiversityScore,
     val expiryAlerts: List<ExpiryAlert>,
     val recommendations: List<HealthRecommendation>,
+    val trendMetadata: TrendMetadata? = null,
+    val trendSnapshots: List<TrendSnapshot> = emptyList(),
+    val diversityHistory: List<DiversityHistoryEntry> = emptyList(),
+    val expiryHeatmap: List<ExpiryHeatmapCell> = emptyList(),
 )
 
 @Serializable
@@ -70,4 +74,42 @@ data class HealthRecommendation(
     val category: NutritionCategory,
     val reason: RecommendationReason,
     val message: String,
+)
+
+@Serializable
+data class TrendSnapshot(
+    val date: LocalDate,
+    val distribution: Map<NutritionCategory, Double>,
+    val deficitCategories: List<NutritionCategory> = emptyList(),
+    val totalTrackedItems: Int,
+)
+
+@Serializable
+data class DiversityHistoryEntry(
+    val weekStart: LocalDate,
+    val score: Int,
+    val rating: DiversityRating,
+)
+
+@Serializable
+data class ExpiryHeatmapCell(
+    val date: LocalDate,
+    val category: NutritionCategory,
+    val count: Int,
+    val severity: ExpirySeverity,
+    val items: List<String> = emptyList(),
+)
+
+@Serializable
+enum class ExpirySeverity {
+    LOW,
+    MEDIUM,
+    HIGH,
+}
+
+@Serializable
+data class TrendMetadata(
+    val rangeDays: Int,
+    val partialRange: Boolean,
+    val generatedAtEpochMillis: Long,
 )

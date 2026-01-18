@@ -2,6 +2,7 @@ package fridger.com.io.data.repository
 
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
+import fridger.com.io.data.IngredientCategoryClassifier
 import fridger.com.io.data.database.DatabaseProvider
 import fridger.com.io.data.model.Freshness
 import fridger.com.io.data.model.Ingredient
@@ -48,7 +49,7 @@ class IngredientRepositoryImpl(
                         name = row.name,
                         addDate = addDate,
                         expirationDate = expirationDate,
-                        category = fridger.com.io.data.model.IngredientCategory.OTHERS,
+                        category = IngredientCategoryClassifier.classify(row.name),
                         freshness = computeFreshness(today, expirationDate)
                     )
                 }

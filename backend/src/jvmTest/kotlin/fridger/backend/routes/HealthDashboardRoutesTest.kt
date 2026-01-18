@@ -1,7 +1,9 @@
 package fridger.backend.routes
 
 import fridger.backend.config.ApiPaths
+import fridger.backend.services.DEFAULT_TREND_RANGE_DAYS
 import fridger.backend.services.HealthDashboardProvider
+import fridger.backend.services.HealthDashboardRequestOptions
 import fridger.shared.health.CalorieBucket
 import fridger.shared.health.DiversityRating
 import fridger.shared.health.DiversityScore
@@ -45,6 +47,7 @@ class HealthDashboardRoutesTest {
         val payload = Json.decodeFromString<ApiResponse<HealthDashboardMetrics>>(response.bodyAsText())
         assertTrue(payload.success)
         assertEquals(provider.metrics, payload.data)
+        assertEquals(false, provider.lastOptions?.includeTrends)
     }
 
     @Test
@@ -56,6 +59,53 @@ class HealthDashboardRoutesTest {
 
         val response = client.get(ApiPaths.HEALTH_DASHBOARD)
         assertEquals(HttpStatusCode.BadRequest, response.status)
+    }
+
+    @Test
+    fun parsesIncludeAndRangeOptions() = testApplication {
+        val provider = FakeProvider()
+        application {
+            install(ContentNegotiation) { json() }
+            routing { healthDashboardRoutes(provider) }
+        }
+
+        val response = client.get("${ApiPaths.HEALTH_DASHBOARD}?userId=$userId&include=trends&rangeDays=30")
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertTrue(provider.lastOptions?.includeTrends == true)
+        assertEquals(30, provider.lastOptions?.rangeDays)
+    }
+
+    @Test
+    fun rejectsInvalidIncludeParameter() = testApplication {
+        application {
+            install(ContentNegotiation) { json() }
+            routing { healthDashboardRoutes(FakeProvider()) }
+        }
+        val response = client.get("${ApiPaths.HEALTH_DASHBOARD}?userId=$userId&include=oops")
+        assertEquals(HttpStatusCode.BadRequest, response.status)
+    }
+
+    @Test
+    fun rejectsInvalidRange() = testApplication {
+        application {
+            install(ContentNegotiation) { json() }
+            routing { healthDashboardRoutes(FakeProvider()) }
+        }
+        val response = client.get("${ApiPaths.HEALTH_DASHBOARD}?userId=$userId&include=trends&rangeDays=3")
+        assertEquals(HttpStatusCode.BadRequest, response.status)
+    }
+
+    @Test
+    fun ignoresRangeWhenTrendsNotRequested() = testApplication {
+        val provider = FakeProvider()
+        application {
+            install(ContentNegotiation) { json() }
+            routing { healthDashboardRoutes(provider) }
+        }
+        val response = client.get("${ApiPaths.HEALTH_DASHBOARD}?userId=$userId&rangeDays=3")
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertEquals(false, provider.lastOptions?.includeTrends)
+        assertEquals(DEFAULT_TREND_RANGE_DAYS, provider.lastOptions?.rangeDays)
     }
 
     private class FakeProvider : HealthDashboardProvider {
@@ -83,6 +133,14 @@ class HealthDashboardRoutesTest {
             ),
         )
 
-        override fun getDashboard(userId: UUID): HealthDashboardMetrics = metrics
+        var lastOptions: HealthDashboardRequestOptions? = null
+
+        override fun getDashboard(
+            userId: UUID,
+            options: HealthDashboardRequestOptions,
+        ): HealthDashboardMetrics {
+            lastOptions = options
+            return metrics
+        }
     }
 }

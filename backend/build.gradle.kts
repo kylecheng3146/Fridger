@@ -81,6 +81,7 @@ dependencies {
     implementation(project(":shared"))
 
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.datetime)
 }
 
 ktlint {

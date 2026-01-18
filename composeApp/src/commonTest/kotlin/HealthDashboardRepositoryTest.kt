@@ -7,6 +7,7 @@ import fridger.shared.health.HealthDashboardMetrics
 import fridger.shared.health.NutritionCategory
 import fridger.shared.models.ApiResponse
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
@@ -14,8 +15,16 @@ import kotlinx.coroutines.test.runTest
 class HealthDashboardRepositoryTest {
     private class FakeApiService(
         private val response: ApiResponse<HealthDashboardMetrics>,
+        private val onFetch: (Boolean, Int?) -> Unit = { _, _ -> },
     ) : HealthDashboardApiService() {
-        override suspend fun fetchDashboard(userId: String): ApiResponse<HealthDashboardMetrics> = response
+        override suspend fun fetchDashboard(
+            userId: String,
+            includeTrends: Boolean,
+            rangeDays: Int?,
+        ): ApiResponse<HealthDashboardMetrics> {
+            onFetch(includeTrends, rangeDays)
+            return response
+        }
     }
 
     private val sampleMetrics =
@@ -51,5 +60,30 @@ class HealthDashboardRepositoryTest {
 
             assertTrue(result.isFailure)
             assertFalse(result.exceptionOrNull()?.message.isNullOrBlank())
+        }
+
+    @Test
+    fun fetchesDashboardFromApi() =
+        runTest {
+            var invoked = false
+            var capturedInclude: Boolean? = null
+            var capturedRange: Int? = null
+            val repository =
+                HealthDashboardRepositoryImpl(
+                    FakeApiService(
+                        ApiResponse(success = true, data = sampleMetrics),
+                        onFetch = { include, range ->
+                            invoked = true
+                            capturedInclude = include
+                            capturedRange = range
+                        },
+                    ),
+                )
+
+            repository.getDashboardMetrics("user", includeTrends = true, rangeDays = 30)
+
+            assertTrue(invoked)
+            assertEquals(true, capturedInclude)
+            assertEquals(30, capturedRange)
         }
 }

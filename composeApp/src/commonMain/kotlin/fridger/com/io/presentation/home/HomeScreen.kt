@@ -28,6 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -70,6 +71,7 @@ import fridger.com.io.presentation.home.components.RecipeResultSheet
 import fridger.com.data.model.remote.MealDto
 import fridger.com.io.presentation.home.dashboard.HealthDashboardDetailSheet
 import fridger.com.io.presentation.home.dashboard.HealthDashboardSummaryCard
+import fridger.com.io.presentation.settings.SettingsScreen
 import fridger.com.io.presentation.util.animateItemPlacementCompat
 import fridger.com.io.ui.theme.AppColors
 import fridger.com.io.ui.theme.sizing
@@ -81,7 +83,8 @@ import fridger.composeapp.generated.resources.home_refrigerated
 import fridger.composeapp.generated.resources.home_title
 import org.jetbrains.compose.resources.stringResource
 import coil3.compose.AsyncImage
-import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 
 @Composable
 private fun SectionTitle(title: String) {
@@ -96,13 +99,13 @@ private fun SectionTitle(title: String) {
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    onSettingsClick: () -> Unit = {}
 ) {
     val viewModel: HomeViewModel = viewModel(factory = ViewModelFactoryProvider.factory)
     val uiState by viewModel.uiState.collectAsState()
     val recipeState by viewModel.recipeState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var showDashboardDetails by remember { mutableStateOf(false) }
+    var showSettings by remember { mutableStateOf(false) }
     val dashboardState = uiState.healthDashboard
 
     // Random recipe bottom sheet state
@@ -127,13 +130,6 @@ fun HomeScreen(
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-        if (showDashboardDetails) {
-            HealthDashboardDetailSheet(
-                state = dashboardState,
-                onDismiss = { showDashboardDetails = false },
-                onRefresh = viewModel::refreshHealthDashboard,
-            )
-        }
         Scaffold(
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
             snackbarHost = {
@@ -151,7 +147,7 @@ fun HomeScreen(
                 contentPadding = PaddingValues(bottom = MaterialTheme.sizing.contentPaddingVertical),
             ) {
                 item {
-                    HomeHeader(onSettingsClick = onSettingsClick)
+                    HomeHeader(onSettingsClick = { showSettings = true })
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
                     Row(
                         modifier =
@@ -182,7 +178,7 @@ fun HomeScreen(
                     ) {
                         HealthDashboardSummaryCard(
                             state = dashboardState,
-                            onRefresh = viewModel::refreshHealthDashboard,
+                            onRefresh = { viewModel.refreshHealthDashboard() },
                             onViewDetails = { showDashboardDetails = true },
                         )
                     }
@@ -399,6 +395,30 @@ fun HomeScreen(
                             Box(modifier = Modifier.fillMaxWidth().height(100.dp))
                         }
                     }
+                }
+            }
+        }
+
+        if (showDashboardDetails) {
+            HealthDashboardDetailSheet(
+                state = dashboardState,
+                onDismiss = { showDashboardDetails = false },
+                onRefresh = { viewModel.refreshHealthDashboard(includeTrends = true) },
+            )
+        }
+        if (showSettings) {
+            Dialog(
+                onDismissRequest = { showSettings = false },
+                properties = DialogProperties(usePlatformDefaultWidth = false),
+            ) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background,
+                ) {
+                    SettingsScreen(
+                        onBackClick = { showSettings = false },
+                        modifier = Modifier.fillMaxSize(),
+                    )
                 }
             }
         }

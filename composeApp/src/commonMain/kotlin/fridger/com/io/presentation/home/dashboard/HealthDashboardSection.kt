@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -30,7 +31,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -41,7 +41,6 @@ import fridger.shared.health.DiversityRating
 import fridger.shared.health.ExpiryAlert
 import fridger.shared.health.HealthDashboardMetrics
 import fridger.shared.health.HealthRecommendation
-import fridger.shared.health.NutritionCategory
 import kotlin.math.roundToInt
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -108,10 +107,12 @@ fun HealthDashboardSummaryCard(
                 state.metrics != null -> {
                     DashboardMetricsOverview(metrics = state.metrics)
                     Spacer(modifier = Modifier.height(12.dp))
-                    TextButton(onClick = onViewDetails) {
-                        Icon(Icons.Default.Visibility, contentDescription = null)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("查看詳情")
+                    Row {
+                        TextButton(onClick = onViewDetails) {
+                            Icon(Icons.Default.Visibility, contentDescription = null)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("查看詳情")
+                        }
                     }
                 }
                 else -> {
@@ -218,8 +219,10 @@ fun HealthDashboardDetailSheet(
                         color = MaterialTheme.colorScheme.error,
                     )
                 }
-                state.metrics != null -> {
-                    DashboardDetailContent(metrics = state.metrics)
+                else -> {
+                    state.metrics?.let {
+                        DashboardDetailContent(metrics = it)
+                    } ?: Text("目前沒有可顯示的儀表板資料。")
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))

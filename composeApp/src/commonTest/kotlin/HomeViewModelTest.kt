@@ -141,8 +141,11 @@ class HomeViewModelTest {
         translator = FakeTranslator()
         dashboardRepository =
             object : HealthDashboardRepository {
-                override suspend fun getDashboardMetrics(userId: String): Result<HealthDashboardMetrics> =
-                    Result.success(dashboardMetrics)
+                override suspend fun getDashboardMetrics(
+                    userId: String,
+                    includeTrends: Boolean,
+                    rangeDays: Int?,
+                ): Result<HealthDashboardMetrics> = Result.success(dashboardMetrics)
             }
     }
 
@@ -283,7 +286,7 @@ class HomeViewModelTest {
             repository = FakeIngredientRepository(flowOf(ingredients))
 
             // Act
-            viewModel = HomeViewModel(repository, recipeRepository, translator)
+            viewModel = HomeViewModel(repository, recipeRepository, translator, dashboardRepository, userSessionProvider)
             advanceUntilIdle() // ensure initial collect complete
             viewModel.updateSortingAndGrouping(sort = SortOption.NAME)
 
@@ -320,12 +323,106 @@ class HomeViewModelTest {
             repository = FakeIngredientRepository(flowOf(ingredients))
 
             // Act
-            viewModel = HomeViewModel(repository, recipeRepository, translator)
+            viewModel = HomeViewModel(repository, recipeRepository, translator, dashboardRepository, userSessionProvider)
             advanceUntilIdle()
 
             // Assert
             val items = viewModel.uiState.value.refrigeratedItems
             assertEquals(fridger.com.io.data.model.IngredientCategory.FRUITS, items.find { it.name == "Apple" }?.category)
             assertEquals(fridger.com.io.data.model.IngredientCategory.DAIRY, items.find { it.name == "Milk" }?.category)
+        }
+
+    @Test
+    fun `when backend fails fallback metrics are used`() =
+        runTest(testDispatcher) {
+            val failingRepository =
+                object : HealthDashboardRepository {
+                    override suspend fun getDashboardMetrics(
+                        userId: String,
+                        includeTrends: Boolean,
+                        rangeDays: Int?,
+                    ): Result<HealthDashboardMetrics> = Result.failure(IllegalStateException("network"))
+                }
+            viewModel = HomeViewModel(repository, recipeRepository, translator, failingRepository, userSessionProvider)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value.healthDashboard
+            assertEquals("network", state.error)
+            assertTrue(state.metrics != null)
+        }
+
+    @Test
+    fun `local metrics override zero remote response`() =
+        runTest(testDispatcher) {
+            val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+            val ingredients =
+                listOf(
+                    Ingredient(
+                        id = 10,
+                        name = "菠菜",
+                        addDate = today,
+                        expirationDate = today.plus(DatePeriod(days = 3)),
+                        category = fridger.com.io.data.model.IngredientCategory.VEGETABLES,
+                        freshness = Freshness.Fresh
+                    ),
+                    Ingredient(
+                        id = 11,
+                        name = "雞胸肉",
+                        addDate = today,
+                        expirationDate = today.plus(DatePeriod(days = 2)),
+                        category = fridger.com.io.data.model.IngredientCategory.MEAT,
+                        freshness = Freshness.Fresh
+                    )
+                )
+            repository = FakeIngredientRepository(flowOf(ingredients))
+            val zeroMetrics =
+                HealthDashboardMetrics(
+                    nutritionDistribution = NutritionCategory.entries.associateWith { 0.0 },
+                    diversityScore = DiversityScore(0, DiversityRating.LOW),
+                    expiryAlerts = emptyList(),
+                    recommendations = emptyList(),
+                )
+            val zeroDashboardRepository =
+                object : HealthDashboardRepository {
+                    override suspend fun getDashboardMetrics(
+                        userId: String,
+                        includeTrends: Boolean,
+                        rangeDays: Int?,
+                    ): Result<HealthDashboardMetrics> = Result.success(zeroMetrics)
+                }
+
+            viewModel = HomeViewModel(repository, recipeRepository, translator, zeroDashboardRepository, userSessionProvider)
+            advanceUntilIdle()
+
+            val metrics = viewModel.uiState.value.healthDashboard.metrics
+            requireNotNull(metrics)
+            assertTrue((metrics.nutritionDistribution[NutritionCategory.PRODUCE] ?: 0.0) > 0.0)
+        }
+
+    @Test
+    fun `refreshing with trends requests trend payload`() =
+        runTest(testDispatcher) {
+            var capturedInclude: Boolean? = null
+            var capturedRange: Int? = null
+            val capturingRepository =
+                object : HealthDashboardRepository {
+                    override suspend fun getDashboardMetrics(
+                        userId: String,
+                        includeTrends: Boolean,
+                        rangeDays: Int?,
+                    ): Result<HealthDashboardMetrics> {
+                        capturedInclude = includeTrends
+                        capturedRange = rangeDays
+                        return Result.success(dashboardMetrics)
+                    }
+                }
+            viewModel = HomeViewModel(repository, recipeRepository, translator, capturingRepository, userSessionProvider)
+            advanceUntilIdle()
+
+            viewModel.refreshHealthDashboard(includeTrends = true, trendRangeDays = 30)
+            advanceUntilIdle()
+
+            assertEquals(true, capturedInclude)
+            assertEquals(30, capturedRange)
         }
 }

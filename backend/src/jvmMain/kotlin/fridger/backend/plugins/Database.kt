@@ -16,7 +16,7 @@ fun Application.configureDatabase() {
         .dataSource(url, user, password)
         .locations("classpath:db/migration")
         .load()
-        .repair()
+        .migrate()
     log.info("Flyway migrations complete")
 
     log.info("Connecting database via Exposed")

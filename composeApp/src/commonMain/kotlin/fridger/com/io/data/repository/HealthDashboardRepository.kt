@@ -4,15 +4,23 @@ import fridger.com.io.data.remote.HealthDashboardApiService
 import fridger.shared.health.HealthDashboardMetrics
 
 interface HealthDashboardRepository {
-    suspend fun getDashboardMetrics(userId: String): Result<HealthDashboardMetrics>
+    suspend fun getDashboardMetrics(
+        userId: String,
+        includeTrends: Boolean = false,
+        rangeDays: Int? = null,
+    ): Result<HealthDashboardMetrics>
 }
 
 class HealthDashboardRepositoryImpl(
     private val apiService: HealthDashboardApiService,
 ) : HealthDashboardRepository {
-    override suspend fun getDashboardMetrics(userId: String): Result<HealthDashboardMetrics> =
+    override suspend fun getDashboardMetrics(
+        userId: String,
+        includeTrends: Boolean,
+        rangeDays: Int?,
+    ): Result<HealthDashboardMetrics> =
         try {
-            val response = apiService.fetchDashboard(userId)
+            val response = apiService.fetchDashboard(userId, includeTrends, rangeDays)
             when {
                 response.success && response.data != null -> {
                     val metrics: HealthDashboardMetrics = requireNotNull(response.data)

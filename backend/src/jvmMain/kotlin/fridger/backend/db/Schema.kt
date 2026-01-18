@@ -1,6 +1,7 @@
 package fridger.backend.db
 
 import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.javatime.date
 import org.jetbrains.exposed.sql.javatime.timestamp
 import java.time.Instant
 import java.util.*

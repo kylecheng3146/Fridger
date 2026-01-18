@@ -38,10 +38,18 @@ open class HealthDashboardApiService(
         },
     private val baseUrl: String = BackendConfig.baseUrl,
 ) {
-    open suspend fun fetchDashboard(userId: String): ApiResponse<HealthDashboardMetrics> {
+    open suspend fun fetchDashboard(
+        userId: String,
+        includeTrends: Boolean = false,
+        rangeDays: Int? = null,
+    ): ApiResponse<HealthDashboardMetrics> {
         return client
             .get("$baseUrl$DASHBOARD_PATH") {
                 parameter("userId", userId)
+                if (includeTrends) {
+                    parameter("include", "trends")
+                    rangeDays?.let { parameter("rangeDays", it) }
+                }
             }.body<ApiResponse<HealthDashboardMetrics>>()
     }
 }
