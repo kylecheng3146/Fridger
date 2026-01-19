@@ -2,12 +2,18 @@ package fridger.com.io.presentation.home
 
 import fridger.com.data.model.remote.MealDto
 import fridger.com.domain.translator.Translator
+import fridger.com.io.data.analytics.DashboardSectionAction
+import fridger.com.io.data.analytics.DashboardStateSyncSource
+import fridger.com.io.data.analytics.HealthDashboardAnalytics
 import fridger.com.io.data.model.Freshness
 import fridger.com.io.data.model.Ingredient
 import fridger.com.io.data.repository.HealthDashboardRepository
 import fridger.com.io.data.repository.IngredientRepository
 import fridger.com.io.data.repository.RecipeRepository
+import fridger.com.io.data.settings.HealthDashboardPreferences
 import fridger.com.io.data.user.UserSessionProvider
+import fridger.com.io.presentation.home.dashboard.DashboardSection
+import fridger.com.io.presentation.home.dashboard.DashboardSectionDefaults
 import fridger.shared.health.CalorieBucket
 import fridger.shared.health.DiversityRating
 import fridger.shared.health.DiversityScore
@@ -19,6 +25,8 @@ import fridger.shared.health.RecommendationReason
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -46,6 +54,8 @@ class HomeViewModelTest {
     private lateinit var recipeRepository: RecipeRepository
     private lateinit var translator: Translator
     private lateinit var dashboardRepository: HealthDashboardRepository
+    private lateinit var dashboardPreferences: FakeDashboardPreferences
+    private lateinit var analytics: RecordingAnalytics
     private val userSessionProvider = UserSessionProvider { "test-user" }
     private val dashboardMetrics =
         HealthDashboardMetrics(
@@ -133,12 +143,54 @@ class HomeViewModelTest {
         ): String = "$text [translated]"
     }
 
+    private class FakeDashboardPreferences(
+        initial: Map<DashboardSection, Boolean> = DashboardSectionDefaults.defaultStates(),
+    ) : HealthDashboardPreferences {
+        private val _states = MutableStateFlow(initial)
+        override val sectionStates: Flow<Map<DashboardSection, Boolean>> = _states
+
+        override suspend fun setSectionStates(states: Map<DashboardSection, Boolean>) {
+            _states.value = states
+        }
+    }
+
+    private class RecordingAnalytics : HealthDashboardAnalytics {
+        val toggles = mutableListOf<Pair<DashboardSection, DashboardSectionAction>>()
+        val impressions = mutableListOf<DashboardSection>()
+        val syncEvents = mutableListOf<Map<DashboardSection, Boolean>>()
+
+        override fun trackSectionToggle(
+            section: DashboardSection,
+            action: DashboardSectionAction,
+            previousState: Boolean,
+        ) {
+            toggles += section to action
+        }
+
+        override fun trackCollapsedImpression(
+            section: DashboardSection,
+            durationMillis: Long,
+            isDefaultState: Boolean,
+        ) {
+            impressions += section
+        }
+
+        override fun trackStateSync(
+            sectionStates: Map<DashboardSection, Boolean>,
+            source: DashboardStateSyncSource,
+        ) {
+            syncEvents += sectionStates
+        }
+    }
+
     @BeforeTest
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         repository = FakeIngredientRepository(flowOf(emptyList()))
         recipeRepository = FakeRecipeRepository()
         translator = FakeTranslator()
+        dashboardPreferences = FakeDashboardPreferences()
+        analytics = RecordingAnalytics()
         dashboardRepository =
             object : HealthDashboardRepository {
                 override suspend fun getDashboardMetrics(
@@ -211,7 +263,7 @@ class HomeViewModelTest {
             repository = FakeIngredientRepository(flowOf(ingredients))
 
             // Act (init triggers observe)
-            viewModel = HomeViewModel(repository, recipeRepository, translator, dashboardRepository, userSessionProvider)
+            viewModel = HomeViewModel(repository, recipeRepository, translator, dashboardRepository, userSessionProvider, dashboardPreferences, analytics)
             advanceUntilIdle()
 
             // Assert
@@ -232,7 +284,7 @@ class HomeViewModelTest {
             repository = FakeIngredientRepository(flowOf(emptyList()))
 
             // Act
-            viewModel = HomeViewModel(repository, recipeRepository, translator, dashboardRepository, userSessionProvider)
+            viewModel = HomeViewModel(repository, recipeRepository, translator, dashboardRepository, userSessionProvider, dashboardPreferences, analytics)
             advanceUntilIdle()
 
             // Assert
@@ -286,7 +338,7 @@ class HomeViewModelTest {
             repository = FakeIngredientRepository(flowOf(ingredients))
 
             // Act
-            viewModel = HomeViewModel(repository, recipeRepository, translator, dashboardRepository, userSessionProvider)
+            viewModel = HomeViewModel(repository, recipeRepository, translator, dashboardRepository, userSessionProvider, dashboardPreferences, analytics)
             advanceUntilIdle() // ensure initial collect complete
             viewModel.updateSortingAndGrouping(sort = SortOption.NAME)
 
@@ -323,7 +375,7 @@ class HomeViewModelTest {
             repository = FakeIngredientRepository(flowOf(ingredients))
 
             // Act
-            viewModel = HomeViewModel(repository, recipeRepository, translator, dashboardRepository, userSessionProvider)
+            viewModel = HomeViewModel(repository, recipeRepository, translator, dashboardRepository, userSessionProvider, dashboardPreferences, analytics)
             advanceUntilIdle()
 
             // Assert
@@ -343,7 +395,7 @@ class HomeViewModelTest {
                         rangeDays: Int?,
                     ): Result<HealthDashboardMetrics> = Result.failure(IllegalStateException("network"))
                 }
-            viewModel = HomeViewModel(repository, recipeRepository, translator, failingRepository, userSessionProvider)
+            viewModel = HomeViewModel(repository, recipeRepository, translator, failingRepository, userSessionProvider, dashboardPreferences, analytics)
             advanceUntilIdle()
 
             val state = viewModel.uiState.value.healthDashboard
@@ -391,12 +443,29 @@ class HomeViewModelTest {
                     ): Result<HealthDashboardMetrics> = Result.success(zeroMetrics)
                 }
 
-            viewModel = HomeViewModel(repository, recipeRepository, translator, zeroDashboardRepository, userSessionProvider)
+            viewModel = HomeViewModel(repository, recipeRepository, translator, zeroDashboardRepository, userSessionProvider, dashboardPreferences, analytics)
             advanceUntilIdle()
 
             val metrics = viewModel.uiState.value.healthDashboard.metrics
             requireNotNull(metrics)
             assertTrue((metrics.nutritionDistribution[NutritionCategory.PRODUCE] ?: 0.0) > 0.0)
+        }
+
+    @Test
+    fun `toggling dashboard section persists state and emits analytics`() =
+        runTest(testDispatcher) {
+            viewModel = HomeViewModel(repository, recipeRepository, translator, dashboardRepository, userSessionProvider, dashboardPreferences, analytics)
+            advanceUntilIdle()
+
+            viewModel.onDashboardSectionToggle(DashboardSection.RECOMMENDATIONS, true)
+            advanceUntilIdle()
+
+            val states = viewModel.uiState.value.healthDashboard.sectionStates
+            assertEquals(true, states[DashboardSection.RECOMMENDATIONS])
+            val stored = dashboardPreferences.sectionStates.first()
+            assertEquals(true, stored[DashboardSection.RECOMMENDATIONS])
+            assertTrue(analytics.toggles.any { it.first == DashboardSection.RECOMMENDATIONS })
+            assertTrue(analytics.syncEvents.isNotEmpty())
         }
 
     @Test
@@ -416,7 +485,7 @@ class HomeViewModelTest {
                         return Result.success(dashboardMetrics)
                     }
                 }
-            viewModel = HomeViewModel(repository, recipeRepository, translator, capturingRepository, userSessionProvider)
+            viewModel = HomeViewModel(repository, recipeRepository, translator, capturingRepository, userSessionProvider, dashboardPreferences, analytics)
             advanceUntilIdle()
 
             viewModel.refreshHealthDashboard(includeTrends = true, trendRangeDays = 30)

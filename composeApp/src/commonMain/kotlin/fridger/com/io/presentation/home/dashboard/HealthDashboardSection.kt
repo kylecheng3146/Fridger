@@ -1,5 +1,8 @@
 package fridger.com.io.presentation.home.dashboard
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,8 +15,18 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ColorLens
+import androidx.compose.material.icons.filled.Eco
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.HourglassBottom
+import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.RamenDining
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -31,26 +44,41 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import fridger.com.io.presentation.home.HealthDashboardUiState
 import fridger.shared.health.CalorieBucket
 import fridger.shared.health.DiversityRating
 import fridger.shared.health.ExpiryAlert
+import fridger.shared.health.ExpirySeverity
 import fridger.shared.health.HealthDashboardMetrics
 import fridger.shared.health.HealthRecommendation
+import fridger.shared.health.NutritionCategory
 import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+
+private const val COLLAPSED_IMPRESSION_DELAY_MS = 1_500L
+private val StatusGood = Color(0xFF2D5A27)
+private val StatusWarning = Color(0xFFFF9800)
+private val StatusCritical = Color(0xFFE53935)
 
 @Composable
 fun HealthDashboardSummaryCard(
     state: HealthDashboardUiState,
     onRefresh: () -> Unit,
     onViewDetails: () -> Unit,
+    onToggleSection: (DashboardSection, Boolean) -> Unit,
+    onCollapsedImpression: (DashboardSection, Boolean, Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -105,7 +133,42 @@ fun HealthDashboardSummaryCard(
                     }
                 }
                 state.metrics != null -> {
-                    DashboardMetricsOverview(metrics = state.metrics)
+                    val sectionStates = state.sectionStates
+                    val metrics = state.metrics
+                    DashboardMetricsOverview(metrics = metrics)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        DashboardFoldableSection(
+                            section = DashboardSection.INDICATORS,
+                            title = "指標總覽",
+                            isExpanded = sectionStates[DashboardSection.INDICATORS] ?: DashboardSection.INDICATORS.defaultExpanded,
+                            onToggle = onToggleSection,
+                            onCollapsedImpression = onCollapsedImpression,
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            collapsedContent = { IndicatorCollapsedContent(metrics) },
+                            expandedContent = { IndicatorsExpandedContent(metrics) },
+                        )
+                        DashboardFoldableSection(
+                            section = DashboardSection.RECOMMENDATIONS,
+                            title = "建議與補貨",
+                            isExpanded = sectionStates[DashboardSection.RECOMMENDATIONS] ?: DashboardSection.RECOMMENDATIONS.defaultExpanded,
+                            onToggle = onToggleSection,
+                            onCollapsedImpression = onCollapsedImpression,
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            collapsedContent = { RecommendationsCollapsedContent(metrics) },
+                            expandedContent = { RecommendationsExpandedContent(metrics) },
+                        )
+                        DashboardFoldableSection(
+                            section = DashboardSection.HISTORY,
+                            title = "歷史趨勢",
+                            isExpanded = sectionStates[DashboardSection.HISTORY] ?: DashboardSection.HISTORY.defaultExpanded,
+                            onToggle = onToggleSection,
+                            onCollapsedImpression = onCollapsedImpression,
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            collapsedContent = { HistoryCollapsedContent(metrics) },
+                            expandedContent = { HistoryExpandedContent(metrics) },
+                        )
+                    }
                     Spacer(modifier = Modifier.height(12.dp))
                     Row {
                         TextButton(onClick = onViewDetails) {
@@ -179,6 +242,8 @@ fun HealthDashboardDetailSheet(
     state: HealthDashboardUiState,
     onDismiss: () -> Unit,
     onRefresh: () -> Unit,
+    onToggleSection: (DashboardSection, Boolean) -> Unit,
+    onCollapsedImpression: (DashboardSection, Boolean, Long) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
@@ -220,8 +285,13 @@ fun HealthDashboardDetailSheet(
                     )
                 }
                 else -> {
-                    state.metrics?.let {
-                        DashboardDetailContent(metrics = it)
+                    state.metrics?.let { metrics ->
+                        DashboardDetailContent(
+                            metrics = metrics,
+                            sectionStates = state.sectionStates,
+                            onToggleSection = onToggleSection,
+                            onCollapsedImpression = onCollapsedImpression,
+                        )
                     } ?: Text("目前沒有可顯示的儀表板資料。")
                 }
             }
@@ -231,44 +301,367 @@ fun HealthDashboardDetailSheet(
 }
 
 @Composable
-private fun DashboardDetailContent(metrics: HealthDashboardMetrics) {
+private fun DashboardDetailContent(
+    metrics: HealthDashboardMetrics,
+    sectionStates: Map<DashboardSection, Boolean>,
+    onToggleSection: (DashboardSection, Boolean) -> Unit,
+    onCollapsedImpression: (DashboardSection, Boolean, Long) -> Unit,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        DetailSection(title = "營養比例") {
-            metrics.nutritionDistribution.entries
-                .sortedByDescending { it.value }
-                .forEach { (category, percent) ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(category.displayName, modifier = Modifier.weight(1f))
-                        Text("${percent.roundToInt()}%")
-                    }
+        DashboardFoldableSection(
+            section = DashboardSection.INDICATORS,
+            title = "指標總覽",
+            isExpanded = sectionStates[DashboardSection.INDICATORS] ?: DashboardSection.INDICATORS.defaultExpanded,
+            onToggle = onToggleSection,
+            onCollapsedImpression = onCollapsedImpression,
+            collapsedContent = { IndicatorCollapsedContent(metrics) },
+            expandedContent = { IndicatorsExpandedContent(metrics) },
+        )
+
+        DashboardFoldableSection(
+            section = DashboardSection.RECOMMENDATIONS,
+            title = "建議與補貨",
+            isExpanded = sectionStates[DashboardSection.RECOMMENDATIONS] ?: DashboardSection.RECOMMENDATIONS.defaultExpanded,
+            onToggle = onToggleSection,
+            onCollapsedImpression = onCollapsedImpression,
+            collapsedContent = { RecommendationsCollapsedContent(metrics) },
+            expandedContent = { RecommendationsExpandedContent(metrics) },
+        )
+
+        DashboardFoldableSection(
+            section = DashboardSection.HISTORY,
+            title = "歷史趨勢",
+            isExpanded = sectionStates[DashboardSection.HISTORY] ?: DashboardSection.HISTORY.defaultExpanded,
+            onToggle = onToggleSection,
+            onCollapsedImpression = onCollapsedImpression,
+            collapsedContent = { HistoryCollapsedContent(metrics) },
+            expandedContent = { HistoryExpandedContent(metrics) },
+        )
+    }
+}
+
+@Composable
+private fun DashboardFoldableSection(
+    section: DashboardSection,
+    title: String,
+    isExpanded: Boolean,
+    onToggle: (DashboardSection, Boolean) -> Unit,
+    onCollapsedImpression: (DashboardSection, Boolean, Long) -> Unit,
+    collapsedContent: @Composable () -> Unit,
+    expandedContent: @Composable () -> Unit,
+    modifier: Modifier = Modifier.fillMaxWidth(),
+    containerColor: Color = MaterialTheme.colorScheme.surfaceVariant,
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { onToggle(section, !isExpanded) },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f),
+                )
+                IconButton(onClick = { onToggle(section, !isExpanded) }) {
+                    Icon(
+                        imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (isExpanded) "收合" else "展開",
+                    )
                 }
-        }
-
-        DetailSection(title = "膳食多樣性") {
-            Text("評等：${metrics.diversityScore.rating.label()}")
-            Text("分數：${metrics.diversityScore.value}")
-        }
-
-        DetailSection(title = "即將過期") {
-            if (metrics.expiryAlerts.isEmpty()) {
-                Text("暫無即將過期的食材。")
-            } else {
-                ExpiryAlertList(alerts = metrics.expiryAlerts)
+            }
+            AnimatedVisibility(visible = isExpanded) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    expandedContent()
+                }
+            }
+            AnimatedVisibility(visible = !isExpanded) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    collapsedContent()
+                }
             }
         }
+    }
+    LaunchedEffect(section, isExpanded) {
+        if (!isExpanded) {
+            delay(COLLAPSED_IMPRESSION_DELAY_MS)
+            val isDefault = DashboardSectionDefaults.isDefaultState(section, isExpanded)
+            onCollapsedImpression(section, isDefault, COLLAPSED_IMPRESSION_DELAY_MS)
+        }
+    }
+}
 
-        DetailSection(title = "系統建議") {
-            if (metrics.recommendations.isEmpty()) {
-                Text("目前沒有建議。")
-            } else {
-                RecommendationList(recommendations = metrics.recommendations)
+@Composable
+private fun IndicatorCollapsedContent(metrics: HealthDashboardMetrics) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            listOf(NutritionCategory.PRODUCE, NutritionCategory.PROTEIN, NutritionCategory.REFINED_GRAIN).forEach { category ->
+                val percent = metrics.nutritionDistribution[category] ?: 0.0
+                IndicatorBadge(
+                    icon = nutritionIcon(category),
+                    label = category.displayName,
+                    value = "${percent.roundToInt()}%",
+                    color = nutritionStatusColor(percent),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            IndicatorBadge(
+                icon = Icons.Default.ColorLens,
+                label = "多樣性",
+                value = "${metrics.diversityScore.value} 分",
+                color = diversityStatusColor(metrics.diversityScore.value),
+                modifier = Modifier.weight(1f),
+            )
+            IndicatorBadge(
+                icon = Icons.Default.HourglassBottom,
+                label = "即將過期",
+                value = "${metrics.expiryAlerts.size} 項",
+                color = expiryStatusColor(metrics.expiryAlerts.size),
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun IndicatorBadge(
+    icon: ImageVector,
+    label: String,
+    value: String,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(16.dp))
+                .background(color.copy(alpha = 0.08f))
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(20.dp),
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = color,
+            )
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = color,
+        )
+    }
+}
+
+@Composable
+private fun IndicatorsExpandedContent(metrics: HealthDashboardMetrics) {
+    DetailSection(title = "營養比例") {
+        metrics.nutritionDistribution.entries
+            .sortedByDescending { it.value }
+            .forEach { (category, percent) ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(category.displayName, modifier = Modifier.weight(1f))
+                    Text("${percent.roundToInt()}%")
+                }
+            }
+    }
+
+    DetailSection(title = "膳食多樣性") {
+        Text("評等：${metrics.diversityScore.rating.label()}")
+        Text("分數：${metrics.diversityScore.value}")
+    }
+
+    DetailSection(title = "即將過期") {
+        if (metrics.expiryAlerts.isEmpty()) {
+            Text("暫無即將過期的食材。")
+        } else {
+            ExpiryAlertList(alerts = metrics.expiryAlerts)
+        }
+    }
+}
+
+@Composable
+private fun RecommendationsCollapsedContent(metrics: HealthDashboardMetrics) {
+    val topRecommendation = metrics.recommendations.firstOrNull()
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = Icons.Default.Lightbulb,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier.size(24.dp),
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = topRecommendation?.message ?: "一切均衡，暫無建議。",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+    }
+}
+
+@Composable
+private fun RecommendationsExpandedContent(metrics: HealthDashboardMetrics) {
+    DetailSection(title = "系統建議") {
+        if (metrics.recommendations.isEmpty()) {
+            Text("目前沒有建議。")
+        } else {
+            RecommendationList(recommendations = metrics.recommendations)
+        }
+    }
+}
+
+@Composable
+private fun HistoryCollapsedContent(metrics: HealthDashboardMetrics) {
+    val metadata = metrics.trendMetadata
+    val deficitSummary =
+        metrics.trendSnapshots.firstOrNull()
+            ?.deficitCategories
+            ?.takeIf { it.isNotEmpty() }
+            ?.joinToString("、") { it.displayName }
+    val summaryText =
+        when {
+            metadata != null && deficitSummary != null -> "近 ${metadata.rangeDays} 天偏少：$deficitSummary"
+            metadata != null -> "近 ${metadata.rangeDays} 天趨勢穩定"
+            else -> "尚無足夠的歷史資料"
+        }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = Icons.Default.Timeline,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp),
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = summaryText,
+            style = MaterialTheme.typography.bodyMedium,
+        )
+    }
+}
+
+@Composable
+private fun HistoryExpandedContent(metrics: HealthDashboardMetrics) {
+    metrics.trendMetadata?.let {
+        Text(
+            text = "資料範圍：最近 ${it.rangeDays} 天${if (it.partialRange) "（統計中）" else ""}",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    } ?: Text(
+        text = "尚未累積足夠的趨勢資料。",
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+
+    DetailSection(title = "營養趨勢") {
+        if (metrics.trendSnapshots.isEmpty()) {
+            Text("暫無趨勢資料。")
+        } else {
+            metrics.trendSnapshots.take(3).forEach { snapshot ->
+                Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                    Text(
+                        text = formatDate(snapshot.date),
+                        fontWeight = FontWeight.Medium,
+                    )
+                    val deficit =
+                        snapshot.deficitCategories
+                            .takeIf { it.isNotEmpty() }
+                            ?.joinToString("、") { it.displayName } ?: "無"
+                    Text(
+                        text = "追蹤 ${snapshot.totalTrackedItems} 項 · 缺少 $deficit",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+    }
+
+    DetailSection(title = "多樣性歷史") {
+        if (metrics.diversityHistory.isEmpty()) {
+            Text("尚無多樣性歷史。")
+        } else {
+            metrics.diversityHistory.take(3).forEach { entry ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(formatDate(entry.weekStart))
+                    Text("${entry.score} 分 · ${entry.rating.label()}")
+                }
+            }
+        }
+    }
+
+    if (metrics.expiryHeatmap.isNotEmpty()) {
+        DetailSection(title = "過期熱度") {
+            val grouped = metrics.expiryHeatmap.groupBy { it.severity }
+            grouped.entries.forEach { (severity, cells) ->
+                Text(
+                    text = "${severity.label()}：${cells.sumOf { it.count }} 項",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
             }
         }
     }
 }
+
+private fun nutritionStatusColor(percent: Double): Color =
+    when {
+        percent >= 40 -> StatusGood
+        percent >= 25 -> StatusWarning
+        else -> StatusCritical
+    }
+
+private fun diversityStatusColor(score: Int): Color =
+    when {
+        score >= 70 -> StatusGood
+        score >= 50 -> StatusWarning
+        else -> StatusCritical
+    }
+
+private fun expiryStatusColor(count: Int): Color =
+    when {
+        count == 0 -> StatusGood
+        count <= 2 -> StatusWarning
+        else -> StatusCritical
+    }
+
+private fun nutritionIcon(category: NutritionCategory) =
+    when (category) {
+        NutritionCategory.PRODUCE -> Icons.Default.Eco
+        NutritionCategory.PROTEIN -> Icons.Default.FitnessCenter
+        NutritionCategory.REFINED_GRAIN -> Icons.Default.RamenDining
+        NutritionCategory.OTHER -> Icons.Default.Lightbulb
+    }
+
+private fun formatDate(date: LocalDate): String = "${date.monthNumber}/${date.dayOfMonth}"
 
 @Composable
 private fun DetailSection(
@@ -330,6 +723,13 @@ private fun CalorieBucket.label(): String =
         CalorieBucket.HIGH -> "高"
         CalorieBucket.MODERATE -> "中"
         CalorieBucket.LOW -> "低"
+    }
+
+private fun ExpirySeverity.label(): String =
+    when (this) {
+        ExpirySeverity.HIGH -> "高風險"
+        ExpirySeverity.MEDIUM -> "中等"
+        ExpirySeverity.LOW -> "低"
     }
 
 private fun formatTimestamp(epochMillis: Long): String {

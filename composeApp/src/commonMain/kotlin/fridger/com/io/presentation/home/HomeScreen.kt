@@ -180,6 +180,10 @@ fun HomeScreen(
                             state = dashboardState,
                             onRefresh = { viewModel.refreshHealthDashboard() },
                             onViewDetails = { showDashboardDetails = true },
+                            onToggleSection = { section, expanded -> viewModel.onDashboardSectionToggle(section, expanded) },
+                            onCollapsedImpression = { section, isDefault, duration ->
+                                viewModel.onDashboardSectionCollapsedImpression(section, isDefault, duration)
+                            },
                         )
                     }
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
@@ -404,6 +408,10 @@ fun HomeScreen(
                 state = dashboardState,
                 onDismiss = { showDashboardDetails = false },
                 onRefresh = { viewModel.refreshHealthDashboard(includeTrends = true) },
+                onToggleSection = { section, expanded -> viewModel.onDashboardSectionToggle(section, expanded) },
+                onCollapsedImpression = { section, isDefault, duration ->
+                    viewModel.onDashboardSectionCollapsedImpression(section, isDefault, duration)
+                },
             )
         }
         if (showSettings) {

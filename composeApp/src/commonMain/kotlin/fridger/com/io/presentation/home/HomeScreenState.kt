@@ -1,6 +1,8 @@
 package fridger.com.io.presentation.home
 
 import fridger.com.io.data.model.Freshness
+import fridger.com.io.presentation.home.dashboard.DashboardSection
+import fridger.com.io.presentation.home.dashboard.DashboardSectionDefaults
 import kotlinx.coroutines.Job
 
 // UI state for Home screen
@@ -34,6 +36,7 @@ data class HealthDashboardUiState(
     val metrics: fridger.shared.health.HealthDashboardMetrics? = null,
     val error: String? = null,
     val lastUpdatedEpochMillis: Long? = null,
+    val sectionStates: Map<DashboardSection, Boolean> = DashboardSectionDefaults.defaultStates(),
 )
 
 // Sorting and grouping options

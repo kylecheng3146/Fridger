@@ -3,10 +3,13 @@ package fridger.com.io.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.CreationExtras
+import fridger.com.io.data.analytics.ConsoleHealthDashboardAnalytics
 import fridger.com.io.data.remote.HealthDashboardApiService
 import fridger.com.io.data.repository.HealthDashboardRepositoryImpl
 import fridger.com.io.data.repository.IngredientRepositoryImpl
 import fridger.com.io.data.repository.RecipeRepositoryImpl
+import fridger.com.io.data.settings.DataStoreHealthDashboardPreferences
+import fridger.com.io.data.settings.SharedDataStoreProvider
 import fridger.com.io.data.user.DemoUserSessionProvider
 import fridger.com.io.presentation.home.HomeViewModel
 import fridger.com.io.presentation.settings.SettingsViewModel
@@ -20,6 +23,9 @@ import kotlin.reflect.KClass
  * A factory for creating ViewModels in a multiplatform context.
  */
 class ViewModelFactory : ViewModelProvider.Factory {
+    private val dashboardPreferences by lazy { DataStoreHealthDashboardPreferences(SharedDataStoreProvider.instance) }
+    private val dashboardAnalytics by lazy { ConsoleHealthDashboardAnalytics() }
+
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(
         modelClass: KClass<T>,
@@ -33,6 +39,8 @@ class ViewModelFactory : ViewModelProvider.Factory {
                     MockTranslator(),
                     HealthDashboardRepositoryImpl(HealthDashboardApiService()),
                     DemoUserSessionProvider,
+                    dashboardPreferences,
+                    dashboardAnalytics,
                 ) as T
             SettingsViewModel::class -> SettingsViewModel() as T
             ShoppingListViewModel::class ->

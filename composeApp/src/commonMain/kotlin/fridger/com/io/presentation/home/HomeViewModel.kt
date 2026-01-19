@@ -3,14 +3,20 @@ package fridger.com.io.presentation.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import fridger.com.io.data.QuickAddCatalog
+import fridger.com.io.data.analytics.DashboardSectionAction
+import fridger.com.io.data.analytics.DashboardStateSyncSource
+import fridger.com.io.data.analytics.HealthDashboardAnalytics
 import fridger.com.io.data.model.Freshness
 import fridger.com.io.data.repository.HealthDashboardRepository
 import fridger.com.io.data.repository.IngredientRepository
 import fridger.com.io.data.repository.RecipeRepository
+import fridger.com.io.data.settings.HealthDashboardPreferences
 import fridger.com.io.data.user.UserSessionProvider
-import fridger.com.io.utils.todayPlusDaysDisplay
+import fridger.com.io.presentation.home.dashboard.DashboardSection
+import fridger.com.io.presentation.home.dashboard.DashboardSectionDefaults
 import fridger.com.domain.translator.Translator
 import fridger.com.data.model.remote.MealDto
+import fridger.com.io.utils.todayPlusDaysDisplay
 import fridger.shared.health.HealthDashboardCalculator
 import fridger.shared.health.HealthDashboardMetrics
 import fridger.shared.health.InventoryItem
@@ -35,6 +41,8 @@ class HomeViewModel(
     private val translator: Translator,
     private val healthDashboardRepository: HealthDashboardRepository,
     private val userSessionProvider: UserSessionProvider,
+    private val dashboardPreferences: HealthDashboardPreferences,
+    private val healthDashboardAnalytics: HealthDashboardAnalytics,
 ) : ViewModel() {
     // Recipe translation-driven state
     private val _recipeState = MutableStateFlow<RecipeUiState>(RecipeUiState.Idle)
@@ -45,10 +53,12 @@ class HomeViewModel(
     private var originalRefrigeratedItems: List<RefrigeratedItem> = emptyList()
 
     private val dashboardCalculator = HealthDashboardCalculator()
+    private val defaultSectionStates = DashboardSectionDefaults.defaultStates()
 
     init {
         observeIngredients()
         refreshHealthDashboard()
+        observeDashboardSectionState()
     }
 
     private fun observeIngredients() {
@@ -101,6 +111,22 @@ class HomeViewModel(
         }
     }
 
+    private fun observeDashboardSectionState() {
+        viewModelScope.launch {
+            dashboardPreferences.sectionStates.collect { stored ->
+                val merged = defaultSectionStates.toMutableMap().apply { putAll(stored) }
+                _uiState.update { state ->
+                    state.copy(
+                        healthDashboard =
+                            state.healthDashboard.copy(
+                                sectionStates = merged,
+                            ),
+                    )
+                }
+            }
+        }
+    }
+
     fun refreshHealthDashboard(
         includeTrends: Boolean = false,
         trendRangeDays: Int? = null,
@@ -144,6 +170,38 @@ class HomeViewModel(
                 )
             }
         }
+    }
+
+    fun onDashboardSectionToggle(
+        section: DashboardSection,
+        isExpanded: Boolean,
+    ) {
+        val currentStates = _uiState.value.healthDashboard.sectionStates
+        val previous = currentStates[section] ?: section.defaultExpanded
+        if (previous == isExpanded) return
+        val updated = currentStates.toMutableMap().apply { this[section] = isExpanded }
+        _uiState.update { state ->
+            state.copy(
+                healthDashboard =
+                    state.healthDashboard.copy(
+                        sectionStates = updated,
+                    ),
+            )
+        }
+        val action = if (isExpanded) DashboardSectionAction.EXPANDED else DashboardSectionAction.COLLAPSED
+        healthDashboardAnalytics.trackSectionToggle(section, action, previous)
+        viewModelScope.launch {
+            dashboardPreferences.setSectionStates(updated)
+            healthDashboardAnalytics.trackStateSync(updated, DashboardStateSyncSource.APP)
+        }
+    }
+
+    fun onDashboardSectionCollapsedImpression(
+        section: DashboardSection,
+        isDefault: Boolean,
+        durationMillis: Long,
+    ) {
+        healthDashboardAnalytics.trackCollapsedImpression(section, durationMillis, isDefault)
     }
 
     private fun computeLocalDashboardMetrics(): HealthDashboardMetrics {
