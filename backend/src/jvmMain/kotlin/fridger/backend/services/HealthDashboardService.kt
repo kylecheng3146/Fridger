@@ -7,8 +7,8 @@ import fridger.shared.health.HealthDashboardMetrics
 import fridger.shared.health.InventoryItem
 import fridger.shared.health.TrendMetadata
 import java.time.Instant
-import kotlinx.datetime.LocalDate as KotlinLocalDate
 import java.util.UUID
+import kotlinx.datetime.LocalDate as KotlinLocalDate
 
 interface HealthDashboardProvider {
     fun getDashboard(
@@ -21,7 +21,6 @@ class HealthDashboardService(
     private val dataSource: FridgeItemDataSource,
     private val calculator: HealthDashboardCalculator = HealthDashboardCalculator(),
 ) : HealthDashboardProvider {
-
     override fun getDashboard(
         userId: UUID,
         options: HealthDashboardRequestOptions,

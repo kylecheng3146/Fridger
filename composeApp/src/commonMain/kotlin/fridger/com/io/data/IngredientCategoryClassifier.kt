@@ -246,8 +246,11 @@ object IngredientCategoryClassifier {
         )
 
     private fun keywords(vararg values: String): List<Keyword> = values.map { substring(it) }
+
     private fun substring(value: String) = Keyword(value, MatchMode.SUBSTRING)
+
     private fun wholeWord(value: String) = Keyword(value, MatchMode.WHOLE_WORD)
+
     private fun exact(value: String) = Keyword(value, MatchMode.EXACT)
 
     private data class Keyword(

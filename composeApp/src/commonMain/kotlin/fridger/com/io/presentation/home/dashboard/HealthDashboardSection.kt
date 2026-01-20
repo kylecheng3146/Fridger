@@ -60,12 +60,12 @@ import fridger.shared.health.ExpirySeverity
 import fridger.shared.health.HealthDashboardMetrics
 import fridger.shared.health.HealthRecommendation
 import fridger.shared.health.NutritionCategory
-import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlin.math.roundToInt
 
 private const val COLLAPSED_IMPRESSION_DELAY_MS = 1_500L
 private val StatusGood = Color(0xFF2D5A27)
@@ -228,9 +228,10 @@ private fun DashboardMetricsOverview(metrics: HealthDashboardMetrics) {
                 onClick = {},
                 enabled = false,
                 label = { Text(metrics.recommendations.first().message) },
-                colors = AssistChipDefaults.assistChipColors(
-                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                ),
+                colors =
+                    AssistChipDefaults.assistChipColors(
+                        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
             )
         }
     }
@@ -540,7 +541,8 @@ private fun RecommendationsExpandedContent(metrics: HealthDashboardMetrics) {
 private fun HistoryCollapsedContent(metrics: HealthDashboardMetrics) {
     val metadata = metrics.trendMetadata
     val deficitSummary =
-        metrics.trendSnapshots.firstOrNull()
+        metrics.trendSnapshots
+            .firstOrNull()
             ?.deficitCategories
             ?.takeIf { it.isNotEmpty() }
             ?.joinToString("、") { it.displayName }

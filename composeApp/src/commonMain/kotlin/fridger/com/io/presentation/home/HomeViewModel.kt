@@ -2,11 +2,14 @@ package fridger.com.io.presentation.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import fridger.com.data.model.remote.MealDto
+import fridger.com.domain.translator.Translator
 import fridger.com.io.data.QuickAddCatalog
 import fridger.com.io.data.analytics.DashboardSectionAction
 import fridger.com.io.data.analytics.DashboardStateSyncSource
 import fridger.com.io.data.analytics.HealthDashboardAnalytics
 import fridger.com.io.data.model.Freshness
+import fridger.com.io.data.model.IngredientCategory
 import fridger.com.io.data.repository.HealthDashboardRepository
 import fridger.com.io.data.repository.IngredientRepository
 import fridger.com.io.data.repository.RecipeRepository
@@ -14,8 +17,6 @@ import fridger.com.io.data.settings.HealthDashboardPreferences
 import fridger.com.io.data.user.UserSessionProvider
 import fridger.com.io.presentation.home.dashboard.DashboardSection
 import fridger.com.io.presentation.home.dashboard.DashboardSectionDefaults
-import fridger.com.domain.translator.Translator
-import fridger.com.data.model.remote.MealDto
 import fridger.com.io.utils.todayPlusDaysDisplay
 import fridger.shared.health.HealthDashboardCalculator
 import fridger.shared.health.HealthDashboardMetrics
@@ -91,8 +92,10 @@ class HomeViewModel(
                         applySortAndGroup(
                             visibleBase,
                             _uiState.value.sortOption,
-                            _uiState.value.groupOption
+                            _uiState.value.groupOption,
+                            _uiState.value.activeCategoryFilter
                         )
+                    val categorySummaries = buildCategorySummaries(visibleBase)
 
                     _uiState.update { currentState ->
                         currentState.copy(
@@ -102,6 +105,7 @@ class HomeViewModel(
                             fridgeCapacityPercentage = 0.6f,
                             refrigeratedItems = sorted,
                             groupedRefrigeratedItems = grouped,
+                            categorySummaries = categorySummaries,
                             isLoading = false,
                             error = null
                         )
@@ -254,10 +258,12 @@ class HomeViewModel(
     }
 
     private fun Map<NutritionCategory, Double>.totalPercent(): Double = values.sum()
+
     private fun HealthDashboardMetrics.hasMeaningfulData(): Boolean =
         nutritionDistribution.values.any { it > 0.0 } ||
             expiryAlerts.isNotEmpty() ||
             recommendations.isNotEmpty()
+
     companion object {
         private const val DEFAULT_TREND_RANGE_DAYS = 30
     }
@@ -363,11 +369,18 @@ class HomeViewModel(
         val pending = _uiState.value.pendingDeletion ?: return
         pending.job.cancel()
         _uiState.update { current ->
-            val (sorted, grouped) = applySortAndGroup(originalRefrigeratedItems, current.sortOption, current.groupOption)
+            val (sorted, grouped) =
+                applySortAndGroup(
+                    originalRefrigeratedItems,
+                    current.sortOption,
+                    current.groupOption,
+                    current.activeCategoryFilter
+                )
             current.copy(
                 refrigeratedItems = sorted,
                 groupedRefrigeratedItems = grouped,
-                pendingDeletion = null
+                pendingDeletion = null,
+                categorySummaries = buildCategorySummaries(originalRefrigeratedItems)
             )
         }
     }
@@ -378,7 +391,8 @@ class HomeViewModel(
     ) {
         val newSort = sort ?: _uiState.value.sortOption
         val newGroup = group ?: _uiState.value.groupOption
-        val (sortedBase, groupedBase) = applySortAndGroup(originalRefrigeratedItems, newSort, newGroup)
+        val categoryFilter = _uiState.value.activeCategoryFilter
+        val (sortedBase, groupedBase) = applySortAndGroup(originalRefrigeratedItems, newSort, newGroup, categoryFilter)
         val pendingId =
             _uiState.value.pendingDeletion
                 ?.item
@@ -402,27 +416,78 @@ class HomeViewModel(
     private fun applySortAndGroup(
         items: List<RefrigeratedItem>,
         sort: SortOption,
-        group: GroupOption
+        group: GroupOption,
+        categoryFilter: IngredientCategory?
     ): Pair<List<RefrigeratedItem>, Map<Freshness, List<RefrigeratedItem>>> {
+        val filtered =
+            categoryFilter
+                ?.let { filter -> items.filter { it.category == filter } }
+                ?: items
         val sorted =
             when (sort) {
-                SortOption.EXPIRY -> items.sortedBy { it.daysUntilExpiry }
-                SortOption.NAME -> items.sortedBy { it.name.lowercase() }
-                SortOption.ADDED_DATE -> items.sortedBy { it.ageDays }
+                SortOption.EXPIRY -> filtered.sortedBy { it.daysUntilExpiry }
+                SortOption.NAME -> filtered.sortedBy { it.name.lowercase() }
+                SortOption.ADDED_DATE -> filtered.sortedBy { it.ageDays }
             }
         val grouped =
             if (group == GroupOption.FRESHNESS) sorted.groupBy { it.freshness } else emptyMap()
         return sorted to grouped
     }
 
+    fun onCategoryFilterChange(targetCategory: IngredientCategory?) {
+        val current = _uiState.value
+        if (current.activeCategoryFilter == targetCategory) {
+            // Tapping the same chip again clears the filter
+            applyFilterChange(null)
+        } else {
+            applyFilterChange(targetCategory)
+        }
+    }
+
+    private fun applyFilterChange(newFilter: IngredientCategory?) {
+        val current = _uiState.value
+        val (sorted, grouped) =
+            applySortAndGroup(
+                originalRefrigeratedItems,
+                current.sortOption,
+                current.groupOption,
+                newFilter
+            )
+        _uiState.update {
+            it.copy(
+                activeCategoryFilter = newFilter,
+                refrigeratedItems = sorted,
+                groupedRefrigeratedItems = grouped
+            )
+        }
+    }
+
+    fun onViewModeChange(mode: InventoryViewMode) {
+        _uiState.update { it.copy(viewMode = mode) }
+    }
+
+    private fun buildCategorySummaries(items: List<RefrigeratedItem>): List<CategorySummary> {
+        val soonThresholdDays = 3
+        return items
+            .groupBy { it.category }
+            .map { (category, categoryItems) ->
+                CategorySummary(
+                    category = category,
+                    totalCount = categoryItems.size,
+                    expiringSoonCount = categoryItems.count { it.daysUntilExpiry in 0..soonThresholdDays }
+                )
+            }.sortedBy { it.category.name }
+    }
+
     // Selection mode functions
     fun onToggleItemSelection(itemId: String) {
         _uiState.update { current ->
-            val newSelectedIds = if (current.selectedItemIds.contains(itemId)) {
-                current.selectedItemIds - itemId
-            } else {
-                current.selectedItemIds + itemId
-            }
+            val newSelectedIds =
+                if (current.selectedItemIds.contains(itemId)) {
+                    current.selectedItemIds - itemId
+                } else {
+                    current.selectedItemIds + itemId
+                }
             current.copy(selectedItemIds = newSelectedIds)
         }
     }
@@ -432,7 +497,7 @@ class HomeViewModel(
         if (_uiState.value.selectedItemIds.isEmpty()) {
             return
         }
-        
+
         // Get the first selected item's name to search for recipes
         val selectedItem = originalRefrigeratedItems.find { it.id in _uiState.value.selectedItemIds }
         selectedItem?.let { item ->
@@ -442,31 +507,30 @@ class HomeViewModel(
     }
 
     fun generateRecipeFromIngredient(ingredientName: String) {
-        
         viewModelScope.launch {
             _recipeState.value = RecipeUiState.Loading
-            
-            try {
-                recipeRepository.getRecipesByIngredient(ingredientName)
-                    .onSuccess { mealDtos ->
-                        
-                        val translatedMeals = mealDtos.map { mealDto ->
-                            val originalTitle = mealDto.strMeal.orEmpty()
-                            val originalInstructions = mealDto.strInstructions.orEmpty()
-                            
-                            val translatedTitle = translator.translate(originalTitle)
-                            val translatedInstructions = translator.translate(originalInstructions)
 
-                            
-                            mealDto.copy(
-                                strMeal = translatedTitle,
-                                strInstructions = translatedInstructions
-                            )
-                        }
+            try {
+                recipeRepository
+                    .getRecipesByIngredient(ingredientName)
+                    .onSuccess { mealDtos ->
+
+                        val translatedMeals =
+                            mealDtos.map { mealDto ->
+                                val originalTitle = mealDto.strMeal.orEmpty()
+                                val originalInstructions = mealDto.strInstructions.orEmpty()
+
+                                val translatedTitle = translator.translate(originalTitle)
+                                val translatedInstructions = translator.translate(originalInstructions)
+
+                                mealDto.copy(
+                                    strMeal = translatedTitle,
+                                    strInstructions = translatedInstructions
+                                )
+                            }
 
                         _recipeState.value = RecipeUiState.Success(translatedMeals)
-                    }
-                    .onFailure { e ->
+                    }.onFailure { e ->
                         _recipeState.value = RecipeUiState.Error(e.message ?: "Unknown error")
                     }
             } catch (e: Exception) {
@@ -480,29 +544,28 @@ class HomeViewModel(
     }
 
     fun fetchRandomRecipe() {
-        
         viewModelScope.launch {
             _recipeState.value = RecipeUiState.Loading
-            
+
             try {
-                recipeRepository.getRemoteRandomRecipe()
+                recipeRepository
+                    .getRemoteRandomRecipe()
                     .onSuccess { mealDto ->
-                        
+
                         val originalTitle = mealDto.strMeal.orEmpty()
                         val originalInstructions = mealDto.strInstructions.orEmpty()
-                        
+
                         val translatedTitle = translator.translate(originalTitle)
                         val translatedInstructions = translator.translate(originalInstructions)
 
-                        
-                        val translated = mealDto.copy(
-                            strMeal = translatedTitle,
-                            strInstructions = translatedInstructions
-                        )
+                        val translated =
+                            mealDto.copy(
+                                strMeal = translatedTitle,
+                                strInstructions = translatedInstructions
+                            )
 
                         _recipeState.value = RecipeUiState.Success(listOf(translated))
-                    }
-                    .onFailure { e ->
+                    }.onFailure { e ->
                         _recipeState.value = RecipeUiState.Error(e.message ?: "Unknown error")
                     }
             } catch (e: Exception) {
@@ -514,7 +577,14 @@ class HomeViewModel(
 
 sealed interface RecipeUiState {
     data object Idle : RecipeUiState
+
     data object Loading : RecipeUiState
-    data class Success(val meals: List<MealDto>) : RecipeUiState
-    data class Error(val message: String) : RecipeUiState
+
+    data class Success(
+        val meals: List<MealDto>
+    ) : RecipeUiState
+
+    data class Error(
+        val message: String
+    ) : RecipeUiState
 }

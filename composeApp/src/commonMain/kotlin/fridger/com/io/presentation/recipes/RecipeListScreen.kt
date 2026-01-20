@@ -28,18 +28,27 @@ import fridger.com.data.remote.RecipeApiService
 import fridger.com.io.data.repository.RecipeRepositoryImpl
 import kotlin.reflect.KClass
 
-class RecipeListScreen(private val categoryName: String) : Screen {
+class RecipeListScreen(
+    private val categoryName: String
+) : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         // Provide a simple per-screen factory to pass params
-        val vm: RecipeListViewModel = viewModel(factory = object : ViewModelProvider.Factory {
-            override fun <T : ViewModel> create(modelClass: KClass<T>, extras: CreationExtras): T {
-                val repo = RecipeRepositoryImpl(RecipeApiService())
-                @Suppress("UNCHECKED_CAST")
-                return RecipeListViewModel(repo, categoryName) as T
-            }
-        })
+        val vm: RecipeListViewModel =
+            viewModel(
+                factory =
+                    object : ViewModelProvider.Factory {
+                        override fun <T : ViewModel> create(
+                            modelClass: KClass<T>,
+                            extras: CreationExtras
+                        ): T {
+                            val repo = RecipeRepositoryImpl(RecipeApiService())
+                            @Suppress("UNCHECKED_CAST")
+                            return RecipeListViewModel(repo, categoryName) as T
+                        }
+                    }
+            )
 
         val uiState by vm.uiState.collectAsState()
 
@@ -62,9 +71,10 @@ class RecipeListScreen(private val categoryName: String) : Screen {
                     ) {
                         items(state.meals) { meal ->
                             Card(
-                                modifier = Modifier.fillMaxWidth().clickable {
-                                    meal.idMeal?.let { navigator.push(RecipeDetailScreen(it)) }
-                                },
+                                modifier =
+                                    Modifier.fillMaxWidth().clickable {
+                                        meal.idMeal?.let { navigator.push(RecipeDetailScreen(it)) }
+                                    },
                                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                             ) {
                                 Column(modifier = Modifier.fillMaxWidth()) {

@@ -2,7 +2,6 @@ package fridger.com.io.presentation.home.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -35,24 +34,27 @@ fun BottomActionBar(
         modifier = modifier
     ) {
         Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface),
             shadowElevation = 8.dp
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Cancel button
                 OutlinedButton(
                     onClick = onCancelClick,
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.onSurface
-                    ),
+                    colors =
+                        ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        ),
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
@@ -62,28 +64,33 @@ fun BottomActionBar(
                 }
 
                 val buttonContainerColor by animateColorAsState(
-                    targetValue = if (selectedCount > 0)
-                        MaterialTheme.colorScheme.primary
-                    else
-                        MaterialTheme.colorScheme.surfaceVariant,
+                    targetValue =
+                        if (selectedCount > 0) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        },
                     label = "button_container_color"
                 )
 
                 val buttonContentColor by animateColorAsState(
-                    targetValue = if (selectedCount > 0)
-                        MaterialTheme.colorScheme.onPrimary
-                    else
-                        MaterialTheme.colorScheme.onSurfaceVariant,
+                    targetValue =
+                        if (selectedCount > 0) {
+                            MaterialTheme.colorScheme.onPrimary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
                     label = "button_content_color"
                 )
 
                 Button(
                     onClick = onGenerateRecipeClick,
                     enabled = selectedCount > 0,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = buttonContainerColor,
-                        contentColor = buttonContentColor
-                    ),
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = buttonContainerColor,
+                            contentColor = buttonContentColor
+                        ),
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(

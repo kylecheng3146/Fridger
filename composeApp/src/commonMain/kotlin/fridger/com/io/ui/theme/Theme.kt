@@ -43,16 +43,17 @@ object AppColors {
     val DarkProgressTrack = Color(0xFF424242)
 }
 
-private fun getLightColorScheme(themeColor: ThemeColor) =
-    lightColorScheme(
+private fun getLightColorScheme(themeColor: ThemeColor): ColorScheme {
+    val isTeal = themeColor == ThemeColor.TEAL
+    return lightColorScheme(
         primary = themeColor.primary,
         onPrimary = AppColors.OnPrimary,
         primaryContainer = themeColor.primaryLight.copy(alpha = 0.3f),
         onPrimaryContainer = themeColor.primaryDark,
-        secondary = AppColors.Secondary,
+        secondary = themeColor.secondary,
         onSecondary = AppColors.OnSecondary,
-        secondaryContainer = Color(0xFFFFE082),
-        onSecondaryContainer = Color(0xFF6D4C00),
+        secondaryContainer = if (isTeal) themeColor.secondary.copy(alpha = 0.2f) else Color(0xFFFFE082),
+        onSecondaryContainer = if (isTeal) Color(0xFF00201A) else Color(0xFF6D4C00),
         tertiary = Color(0xFF4CAF50),
         onTertiary = Color.White,
         tertiaryContainer = Color(0xFFC8E6C9),
@@ -71,17 +72,19 @@ private fun getLightColorScheme(themeColor: ThemeColor) =
         outlineVariant = Color(0xFFE0E0E0),
         scrim = Color.Black
     )
+}
 
-private fun getDarkColorScheme(themeColor: ThemeColor) =
-    darkColorScheme(
+private fun getDarkColorScheme(themeColor: ThemeColor): ColorScheme {
+    val isTeal = themeColor == ThemeColor.TEAL
+    return darkColorScheme(
         primary = themeColor.primaryLight,
         onPrimary = themeColor.primaryDark,
         primaryContainer = themeColor.primaryDark,
         onPrimaryContainer = themeColor.primaryLight.copy(alpha = 0.9f),
-        secondary = Color(0xFFFFD54F),
-        onSecondary = Color(0xFF3E2D00),
-        secondaryContainer = Color(0xFF6D4C00),
-        onSecondaryContainer = Color(0xFFFFE082),
+        secondary = themeColor.secondary,
+        onSecondary = if (isTeal) Color(0xFF003730) else Color(0xFF3E2D00),
+        secondaryContainer = if (isTeal) themeColor.secondary.copy(alpha = 0.3f) else Color(0xFF6D4C00),
+        onSecondaryContainer = if (isTeal) Color(0xFFB1ECE3) else Color(0xFFFFE082),
         tertiary = Color(0xFF81C784),
         onTertiary = Color(0xFF003907),
         tertiaryContainer = Color(0xFF1B5E20),
@@ -100,6 +103,7 @@ private fun getDarkColorScheme(themeColor: ThemeColor) =
         outlineVariant = Color(0xFF424242),
         scrim = Color.Black
     )
+}
 
 @Composable
 fun FridgerTheme(

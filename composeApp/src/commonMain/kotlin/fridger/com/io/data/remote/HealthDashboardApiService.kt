@@ -42,8 +42,8 @@ open class HealthDashboardApiService(
         userId: String,
         includeTrends: Boolean = false,
         rangeDays: Int? = null,
-    ): ApiResponse<HealthDashboardMetrics> {
-        return client
+    ): ApiResponse<HealthDashboardMetrics> =
+        client
             .get("$baseUrl$DASHBOARD_PATH") {
                 parameter("userId", userId)
                 if (includeTrends) {
@@ -51,5 +51,4 @@ open class HealthDashboardApiService(
                     rangeDays?.let { parameter("rangeDays", it) }
                 }
             }.body<ApiResponse<HealthDashboardMetrics>>()
-    }
 }

@@ -31,12 +31,13 @@ sealed class AppTab(
     private val title: String,
     private val icon: ImageVector
 ) : Tab {
-
     override val options: TabOptions
         @Composable
         get() {
             val tabTitle = title
-            val painter = androidx.compose.ui.graphics.vector.rememberVectorPainter(icon)
+            val painter =
+                androidx.compose.ui.graphics.vector
+                    .rememberVectorPainter(icon)
             return remember(tabKey) { TabOptions(index = 0u, title = tabTitle, icon = painter) }
         }
 

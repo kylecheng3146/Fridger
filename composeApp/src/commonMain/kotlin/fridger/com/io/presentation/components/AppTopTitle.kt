@@ -13,16 +13,20 @@ import fridger.com.io.ui.theme.sizing
 import fridger.com.io.ui.theme.spacing
 
 @Composable
-fun AppTopTitle(title: String, modifier: Modifier = Modifier) {
+fun AppTopTitle(
+    title: String,
+    modifier: Modifier = Modifier
+) {
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(
-                top = MaterialTheme.sizing.contentPaddingTop,
-                bottom = MaterialTheme.spacing.extraSmall,
-                start = MaterialTheme.sizing.contentPaddingHorizontal,
-                end = MaterialTheme.sizing.contentPaddingHorizontal
-            )
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(
+                    top = MaterialTheme.sizing.contentPaddingTop,
+                    bottom = MaterialTheme.spacing.extraSmall,
+                    start = MaterialTheme.sizing.contentPaddingHorizontal,
+                    end = MaterialTheme.sizing.contentPaddingHorizontal
+                )
     ) {
         Text(
             text = title,

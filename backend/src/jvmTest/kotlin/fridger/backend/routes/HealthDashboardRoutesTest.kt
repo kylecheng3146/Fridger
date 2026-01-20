@@ -31,107 +31,117 @@ class HealthDashboardRoutesTest {
     private val userId = UUID.randomUUID()
 
     @Test
-    fun returnsDashboardMetricsForUser() = testApplication {
-        val provider = FakeProvider()
-        application {
-            install(ContentNegotiation) {
-                json()
+    fun returnsDashboardMetricsForUser() =
+        testApplication {
+            val provider = FakeProvider()
+            application {
+                install(ContentNegotiation) {
+                    json()
+                }
+                routing {
+                    healthDashboardRoutes(provider)
+                }
             }
-            routing {
-                healthDashboardRoutes(provider)
+
+            val response = client.get("${ApiPaths.HEALTH_DASHBOARD}?userId=$userId")
+            assertEquals(HttpStatusCode.OK, response.status)
+            val payload = Json.decodeFromString<ApiResponse<HealthDashboardMetrics>>(response.bodyAsText())
+            assertTrue(payload.success)
+            assertEquals(provider.metrics, payload.data)
+            assertEquals(false, provider.lastOptions?.includeTrends)
+        }
+
+    @Test
+    fun returnsBadRequestWhenMissingUserId() =
+        testApplication {
+            application {
+                install(ContentNegotiation) { json() }
+                routing { healthDashboardRoutes(FakeProvider()) }
             }
-        }
 
-        val response = client.get("${ApiPaths.HEALTH_DASHBOARD}?userId=$userId")
-        assertEquals(HttpStatusCode.OK, response.status)
-        val payload = Json.decodeFromString<ApiResponse<HealthDashboardMetrics>>(response.bodyAsText())
-        assertTrue(payload.success)
-        assertEquals(provider.metrics, payload.data)
-        assertEquals(false, provider.lastOptions?.includeTrends)
-    }
+            val response = client.get(ApiPaths.HEALTH_DASHBOARD)
+            assertEquals(HttpStatusCode.BadRequest, response.status)
+        }
 
     @Test
-    fun returnsBadRequestWhenMissingUserId() = testApplication {
-        application {
-            install(ContentNegotiation) { json() }
-            routing { healthDashboardRoutes(FakeProvider()) }
-        }
+    fun parsesIncludeAndRangeOptions() =
+        testApplication {
+            val provider = FakeProvider()
+            application {
+                install(ContentNegotiation) { json() }
+                routing { healthDashboardRoutes(provider) }
+            }
 
-        val response = client.get(ApiPaths.HEALTH_DASHBOARD)
-        assertEquals(HttpStatusCode.BadRequest, response.status)
-    }
+            val response = client.get("${ApiPaths.HEALTH_DASHBOARD}?userId=$userId&include=trends&rangeDays=30")
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertTrue(provider.lastOptions?.includeTrends == true)
+            assertEquals(30, provider.lastOptions?.rangeDays)
+        }
 
     @Test
-    fun parsesIncludeAndRangeOptions() = testApplication {
-        val provider = FakeProvider()
-        application {
-            install(ContentNegotiation) { json() }
-            routing { healthDashboardRoutes(provider) }
+    fun rejectsInvalidIncludeParameter() =
+        testApplication {
+            application {
+                install(ContentNegotiation) { json() }
+                routing { healthDashboardRoutes(FakeProvider()) }
+            }
+            val response = client.get("${ApiPaths.HEALTH_DASHBOARD}?userId=$userId&include=oops")
+            assertEquals(HttpStatusCode.BadRequest, response.status)
         }
-
-        val response = client.get("${ApiPaths.HEALTH_DASHBOARD}?userId=$userId&include=trends&rangeDays=30")
-        assertEquals(HttpStatusCode.OK, response.status)
-        assertTrue(provider.lastOptions?.includeTrends == true)
-        assertEquals(30, provider.lastOptions?.rangeDays)
-    }
 
     @Test
-    fun rejectsInvalidIncludeParameter() = testApplication {
-        application {
-            install(ContentNegotiation) { json() }
-            routing { healthDashboardRoutes(FakeProvider()) }
+    fun rejectsInvalidRange() =
+        testApplication {
+            application {
+                install(ContentNegotiation) { json() }
+                routing { healthDashboardRoutes(FakeProvider()) }
+            }
+            val response = client.get("${ApiPaths.HEALTH_DASHBOARD}?userId=$userId&include=trends&rangeDays=3")
+            assertEquals(HttpStatusCode.BadRequest, response.status)
         }
-        val response = client.get("${ApiPaths.HEALTH_DASHBOARD}?userId=$userId&include=oops")
-        assertEquals(HttpStatusCode.BadRequest, response.status)
-    }
 
     @Test
-    fun rejectsInvalidRange() = testApplication {
-        application {
-            install(ContentNegotiation) { json() }
-            routing { healthDashboardRoutes(FakeProvider()) }
+    fun ignoresRangeWhenTrendsNotRequested() =
+        testApplication {
+            val provider = FakeProvider()
+            application {
+                install(ContentNegotiation) { json() }
+                routing { healthDashboardRoutes(provider) }
+            }
+            val response = client.get("${ApiPaths.HEALTH_DASHBOARD}?userId=$userId&rangeDays=3")
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertEquals(false, provider.lastOptions?.includeTrends)
+            assertEquals(DEFAULT_TREND_RANGE_DAYS, provider.lastOptions?.rangeDays)
         }
-        val response = client.get("${ApiPaths.HEALTH_DASHBOARD}?userId=$userId&include=trends&rangeDays=3")
-        assertEquals(HttpStatusCode.BadRequest, response.status)
-    }
-
-    @Test
-    fun ignoresRangeWhenTrendsNotRequested() = testApplication {
-        val provider = FakeProvider()
-        application {
-            install(ContentNegotiation) { json() }
-            routing { healthDashboardRoutes(provider) }
-        }
-        val response = client.get("${ApiPaths.HEALTH_DASHBOARD}?userId=$userId&rangeDays=3")
-        assertEquals(HttpStatusCode.OK, response.status)
-        assertEquals(false, provider.lastOptions?.includeTrends)
-        assertEquals(DEFAULT_TREND_RANGE_DAYS, provider.lastOptions?.rangeDays)
-    }
 
     private class FakeProvider : HealthDashboardProvider {
-        val metrics = HealthDashboardMetrics(
-            nutritionDistribution = mapOf(
-                NutritionCategory.PRODUCE to 60.0,
-                NutritionCategory.PROTEIN to 30.0,
-                NutritionCategory.OTHER to 10.0,
-            ),
-            diversityScore = DiversityScore(70, DiversityRating.BALANCED),
-            expiryAlerts = listOf(
-                ExpiryAlert(
-                    itemName = "Berry Mix",
-                    category = NutritionCategory.PRODUCE,
-                    daysUntilExpiry = 2,
-                    calorieBucket = CalorieBucket.LOW,
-                ),
-            ),
-            recommendations = listOf(
-                HealthRecommendation(
-                    category = NutritionCategory.REFINED_GRAIN,
-                    reason = RecommendationReason.LOW_STOCK,
-                    message = "Add grains",
-                ),
-            ),
-        )
+        val metrics =
+            HealthDashboardMetrics(
+                nutritionDistribution =
+                    mapOf(
+                        NutritionCategory.PRODUCE to 60.0,
+                        NutritionCategory.PROTEIN to 30.0,
+                        NutritionCategory.OTHER to 10.0,
+                    ),
+                diversityScore = DiversityScore(70, DiversityRating.BALANCED),
+                expiryAlerts =
+                    listOf(
+                        ExpiryAlert(
+                            itemName = "Berry Mix",
+                            category = NutritionCategory.PRODUCE,
+                            daysUntilExpiry = 2,
+                            calorieBucket = CalorieBucket.LOW,
+                        ),
+                    ),
+                recommendations =
+                    listOf(
+                        HealthRecommendation(
+                            category = NutritionCategory.REFINED_GRAIN,
+                            reason = RecommendationReason.LOW_STOCK,
+                            message = "Add grains",
+                        ),
+                    ),
+            )
 
         var lastOptions: HealthDashboardRequestOptions? = null
 

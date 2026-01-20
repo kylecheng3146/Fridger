@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.map
 
 interface HealthDashboardPreferences {
     val sectionStates: Flow<Map<DashboardSection, Boolean>>
+
     suspend fun setSectionStates(states: Map<DashboardSection, Boolean>)
 }
 
@@ -44,7 +45,8 @@ class DataStoreHealthDashboardPreferences(
 
     private fun decodeStates(raw: String): Map<DashboardSection, Boolean> {
         val defaults = DashboardSectionDefaults.defaultStates().toMutableMap()
-        raw.split("|")
+        raw
+            .split("|")
             .mapNotNull { token ->
                 val parts = token.split(":")
                 if (parts.size == 2) {

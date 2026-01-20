@@ -44,7 +44,6 @@ import fridger.composeapp.generated.resources.quick_add_pick_query
 import fridger.composeapp.generated.resources.quick_add_quick_pick
 import fridger.composeapp.generated.resources.quick_add_search_hint
 import fridger.composeapp.generated.resources.quick_add_selected_prefix
-import fridger.composeapp.generated.resources.quick_add_title
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource

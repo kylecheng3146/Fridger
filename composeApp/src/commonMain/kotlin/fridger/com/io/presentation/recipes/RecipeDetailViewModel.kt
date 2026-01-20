@@ -11,15 +11,20 @@ import kotlinx.coroutines.launch
 
 sealed interface RecipeDetailUiState {
     data object Loading : RecipeDetailUiState
-    data class Success(val meal: MealDto) : RecipeDetailUiState
-    data class Error(val message: String?) : RecipeDetailUiState
+
+    data class Success(
+        val meal: MealDto
+    ) : RecipeDetailUiState
+
+    data class Error(
+        val message: String?
+    ) : RecipeDetailUiState
 }
 
 class RecipeDetailViewModel(
     private val recipeRepository: RecipeRepository,
     private val mealId: String
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow<RecipeDetailUiState>(RecipeDetailUiState.Loading)
     val uiState: StateFlow<RecipeDetailUiState> = _uiState.asStateFlow()
 
@@ -27,11 +32,11 @@ class RecipeDetailViewModel(
         viewModelScope.launch {
             _uiState.value = RecipeDetailUiState.Loading
             try {
-                recipeRepository.getRecipeById(mealId)
+                recipeRepository
+                    .getRecipeById(mealId)
                     .onSuccess { meal ->
                         _uiState.value = RecipeDetailUiState.Success(meal)
-                    }
-                    .onFailure { error ->
+                    }.onFailure { error ->
                         _uiState.value = RecipeDetailUiState.Error(error.message)
                     }
             } catch (e: Exception) {

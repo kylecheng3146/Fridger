@@ -339,7 +339,8 @@ private fun todayDisplay(): String {
 
 @Composable
 private fun ShoppingHeader() {
-    fridger.com.io.presentation.components.AppTopTitle(title = "購物清單")
+    fridger.com.io.presentation.components
+        .AppTopTitle(title = "購物清單")
 }
 
 @Composable

@@ -2,49 +2,6 @@
 
 package fridger.com.io.presentation.home
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Text
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.Alignment
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
@@ -55,20 +12,73 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ViewList
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil3.compose.AsyncImage
+import fridger.com.data.model.remote.MealDto
 import fridger.com.io.data.model.Freshness
+import fridger.com.io.data.model.IngredientCategory
 import fridger.com.io.presentation.ViewModelFactoryProvider
 import fridger.com.io.presentation.components.ShoppingQuickAddTopDialog
+import fridger.com.io.presentation.home.CategorySummary
+import fridger.com.io.presentation.home.InventoryViewMode
 import fridger.com.io.presentation.home.components.BottomActionBar
-import fridger.com.io.presentation.home.components.RecipeResultSheet
-import fridger.com.data.model.remote.MealDto
+import fridger.com.io.presentation.home.components.IngredientCompactCard
 import fridger.com.io.presentation.home.dashboard.HealthDashboardDetailSheet
 import fridger.com.io.presentation.home.dashboard.HealthDashboardSummaryCard
 import fridger.com.io.presentation.settings.SettingsScreen
@@ -82,9 +92,6 @@ import fridger.composeapp.generated.resources.Res
 import fridger.composeapp.generated.resources.home_refrigerated
 import fridger.composeapp.generated.resources.home_title
 import org.jetbrains.compose.resources.stringResource
-import coil3.compose.AsyncImage
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 
 @Composable
 private fun SectionTitle(title: String) {
@@ -189,9 +196,10 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
 
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
                     ) {
                         Button(onClick = { viewModel.fetchRandomRecipe() }) {
                             Text("給我一個隨機食譜")
@@ -210,7 +218,6 @@ fun HomeScreen(
                 item {
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraHuge))
                 }
-
 
                 if (uiState.refrigeratedItems.isEmpty()) {
                     item {
@@ -250,10 +257,15 @@ fun HomeScreen(
                 refrigeratedSection(
                     refrigeratedItems = uiState.refrigeratedItems,
                     groupedRefrigeratedItems = uiState.groupedRefrigeratedItems,
+                    categorySummaries = uiState.categorySummaries,
+                    activeCategoryFilter = uiState.activeCategoryFilter,
                     sortOption = uiState.sortOption,
                     groupOption = uiState.groupOption,
+                    viewMode = uiState.viewMode,
                     onSortChange = { sort -> viewModel.updateSortingAndGrouping(sort = sort) },
                     onGroupChange = { group -> viewModel.updateSortingAndGrouping(group = group) },
+                    onCategoryFilterChange = viewModel::onCategoryFilterChange,
+                    onViewModeChange = viewModel::onViewModeChange,
                     onItemClick = { id -> viewModel.onItemClick(id) },
                     onRemoveItem = { id -> viewModel.onRemoveItemInitiated(id) },
                     selectedItemIds = uiState.selectedItemIds,
@@ -264,14 +276,14 @@ fun HomeScreen(
 
         LaunchedEffect(uiState.pendingDeletion) {
             val pendingItem = uiState.pendingDeletion?.item
-            if (pendingItem!=null) {
+            if (pendingItem != null) {
                 val result =
                     snackbarHostState.showSnackbar(
                         message = "${pendingItem.name} 已被移除",
                         actionLabel = "復原",
                         duration = SnackbarDuration.Short
                     )
-                if (result==SnackbarResult.ActionPerformed) {
+                if (result == SnackbarResult.ActionPerformed) {
                     viewModel.undoRemoveItem()
                 }
             }
@@ -314,9 +326,10 @@ fun HomeScreen(
                 Column(modifier = Modifier.padding(16.dp)) {
                     // Header with close button
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -325,7 +338,7 @@ fun HomeScreen(
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold
                         )
-                        
+
                         IconButton(
                             onClick = { viewModel.resetRecipeState() },
                             modifier = Modifier.size(32.dp)
@@ -337,14 +350,15 @@ fun HomeScreen(
                             )
                         }
                     }
-                    
+
                     when (val state = recipeState) {
                         is RecipeUiState.Loading -> {
                             println("🎨 UI: Displaying loading state")
                             Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(200.dp),
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 CircularProgressIndicator()
@@ -378,9 +392,10 @@ fun HomeScreen(
                         is RecipeUiState.Error -> {
                             println("🎨 UI: Displaying error state: ${state.message}")
                             Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(20.dp),
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(20.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
@@ -436,10 +451,15 @@ fun HomeScreen(
 private fun LazyListScope.refrigeratedSection(
     refrigeratedItems: List<RefrigeratedItem>,
     groupedRefrigeratedItems: Map<Freshness, List<RefrigeratedItem>>,
+    categorySummaries: List<CategorySummary>,
+    activeCategoryFilter: IngredientCategory?,
     sortOption: SortOption,
     groupOption: GroupOption,
+    viewMode: InventoryViewMode,
     onSortChange: (SortOption) -> Unit,
     onGroupChange: (GroupOption) -> Unit,
+    onCategoryFilterChange: (IngredientCategory?) -> Unit,
+    onViewModeChange: (InventoryViewMode) -> Unit,
     onItemClick: (String) -> Unit,
     onRemoveItem: (String) -> Unit,
     selectedItemIds: Set<String>,
@@ -454,89 +474,88 @@ private fun LazyListScope.refrigeratedSection(
                         .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
                         .padding(bottom = MaterialTheme.spacing.small),
             ) {
-                SectionTitle(title = stringResource(Res.string.home_refrigerated))
-                Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    @Composable
-                    fun SortChip(
-                        label: String,
-                        selected: Boolean,
-                        onClick: () -> Unit
-                    ) {
-                        val bg by animateColorAsState(
-                            targetValue = if (selected)
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                            else
-                                MaterialTheme.colorScheme.surface,
-                            label = "sort_chip_bg"
-                        )
-                        val fg by animateColorAsState(
-                            targetValue = if (selected)
-                                MaterialTheme.colorScheme.primary
-                            else
-                                MaterialTheme.colorScheme.onSurface,
-                            label = "sort_chip_fg"
-                        )
-
-                        Box(
-                            modifier =
-                                Modifier
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(bg)
-                                    .clickable(onClick = onClick)
-                                    .padding(horizontal = 12.dp, vertical = 6.dp)
-                        ) { Text(label, color = fg, fontSize = 12.sp) }
-                    }
-                    SortChip(
-                        stringResource(Res.string.home_sort_expiry),
-                        sortOption==SortOption.EXPIRY
-                    ) { onSortChange(SortOption.EXPIRY) }
-                    SortChip(
-                        stringResource(Res.string.home_sort_name),
-                        sortOption==SortOption.NAME
-                    ) { onSortChange(SortOption.NAME) }
-                    SortChip(
-                        stringResource(Res.string.home_sort_added_date),
-                        sortOption==SortOption.ADDED_DATE
-                    ) { onSortChange(SortOption.ADDED_DATE) }
-
-                    Spacer(modifier = Modifier.width(MaterialTheme.spacing.large))
-
-                    Text(
-                        stringResource(Res.string.home_group_label),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontSize = 12.sp
+                    SectionTitle(title = stringResource(Res.string.home_refrigerated))
+                    InventoryViewModeToggle(
+                        viewMode = viewMode,
+                        onViewModeChange = onViewModeChange
                     )
-                    val isGrouped = groupOption==GroupOption.FRESHNESS
-                    SortChip(stringResource(Res.string.home_group_by_freshness), isGrouped) {
-                        onGroupChange(if (isGrouped) GroupOption.NONE else GroupOption.FRESHNESS)
-                    }
                 }
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+                if (categorySummaries.isNotEmpty()) {
+                    CategorySummaryRow(
+                        summaries = categorySummaries,
+                        activeCategory = activeCategoryFilter,
+                        onCategorySelected = onCategoryFilterChange,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+                }
+                SortAndGroupRow(
+                    sortOption = sortOption,
+                    groupOption = groupOption,
+                    onSortChange = onSortChange,
+                    onGroupChange = onGroupChange
+                )
                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
             }
         }
     }
 
-    if (groupOption==GroupOption.NONE) {
-        items(
-            items = refrigeratedItems,
-            key = { it.id }
-        ) { item ->
-            fridger.com.io.presentation.home.components.IngredientItem(
-                item = item,
-                isSelected = selectedItemIds.contains(item.id),
-                onClick = { onToggleItemSelection(item.id) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .animateItemPlacementCompat()
-                    .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
-                onRemove = { onRemoveItem(item.id) }
-            )
-            Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
+    if (groupOption == GroupOption.NONE) {
+        if (viewMode == InventoryViewMode.LIST) {
+            items(
+                items = refrigeratedItems,
+                key = { it.id }
+            ) { item ->
+                fridger.com.io.presentation.home.components.IngredientItem(
+                    item = item,
+                    isSelected = selectedItemIds.contains(item.id),
+                    onClick = { onToggleItemSelection(item.id) },
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .animateItemPlacementCompat()
+                            .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
+                    onRemove = { onRemoveItem(item.id) }
+                )
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
+            }
+        } else {
+            val rows = refrigeratedItems.chunked(2)
+            items(
+                items = rows,
+                key = { row -> row.joinToString("_") { it.id } }
+            ) { rowItems ->
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
+                            .padding(bottom = MaterialTheme.spacing.medium),
+                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
+                ) {
+                    rowItems.forEach { item ->
+                        IngredientCompactCard(
+                            item = item,
+                            isSelected = selectedItemIds.contains(item.id),
+                            modifier =
+                                Modifier
+                                    .weight(1f)
+                                    .animateItemPlacementCompat(),
+                            onClick = { onToggleItemSelection(item.id) },
+                            onRemove = { onRemoveItem(item.id) }
+                        )
+                    }
+                    if (rowItems.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
         }
     } else {
         val groupsOrder = listOf(Freshness.Expired, Freshness.NearingExpiration, Freshness.Fresh)
@@ -572,10 +591,11 @@ private fun LazyListScope.refrigeratedSection(
                         item = item,
                         isSelected = selectedItemIds.contains(item.id),
                         onClick = { onToggleItemSelection(item.id) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .animateItemPlacementCompat()
-                            .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .animateItemPlacementCompat()
+                                .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
                         onRemove = { onRemoveItem(item.id) }
                     )
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
@@ -584,6 +604,260 @@ private fun LazyListScope.refrigeratedSection(
         }
     }
 }
+
+@Composable
+private fun InventoryViewModeToggle(
+    viewMode: InventoryViewMode,
+    onViewModeChange: (InventoryViewMode) -> Unit,
+) {
+    val options = listOf(InventoryViewMode.LIST, InventoryViewMode.GRID)
+    SingleChoiceSegmentedButtonRow {
+        options.forEachIndexed { index, option ->
+            SegmentedButton(
+                selected = option == viewMode,
+                onClick = { onViewModeChange(option) },
+                shape = SegmentedButtonDefaults.itemShape(index, options.size),
+                label = {
+                    val label =
+                        when (option) {
+                            InventoryViewMode.LIST -> stringResource(Res.string.home_view_mode_list)
+                            InventoryViewMode.GRID -> stringResource(Res.string.home_view_mode_grid)
+                        }
+                    Text(text = label, fontSize = 12.sp)
+                },
+                icon = {
+                    val icon =
+                        when (option) {
+                            InventoryViewMode.LIST -> Icons.Default.ViewList
+                            InventoryViewMode.GRID -> Icons.Default.Dashboard
+                        }
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun SortAndGroupRow(
+    sortOption: SortOption,
+    groupOption: GroupOption,
+    onSortChange: (SortOption) -> Unit,
+    onGroupChange: (GroupOption) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        SortChip(
+            label = stringResource(Res.string.home_sort_expiry),
+            selected = sortOption == SortOption.EXPIRY,
+            onClick = { onSortChange(SortOption.EXPIRY) }
+        )
+        SortChip(
+            label = stringResource(Res.string.home_sort_name),
+            selected = sortOption == SortOption.NAME,
+            onClick = { onSortChange(SortOption.NAME) }
+        )
+        SortChip(
+            label = stringResource(Res.string.home_sort_added_date),
+            selected = sortOption == SortOption.ADDED_DATE,
+            onClick = { onSortChange(SortOption.ADDED_DATE) }
+        )
+
+        Spacer(modifier = Modifier.width(MaterialTheme.spacing.large))
+
+        Text(
+            text = stringResource(Res.string.home_group_label),
+            color = MaterialTheme.colorScheme.onBackground,
+            fontSize = 12.sp
+        )
+        val isGrouped = groupOption == GroupOption.FRESHNESS
+        SortChip(
+            label = stringResource(Res.string.home_group_by_freshness),
+            selected = isGrouped,
+            onClick = { onGroupChange(if (isGrouped) GroupOption.NONE else GroupOption.FRESHNESS) }
+        )
+    }
+}
+
+@Composable
+private fun SortChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val bg by animateColorAsState(
+        targetValue =
+            if (selected) {
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+            } else {
+                MaterialTheme.colorScheme.surface
+            },
+        label = "sort_chip_bg"
+    )
+    val fg by animateColorAsState(
+        targetValue =
+            if (selected) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+        label = "sort_chip_fg"
+    )
+
+    Box(
+        modifier =
+            Modifier
+                .clip(RoundedCornerShape(16.dp))
+                .background(bg)
+                .clickable(onClick = onClick)
+                .padding(horizontal = 12.dp, vertical = 6.dp)
+    ) {
+        Text(label, color = fg, fontSize = 12.sp)
+    }
+}
+
+@Composable
+private fun CategorySummaryRow(
+    summaries: List<CategorySummary>,
+    activeCategory: IngredientCategory?,
+    onCategorySelected: (IngredientCategory?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val totalCount = summaries.sumOf { it.totalCount }
+    val totalExpiring = summaries.sumOf { it.expiringSoonCount }
+    LazyRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
+    ) {
+        item(key = "all") {
+            CategorySummaryCard(
+                title = stringResource(Res.string.home_category_all),
+                icon = "✨",
+                totalCount = totalCount,
+                expiringSoon = totalExpiring,
+                isSelected = activeCategory == null,
+                secondaryLabel = stringResource(Res.string.home_category_chip_clear),
+                onClick = { onCategorySelected(null) }
+            )
+        }
+        items(
+            items = summaries,
+            key = { it.category.name }
+        ) { summary ->
+            CategorySummaryCard(
+                title = categoryLabel(summary.category),
+                icon = categoryIcon(summary.category),
+                totalCount = summary.totalCount,
+                expiringSoon = summary.expiringSoonCount,
+                isSelected = activeCategory == summary.category,
+                onClick = { onCategorySelected(summary.category) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun CategorySummaryCard(
+    title: String,
+    icon: String,
+    totalCount: Int,
+    expiringSoon: Int,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    secondaryLabel: String? = null,
+    modifier: Modifier = Modifier,
+) {
+    val borderColor by animateColorAsState(
+        targetValue =
+            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+        label = "category_card_border"
+    )
+    Surface(
+        modifier =
+            modifier
+                .widthIn(min = 120.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .clickable(onClick = onClick),
+        tonalElevation = if (isSelected) 4.dp else 0.dp,
+        color =
+            if (isSelected) {
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+            } else {
+                MaterialTheme.colorScheme.surface
+            },
+        border = BorderStroke(1.dp, borderColor)
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(text = icon, fontSize = 18.sp)
+                Text(
+                    text = title,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            Text(
+                text = stringResource(Res.string.home_category_total, totalCount),
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            if (expiringSoon > 0) {
+                Text(
+                    text = stringResource(Res.string.home_category_expiring_badge, expiringSoon),
+                    fontSize = 12.sp,
+                    color = AppColors.Warning,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+            secondaryLabel?.let {
+                Text(
+                    text = it,
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun categoryLabel(category: IngredientCategory): String {
+    val resId =
+        when (category) {
+            IngredientCategory.VEGETABLES -> Res.string.home_category_vegetables
+            IngredientCategory.FRUITS -> Res.string.home_category_fruits
+            IngredientCategory.MEAT -> Res.string.home_category_meat
+            IngredientCategory.DAIRY -> Res.string.home_category_dairy
+            IngredientCategory.SEAFOOD -> Res.string.home_category_seafood
+            IngredientCategory.GRAINS -> Res.string.home_category_grains
+            IngredientCategory.OTHERS -> Res.string.home_category_others
+        }
+    return stringResource(resId)
+}
+
+private fun categoryIcon(category: IngredientCategory): String =
+    when (category) {
+        IngredientCategory.VEGETABLES -> "🥬"
+        IngredientCategory.FRUITS -> "🍎"
+        IngredientCategory.MEAT -> "🥩"
+        IngredientCategory.DAIRY -> "🥛"
+        IngredientCategory.SEAFOOD -> "🐟"
+        IngredientCategory.GRAINS -> "🌾"
+        IngredientCategory.OTHERS -> "🧂"
+    }
 
 @Composable
 private fun HomeHeader(onSettingsClick: () -> Unit) {
@@ -649,9 +923,10 @@ private fun LazyListScope.expirySection(
             ExpiringListItemCard(
                 item = item,
                 accentColor = MaterialTheme.colorScheme.error,
-                modifier = Modifier
-                    .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
-                    .padding(bottom = MaterialTheme.spacing.medium)
+                modifier =
+                    Modifier
+                        .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
+                        .padding(bottom = MaterialTheme.spacing.medium)
             )
         }
     }
@@ -683,9 +958,10 @@ private fun LazyListScope.expirySection(
             ExpiringListItemCard(
                 item = item,
                 accentColor = AppColors.Warning,
-                modifier = Modifier
-                    .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
-                    .padding(bottom = MaterialTheme.spacing.medium)
+                modifier =
+                    Modifier
+                        .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
+                        .padding(bottom = MaterialTheme.spacing.medium)
             )
         }
     }
@@ -717,14 +993,14 @@ private fun LazyListScope.expirySection(
             ExpiringListItemCard(
                 item = item,
                 accentColor = MaterialTheme.colorScheme.error,
-                modifier = Modifier
-                    .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
-                    .padding(bottom = MaterialTheme.spacing.medium)
+                modifier =
+                    Modifier
+                        .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
+                        .padding(bottom = MaterialTheme.spacing.medium)
             )
         }
     }
 }
-
 
 @Composable
 private fun ExpiryCard(
@@ -828,10 +1104,11 @@ private fun ExpiringListItemCard(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = stringResourceFormat(
-                        Res.string.home_item_quantity,
-                        item.count.toString()
-                    ),
+                    text =
+                        stringResourceFormat(
+                            Res.string.home_item_quantity,
+                            item.count.toString()
+                        ),
                     fontSize = 14.sp,
                     color = AppColors.TextSecondary
                 )
@@ -847,16 +1124,18 @@ private fun ExpiringListItemCard(
             ) {
                 val daysText =
                     when (val disp = item.expiryDisplay) {
-                        is ExpiryDisplay.Overdue -> stringResourceFormat(
-                            Res.string.home_days_overdue,
-                            disp.days
-                        )
+                        is ExpiryDisplay.Overdue ->
+                            stringResourceFormat(
+                                Res.string.home_days_overdue,
+                                disp.days
+                            )
 
                         ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
-                        is ExpiryDisplay.Until -> stringResourceFormat(
-                            Res.string.home_days_until,
-                            disp.days
-                        )
+                        is ExpiryDisplay.Until ->
+                            stringResourceFormat(
+                                Res.string.home_days_until,
+                                disp.days
+                            )
                     }
                 Text(
                     text = daysText,
@@ -885,8 +1164,12 @@ private fun RefrigeratedItemCard(
     )
 
     val borderColor by animateColorAsState(
-        targetValue = if (selectedItemIds.contains(item.id))
-            MaterialTheme.colorScheme.primary else Color.Transparent,
+        targetValue =
+            if (selectedItemIds.contains(item.id)) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                Color.Transparent
+            },
         label = "borderColorAnimation"
     )
 
@@ -904,9 +1187,10 @@ private fun RefrigeratedItemCard(
         border = BorderStroke(borderWidth, borderColor)
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onClick)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onClick)
         ) {
             if (compact) {
                 Box(
@@ -934,7 +1218,6 @@ private fun RefrigeratedItemCard(
                         }
                     }
 
-
                     Column(
                         modifier =
                             Modifier
@@ -959,9 +1242,10 @@ private fun RefrigeratedItemCard(
                 }
             } else {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(MaterialTheme.spacing.large),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(MaterialTheme.spacing.large),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(
@@ -1026,48 +1310,54 @@ private fun RefrigeratedItemCard(
                                 when (item.freshness) {
                                     Freshness.Expired ->
                                         MaterialTheme.colorScheme.error to
-                                                when (val d = item.expiryDisplay) {
-                                                    is ExpiryDisplay.Overdue -> stringResourceFormat(
+                                            when (val d = item.expiryDisplay) {
+                                                is ExpiryDisplay.Overdue ->
+                                                    stringResourceFormat(
                                                         Res.string.home_days_overdue,
                                                         d.days
                                                     )
 
-                                                    ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
-                                                    is ExpiryDisplay.Until -> stringResourceFormat(
+                                                ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
+                                                is ExpiryDisplay.Until ->
+                                                    stringResourceFormat(
                                                         Res.string.home_days_until,
                                                         d.days
                                                     )
-                                                }
+                                            }
 
                                     Freshness.NearingExpiration ->
                                         AppColors.Warning to
-                                                when (val d = item.expiryDisplay) {
-                                                    is ExpiryDisplay.Overdue -> stringResourceFormat(
+                                            when (val d = item.expiryDisplay) {
+                                                is ExpiryDisplay.Overdue ->
+                                                    stringResourceFormat(
                                                         Res.string.home_days_overdue,
                                                         d.days
                                                     )
 
-                                                    ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
-                                                    is ExpiryDisplay.Until -> stringResourceFormat(
+                                                ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
+                                                is ExpiryDisplay.Until ->
+                                                    stringResourceFormat(
                                                         Res.string.home_days_until,
                                                         d.days
                                                     )
-                                                }
+                                            }
 
                                     Freshness.Fresh ->
                                         AppColors.TextSecondary to
-                                                when (val d = item.expiryDisplay) {
-                                                    is ExpiryDisplay.Overdue -> stringResourceFormat(
+                                            when (val d = item.expiryDisplay) {
+                                                is ExpiryDisplay.Overdue ->
+                                                    stringResourceFormat(
                                                         Res.string.home_days_overdue,
                                                         d.days
                                                     )
 
-                                                    ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
-                                                    is ExpiryDisplay.Until -> stringResourceFormat(
+                                                ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
+                                                is ExpiryDisplay.Until ->
+                                                    stringResourceFormat(
                                                         Res.string.home_days_until,
                                                         d.days
                                                     )
-                                                }
+                                            }
                                 }
                             Text(
                                 text = textDisplay,
@@ -1088,11 +1378,12 @@ fun RecipeDetails(meal: MealDto) {
         // 食譜圖片
         if (!meal.strMealThumb.isNullOrBlank()) {
             println("🖼️ UI: Loading recipe image: ${meal.strMealThumb}")
-            
+
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
                 shape = RoundedCornerShape(12.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
@@ -1101,10 +1392,10 @@ fun RecipeDetails(meal: MealDto) {
                     contentDescription = meal.strMeal ?: "Recipe image",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
-                    onLoading = { 
+                    onLoading = {
                         println("🖼️ COIL: Loading image ${meal.strMealThumb}")
                     },
-                    onSuccess = { 
+                    onSuccess = {
                         println("✅ COIL: Successfully loaded image ${meal.strMealThumb}")
                     },
                     onError = { error ->
@@ -1112,19 +1403,19 @@ fun RecipeDetails(meal: MealDto) {
                     }
                 )
             }
-            
+
             Spacer(Modifier.height(16.dp))
         }
-        
+
         // 食譜標題
         Text(
             text = meal.strMeal ?: "無標題",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold
         )
-        
+
         Spacer(Modifier.height(8.dp))
-        
+
         // 分類和地區資訊
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -1132,9 +1423,10 @@ fun RecipeDetails(meal: MealDto) {
         ) {
             meal.strCategory?.let { category ->
                 Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                    ),
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                        ),
                     modifier = Modifier.padding(vertical = 2.dp)
                 ) {
                     Text(
@@ -1147,9 +1439,10 @@ fun RecipeDetails(meal: MealDto) {
             }
             meal.strArea?.let { area ->
                 Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)
-                    ),
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)
+                        ),
                     modifier = Modifier.padding(vertical = 2.dp)
                 ) {
                     Text(
@@ -1161,9 +1454,9 @@ fun RecipeDetails(meal: MealDto) {
                 }
             }
         }
-        
+
         Spacer(Modifier.height(12.dp))
-        
+
         // 作法說明
         if (!meal.strInstructions.isNullOrBlank()) {
             Text(
@@ -1179,9 +1472,10 @@ fun RecipeDetails(meal: MealDto) {
             )
         } else {
             Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                ),
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    ),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
@@ -1193,20 +1487,22 @@ fun RecipeDetails(meal: MealDto) {
                 )
             }
         }
-        
+
         // YouTube 連結（如果有的話）
         if (!meal.strYoutube.isNullOrBlank()) {
             Spacer(Modifier.height(12.dp))
             Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
-                ),
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                    ),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {

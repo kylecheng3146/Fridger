@@ -5,32 +5,36 @@ import fridger.com.data.remote.RecipeApiService
 
 interface RecipeRepository {
     suspend fun getRemoteRandomRecipe(): Result<MealDto>
+
     suspend fun getRecipesByIngredient(ingredient: String): Result<List<MealDto>>
+
     suspend fun getRecipeById(id: String): Result<MealDto>
+
     suspend fun getRecipeCategories(): Result<List<fridger.com.data.model.remote.RecipeCategoryDto>>
+
     suspend fun getRecipesByCategory(category: String): Result<List<MealDto>>
+
     suspend fun searchRecipesByName(query: String): Result<List<MealDto>>
 }
 
 class RecipeRepositoryImpl(
     private val apiService: RecipeApiService,
 ) : RecipeRepository {
-
     override suspend fun getRecipesByIngredient(ingredient: String): Result<List<MealDto>> {
         println("🏪 REPOSITORY: Starting getRecipesByIngredient for '$ingredient'")
-        
+
         return try {
             // Step 1: Get list of recipes by ingredient (basic info only)
             val response = apiService.getRecipesByIngredient(ingredient)
             if (response.meals != null) {
                 println("✅ REPOSITORY: Successfully got ${response.meals.size} basic meals from filter API")
-                
+
                 // Step 2: Get detailed info for first few recipes (limit to avoid too many API calls)
                 val detailedMeals = mutableListOf<MealDto>()
                 val maxRecipes = minOf(5, response.meals.size) // Limit to 5 recipes for performance
-                
+
                 println("🔄 REPOSITORY: Fetching detailed info for first $maxRecipes recipes")
-                
+
                 response.meals.take(maxRecipes).forEachIndexed { index, basicMeal ->
                     basicMeal.idMeal?.let { id ->
                         try {
@@ -46,7 +50,7 @@ class RecipeRepositoryImpl(
                         }
                     }
                 }
-                
+
                 println("✅ REPOSITORY: Successfully processed ${detailedMeals.size} detailed meals")
                 Result.success(detailedMeals)
             } else {
@@ -61,7 +65,7 @@ class RecipeRepositoryImpl(
 
     override suspend fun getRecipeById(id: String): Result<MealDto> {
         println("🏪 REPOSITORY: Starting getRecipeById for '$id'")
-        
+
         return try {
             val response = apiService.getRecipeById(id)
             val meal = response.meals?.firstOrNull()
@@ -80,7 +84,7 @@ class RecipeRepositoryImpl(
 
     override suspend fun getRemoteRandomRecipe(): Result<MealDto> {
         println("🏪 REPOSITORY: Starting getRemoteRandomRecipe")
-        
+
         return try {
             val response = apiService.getRandomRecipe()
             val meal = response.meals?.firstOrNull()

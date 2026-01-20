@@ -1,6 +1,7 @@
 package fridger.com.io.presentation.home
 
 import fridger.com.io.data.model.Freshness
+import fridger.com.io.data.model.IngredientCategory
 import fridger.com.io.presentation.home.dashboard.DashboardSection
 import fridger.com.io.presentation.home.dashboard.DashboardSectionDefaults
 import kotlinx.coroutines.Job
@@ -19,8 +20,11 @@ data class HomeUiState(
     val fridgeCapacityPercentage: Float = 0f,
     val refrigeratedItems: List<RefrigeratedItem> = emptyList(),
     val groupedRefrigeratedItems: Map<Freshness, List<RefrigeratedItem>> = emptyMap(),
+    val categorySummaries: List<CategorySummary> = emptyList(),
     val sortOption: SortOption = SortOption.EXPIRY,
     val groupOption: GroupOption = GroupOption.NONE,
+    val activeCategoryFilter: IngredientCategory? = null,
+    val viewMode: InventoryViewMode = InventoryViewMode.GRID,
     val showAddNewItemDialog: Boolean = false,
     val quickAddSearchText: String = "",
     val quickAddSuggestions: List<String> = emptyList(),
@@ -44,6 +48,8 @@ data class HealthDashboardUiState(
 enum class SortOption { EXPIRY, NAME, ADDED_DATE }
 
 enum class GroupOption { NONE, FRESHNESS }
+
+enum class InventoryViewMode { LIST, GRID }
 
 // Presentation of expiry for i18n-safe mapping in UI layer
 sealed class ExpiryDisplay {
@@ -90,6 +96,12 @@ data class RefrigeratedItem(
             daysUntilExpiry == 0 -> ExpiryDisplay.DueToday
             else -> ExpiryDisplay.Until(daysUntilExpiry)
         }
+)
+
+data class CategorySummary(
+    val category: IngredientCategory,
+    val totalCount: Int,
+    val expiringSoonCount: Int,
 )
 
 // Model for batch quick-add

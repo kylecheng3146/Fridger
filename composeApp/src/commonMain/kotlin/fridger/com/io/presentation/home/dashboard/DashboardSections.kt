@@ -20,5 +20,8 @@ enum class DashboardSection(
 object DashboardSectionDefaults {
     fun defaultStates(): Map<DashboardSection, Boolean> = DashboardSection.entries.associateWith { it.defaultExpanded }
 
-    fun isDefaultState(section: DashboardSection, isExpanded: Boolean): Boolean = section.defaultExpanded == isExpanded
+    fun isDefaultState(
+        section: DashboardSection,
+        isExpanded: Boolean
+    ): Boolean = section.defaultExpanded == isExpanded
 }

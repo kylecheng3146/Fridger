@@ -102,36 +102,42 @@ enum class ThemeColor(
     val displayName: String,
     val primary: Color,
     val primaryDark: Color,
-    val primaryLight: Color
+    val primaryLight: Color,
+    val secondary: Color
 ) {
     BLUE(
         displayName = "經典藍",
         primary = Color(0xFF2196F3),
         primaryDark = Color(0xFF1976D2),
-        primaryLight = Color(0xFF64B5F6)
+        primaryLight = Color(0xFF64B5F6),
+        secondary = Color(0xFFFFC107)
     ),
     TEAL(
         displayName = "青綠色",
-        primary = Color(0xFF009688),
-        primaryDark = Color(0xFF00796B),
-        primaryLight = Color(0xFF4DB6AC)
+        primary = Color(0xFF227466),
+        primaryDark = Color(0xFF175046),
+        primaryLight = Color(0xFF529A8E),
+        secondary = Color(0xFF2a9486)
     ),
     PURPLE(
         displayName = "優雅紫",
         primary = Color(0xFF9C27B0),
         primaryDark = Color(0xFF7B1FA2),
-        primaryLight = Color(0xFFBA68C8)
+        primaryLight = Color(0xFFBA68C8),
+        secondary = Color(0xFFFFC107)
     ),
     ORANGE(
         displayName = "活力橙",
         primary = Color(0xFFFF6D00),
         primaryDark = Color(0xFFE65100),
-        primaryLight = Color(0xFFFF9100)
+        primaryLight = Color(0xFFFF9100),
+        secondary = Color(0xFFFFC107)
     ),
     PINK(
         displayName = "櫻花粉",
         primary = Color(0xFFE91E63),
         primaryDark = Color(0xFFC2185B),
-        primaryLight = Color(0xFFF06292)
+        primaryLight = Color(0xFFF06292),
+        secondary = Color(0xFFFFC107)
     )
 }

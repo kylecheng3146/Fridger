@@ -19,10 +19,11 @@ fun Route.healthDashboardRoutes(provider: HealthDashboardProvider) {
             call.respond(HttpStatusCode.BadRequest, ApiResponse.fail<Unit>("Missing userId"))
             return@get
         }
-        val userId = runCatching { UUID.fromString(userIdParam) }.getOrElse {
-            call.respond(HttpStatusCode.BadRequest, ApiResponse.fail<Unit>("Invalid userId"))
-            return@get
-        }
+        val userId =
+            runCatching { UUID.fromString(userIdParam) }.getOrElse {
+                call.respond(HttpStatusCode.BadRequest, ApiResponse.fail<Unit>("Invalid userId"))
+                return@get
+            }
         val includeParam = call.request.queryParameters["include"]?.lowercase()
         val includeTrends =
             when (includeParam) {

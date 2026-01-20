@@ -6,11 +6,11 @@ import fridger.shared.health.DiversityScore
 import fridger.shared.health.HealthDashboardMetrics
 import fridger.shared.health.NutritionCategory
 import fridger.shared.models.ApiResponse
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import kotlinx.coroutines.test.runTest
 
 class HealthDashboardRepositoryTest {
     private class FakeApiService(

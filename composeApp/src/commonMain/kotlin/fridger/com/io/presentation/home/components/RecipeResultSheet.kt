@@ -10,20 +10,16 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import fridger.com.io.presentation.home.RecipeSuggestion
 import fridger.composeapp.generated.resources.Res
 import fridger.composeapp.generated.resources.recipe_sheet_close
 import fridger.composeapp.generated.resources.recipe_sheet_cooking_time
-import fridger.composeapp.generated.resources.recipe_sheet_description
 import fridger.composeapp.generated.resources.recipe_sheet_difficulty
 import fridger.composeapp.generated.resources.recipe_sheet_generating
 import fridger.composeapp.generated.resources.recipe_sheet_ingredients_title
@@ -42,10 +38,11 @@ fun RecipeResultSheet(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-            .animateContentSize()
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .animateContentSize()
     ) {
         // Header
         Row(
@@ -86,11 +83,11 @@ fun RecipeResultSheet(
         }
 
         AnimatedVisibility(
-            visible = !isGenerating && recipe!=null,
+            visible = !isGenerating && recipe != null,
             enter = slideInVertically(initialOffsetY = { it / 4 }) + fadeIn(),
             exit = slideOutVertically(targetOffsetY = { -it / 4 }) + fadeOut()
         ) {
-            if (recipe!=null) {
+            if (recipe != null) {
                 // Recipe content
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth(),
@@ -120,26 +117,29 @@ fun RecipeResultSheet(
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             Text(
-                                text = stringResource(
-                                    Res.string.recipe_sheet_cooking_time,
-                                    recipe.cookingTime
-                                ),
+                                text =
+                                    stringResource(
+                                        Res.string.recipe_sheet_cooking_time,
+                                        recipe.cookingTime
+                                    ),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = stringResource(
-                                    Res.string.recipe_sheet_difficulty,
-                                    recipe.difficulty
-                                ),
+                                text =
+                                    stringResource(
+                                        Res.string.recipe_sheet_difficulty,
+                                        recipe.difficulty
+                                    ),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = stringResource(
-                                    Res.string.recipe_sheet_servings,
-                                    recipe.servings
-                                ),
+                                text =
+                                    stringResource(
+                                        Res.string.recipe_sheet_servings,
+                                        recipe.servings
+                                    ),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

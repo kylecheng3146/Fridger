@@ -15,15 +15,16 @@ class HealthDashboardServiceTest {
 
     @Test
     fun aggregatesInventoryIntoMetrics() {
-        val dataSource = object : FridgeItemDataSource {
-            override fun fetchItemsForUser(userId: UUID): List<FridgeItemRecord> {
-                return listOf(
-                    record("Spinach", NutritionCategory.PRODUCE, 4.0, 30, 8),
-                    record("Salmon", NutritionCategory.PROTEIN, 2.0, 250, 4),
-                    record("Rice", NutritionCategory.REFINED_GRAIN, 1.0, 180, 20),
-                )
+        val dataSource =
+            object : FridgeItemDataSource {
+                override fun fetchItemsForUser(userId: UUID): List<FridgeItemRecord> {
+                    return listOf(
+                        record("Spinach", NutritionCategory.PRODUCE, 4.0, 30, 8),
+                        record("Salmon", NutritionCategory.PROTEIN, 2.0, 250, 4),
+                        record("Rice", NutritionCategory.REFINED_GRAIN, 1.0, 180, 20),
+                    )
+                }
             }
-        }
         val service = HealthDashboardService(dataSource = dataSource)
 
         val metrics: HealthDashboardMetrics = service.getDashboard(userId)

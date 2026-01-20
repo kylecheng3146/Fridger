@@ -27,7 +27,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -118,20 +117,15 @@ class HomeViewModelTest {
                 )
             )
 
-        override suspend fun getRecipesByIngredient(ingredient: String): Result<List<MealDto>> =
-            Result.success(emptyList())
+        override suspend fun getRecipesByIngredient(ingredient: String): Result<List<MealDto>> = Result.success(emptyList())
 
-        override suspend fun getRecipeById(id: String): Result<MealDto> =
-            Result.failure(UnsupportedOperationException("Not needed in this test"))
+        override suspend fun getRecipeById(id: String): Result<MealDto> = Result.failure(UnsupportedOperationException("Not needed in this test"))
 
-        override suspend fun getRecipeCategories(): Result<List<fridger.com.data.model.remote.RecipeCategoryDto>> =
-            Result.success(emptyList())
+        override suspend fun getRecipeCategories(): Result<List<fridger.com.data.model.remote.RecipeCategoryDto>> = Result.success(emptyList())
 
-        override suspend fun getRecipesByCategory(category: String): Result<List<MealDto>> =
-            Result.success(emptyList())
+        override suspend fun getRecipesByCategory(category: String): Result<List<MealDto>> = Result.success(emptyList())
 
-        override suspend fun searchRecipesByName(query: String): Result<List<MealDto>> =
-            Result.success(emptyList())
+        override suspend fun searchRecipesByName(query: String): Result<List<MealDto>> = Result.success(emptyList())
     }
 
     // Fake Translator for tests
@@ -353,25 +347,30 @@ class HomeViewModelTest {
     fun `given ingredients with categories when loaded then refrigeratedItems have correct categories`() =
         runTest(testDispatcher) {
             // Arrange
-            val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-            val ingredients = listOf(
-                Ingredient(
-                    id = 1,
-                    name = "Apple",
-                    addDate = today,
-                    expirationDate = today.plus(DatePeriod(days = 7)),
-                    category = fridger.com.io.data.model.IngredientCategory.FRUITS,
-                    freshness = Freshness.Fresh
-                ),
-                Ingredient(
-                    id = 2,
-                    name = "Milk",
-                    addDate = today,
-                    expirationDate = today.plus(DatePeriod(days = 3)),
-                    category = fridger.com.io.data.model.IngredientCategory.DAIRY,
-                    freshness = Freshness.Fresh
+            val today =
+                Clock.System
+                    .now()
+                    .toLocalDateTime(TimeZone.currentSystemDefault())
+                    .date
+            val ingredients =
+                listOf(
+                    Ingredient(
+                        id = 1,
+                        name = "Apple",
+                        addDate = today,
+                        expirationDate = today.plus(DatePeriod(days = 7)),
+                        category = fridger.com.io.data.model.IngredientCategory.FRUITS,
+                        freshness = Freshness.Fresh
+                    ),
+                    Ingredient(
+                        id = 2,
+                        name = "Milk",
+                        addDate = today,
+                        expirationDate = today.plus(DatePeriod(days = 3)),
+                        category = fridger.com.io.data.model.IngredientCategory.DAIRY,
+                        freshness = Freshness.Fresh
+                    )
                 )
-            )
             repository = FakeIngredientRepository(flowOf(ingredients))
 
             // Act
@@ -406,7 +405,11 @@ class HomeViewModelTest {
     @Test
     fun `local metrics override zero remote response`() =
         runTest(testDispatcher) {
-            val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+            val today =
+                Clock.System
+                    .now()
+                    .toLocalDateTime(TimeZone.currentSystemDefault())
+                    .date
             val ingredients =
                 listOf(
                     Ingredient(

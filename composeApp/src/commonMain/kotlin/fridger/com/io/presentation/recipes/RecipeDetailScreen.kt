@@ -3,11 +3,13 @@ package fridger.com.io.presentation.recipes
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -26,19 +28,26 @@ import coil3.compose.AsyncImage
 import fridger.com.data.remote.RecipeApiService
 import fridger.com.io.data.repository.RecipeRepositoryImpl
 import kotlin.reflect.KClass
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 
-class RecipeDetailScreen(private val mealId: String) : Screen {
+class RecipeDetailScreen(
+    private val mealId: String
+) : Screen {
     @Composable
     override fun Content() {
-        val vm: RecipeDetailViewModel = viewModel(factory = object : ViewModelProvider.Factory {
-            override fun <T : ViewModel> create(modelClass: KClass<T>, extras: CreationExtras): T {
-                val repo = RecipeRepositoryImpl(RecipeApiService())
-                @Suppress("UNCHECKED_CAST")
-                return RecipeDetailViewModel(repo, mealId) as T
-            }
-        })
+        val vm: RecipeDetailViewModel =
+            viewModel(
+                factory =
+                    object : ViewModelProvider.Factory {
+                        override fun <T : ViewModel> create(
+                            modelClass: KClass<T>,
+                            extras: CreationExtras
+                        ): T {
+                            val repo = RecipeRepositoryImpl(RecipeApiService())
+                            @Suppress("UNCHECKED_CAST")
+                            return RecipeDetailViewModel(repo, mealId) as T
+                        }
+                    }
+            )
 
         val navigator = LocalNavigator.currentOrThrow
         val uiState by vm.uiState.collectAsState()
@@ -46,9 +55,10 @@ class RecipeDetailScreen(private val mealId: String) : Screen {
         Column(modifier = Modifier.fillMaxSize()) {
             // Top back button
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 8.dp, top = 8.dp, end = 8.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp, top = 8.dp, end = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { navigator.pop() }) {
@@ -62,10 +72,11 @@ class RecipeDetailScreen(private val mealId: String) : Screen {
                 is RecipeDetailUiState.Success -> {
                     val meal = state.meal
                     Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(16.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState())
+                                .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         AsyncImage(

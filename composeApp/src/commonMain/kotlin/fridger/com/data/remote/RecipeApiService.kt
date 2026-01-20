@@ -12,32 +12,34 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
 class RecipeApiService {
-    private val client = HttpClient {
-        install(ContentNegotiation) {
-            json(
-                Json {
-                    ignoreUnknownKeys = true
-                    prettyPrint = true
-                    isLenient = true
-                }
-            )
-        }
-        
-        install(Logging) {
-            logger = object : Logger {
-                override fun log(message: String) {
-                    println("🌐 API DEBUG: $message")
-                }
+    private val client =
+        HttpClient {
+            install(ContentNegotiation) {
+                json(
+                    Json {
+                        ignoreUnknownKeys = true
+                        prettyPrint = true
+                        isLenient = true
+                    }
+                )
             }
-            level = LogLevel.ALL
+
+            install(Logging) {
+                logger =
+                    object : Logger {
+                        override fun log(message: String) {
+                            println("🌐 API DEBUG: $message")
+                        }
+                    }
+                level = LogLevel.ALL
+            }
         }
-    }
 
     private val baseUrl = "https://www.themealdb.com/api/json/v1/1"
 
     suspend fun getRandomRecipe(): MealApiResponse {
         println("📞 API CALL: Getting random recipe")
-        
+
         return try {
             val response = client.get("$baseUrl/random.php").body<MealApiResponse>()
             println("✅ API SUCCESS: Random recipe received")
@@ -52,9 +54,11 @@ class RecipeApiService {
         println("📞 API CALL: Getting recipes by ingredient '$ingredient'")
 
         return try {
-            val response = client.get("$baseUrl/filter.php") {
-                url { parameters.append("i", ingredient) }
-            }.body<MealApiResponse>()
+            val response =
+                client
+                    .get("$baseUrl/filter.php") {
+                        url { parameters.append("i", ingredient) }
+                    }.body<MealApiResponse>()
 
             println("✅ API SUCCESS: Recipes by ingredient received")
             response
@@ -63,13 +67,15 @@ class RecipeApiService {
             throw e
         }
     }
-    
+
     suspend fun getRecipesByCategory(category: String): MealApiResponse {
         println("📞 API CALL: Getting recipes by category '$category'")
         return try {
-            val response = client.get("$baseUrl/filter.php") {
-                url { parameters.append("c", category) }
-            }.body<MealApiResponse>()
+            val response =
+                client
+                    .get("$baseUrl/filter.php") {
+                        url { parameters.append("c", category) }
+                    }.body<MealApiResponse>()
             println("✅ API SUCCESS: Recipes by category received")
             response
         } catch (e: Exception) {
@@ -81,9 +87,11 @@ class RecipeApiService {
     suspend fun searchRecipesByName(query: String): MealApiResponse {
         println("📞 API CALL: Searching recipes by name '$query'")
         return try {
-            val response = client.get("$baseUrl/search.php") {
-                url { parameters.append("s", query) }
-            }.body<MealApiResponse>()
+            val response =
+                client
+                    .get("$baseUrl/search.php") {
+                        url { parameters.append("s", query) }
+                    }.body<MealApiResponse>()
             println("✅ API SUCCESS: Search results received")
             response
         } catch (e: Exception) {
@@ -91,14 +99,16 @@ class RecipeApiService {
             throw e
         }
     }
-    
+
     suspend fun getRecipeById(id: String): MealApiResponse {
         println("📞 API CALL: Getting recipe details by ID '$id'")
-        
+
         return try {
-            val response = client.get("$baseUrl/lookup.php") {
-                url { parameters.append("i", id) }
-            }.body<MealApiResponse>()
+            val response =
+                client
+                    .get("$baseUrl/lookup.php") {
+                        url { parameters.append("i", id) }
+                    }.body<MealApiResponse>()
 
             println("✅ API SUCCESS: Recipe details received")
             response
