@@ -8,99 +8,109 @@ import androidx.compose.ui.graphics.Color
 import fridger.com.io.presentation.settings.ThemeColor
 
 // App Color Palette
+// App Color Palette - Minimal Design System (Emerald/Amber)
 object AppColors {
-    // Primary Colors (will be replaced by dynamic theme)
-    val Primary = Color(0xFF2196F3)
-    val PrimaryVariant = Color(0xFF1976D2)
-    val Secondary = Color(0xFFFFC107)
-    val SecondaryVariant = Color(0xFFFFA000)
-
-    // Background Colors
-    val Background = Color(0xFFF5F5F5)
-    val Surface = Color(0xFFFFFFFF)
-    val Error = Color(0xFFF44336)
-
-    // Text Colors
+    // Primary (Emerald) - Freshness & Nature
+    val Primary = Color(0xFF10B981) // Emerald 500
+    val PrimaryContainer = Color(0xFFD1FAE5) // Emerald 100
     val OnPrimary = Color(0xFFFFFFFF)
-    val OnSecondary = Color(0xFF000000)
-    val OnBackground = Color(0xFF000000)
-    val OnSurface = Color(0xFF000000)
+    val OnPrimaryContainer = Color(0xFF065F46) // Emerald 800
+
+    // Secondary (Amber) - Food & Warmth
+    val Secondary = Color(0xFFF59E0B) // Amber 500
+    val SecondaryContainer = Color(0xFFFEF3C7) // Amber 100
+    val OnSecondary = Color(0xFFFFFFFF)
+    val OnSecondaryContainer = Color(0xFF78350F) // Amber 900 (High contrast)
+
+    // Functional & Semantic Colors
+    val Success = Color(0xFF22C55E) // Green 500
+    val SuccessContainer = Color(0xFFDCFCE7) // Green 100
+    val Warning = Color(0xFFF59E0B) // Amber 500
+    val WarningContainer = Color(0xFFFEF3C7) // Amber 100
+    val Error = Color(0xFFEF4444) // Red 500
+    val ErrorContainer = Color(0xFFFEE2E2) // Red 100
     val OnError = Color(0xFFFFFFFF)
 
-    // App Specific Colors
-    val TextPrimary = Color(0xFF212121)
-    val TextSecondary = Color(0xFF757575)
-    val Divider = Color(0xFFBDBDBD)
-    val IconBackground = Color(0xFFF5F5F5)
-    val Warning = Color(0xFFFFA726)
-    val ProgressTrack = Color(0xFFE0E0E0)
+    // Backgrounds & Surfaces (Light)
+    val LightBackground = Color(0xFFFAFAFA) // Zinc 50
+    val LightSurface = Color(0xFFFFFFFF) // White
+    val LightSurfaceVariant = Color(0xFFF4F4F5) // Zinc 100
+    val LightOutline = Color(0xFFE4E4E7) // Zinc 200
 
-    // Dark Theme Colors
-    val DarkBackground = Color(0xFF121212)
-    val DarkSurface = Color(0xFF1E1E1E)
-    val DarkTextPrimary = Color(0xFFE0E0E0)
-    val DarkTextSecondary = Color(0xFFBDBDBD)
-    val DarkProgressTrack = Color(0xFF424242)
+    // Backgrounds & Surfaces (Dark) - Elevated & Rich
+    val DarkBackground = Color(0xFF0F172A) // Slate 900
+    val DarkSurface = Color(0xFF1E293B) // Slate 800
+    val DarkSurfaceElevated = Color(0xFF334155) // Slate 700
+    val DarkOutline = Color(0xFF475569) // Slate 600
+    
+    // Text Colors
+    val OnBackground = Color(0xFF18181B) // Zinc 900
+    val OnSurface = Color(0xFF18181B) // Zinc 900
+    val OnSurfaceVariant = Color(0xFF71717A) // Zinc 500
+    
+    val DarkOnBackground = Color(0xFFF1F5F9) // Slate 100
+    val DarkOnSurface = Color(0xFFF1F5F9) // Slate 100
+    val DarkOnSurfaceVariant = Color(0xFF94A3B8) // Slate 400
 }
 
 private fun getLightColorScheme(themeColor: ThemeColor): ColorScheme {
-    val isTeal = themeColor == ThemeColor.TEAL
+    // We prioritize the Minimal Emerald theme, but mapped somewhat if needed. 
+    // For now, enforcing the new standard for consistency as per plan.
     return lightColorScheme(
-        primary = themeColor.primary,
+        primary = AppColors.Primary,
         onPrimary = AppColors.OnPrimary,
-        primaryContainer = themeColor.primaryLight.copy(alpha = 0.3f),
-        onPrimaryContainer = themeColor.primaryDark,
-        secondary = themeColor.secondary,
+        primaryContainer = AppColors.PrimaryContainer,
+        onPrimaryContainer = AppColors.OnPrimaryContainer,
+        secondary = AppColors.Secondary,
         onSecondary = AppColors.OnSecondary,
-        secondaryContainer = if (isTeal) themeColor.secondary.copy(alpha = 0.2f) else Color(0xFFFFE082),
-        onSecondaryContainer = if (isTeal) Color(0xFF00201A) else Color(0xFF6D4C00),
-        tertiary = Color(0xFF4CAF50),
+        secondaryContainer = AppColors.SecondaryContainer,
+        onSecondaryContainer = AppColors.OnSecondaryContainer,
+        tertiary = Color(0xFF14B8A6), // Teal 500 as accent
         onTertiary = Color.White,
-        tertiaryContainer = Color(0xFFC8E6C9),
-        onTertiaryContainer = Color(0xFF1B5E20),
+        tertiaryContainer = Color(0xFFCCFBF1),
+        onTertiaryContainer = Color(0xFF0F766E),
         error = AppColors.Error,
         onError = AppColors.OnError,
-        errorContainer = Color(0xFFFFCDD2),
-        onErrorContainer = Color(0xFFB71C1C),
-        background = AppColors.Background,
+        errorContainer = AppColors.ErrorContainer,
+        onErrorContainer = Color(0xFF991B1B),
+        background = AppColors.LightBackground,
         onBackground = AppColors.OnBackground,
-        surface = AppColors.Surface,
+        surface = AppColors.LightSurface,
         onSurface = AppColors.OnSurface,
-        surfaceVariant = Color(0xFFE0E0E0),
-        onSurfaceVariant = Color(0xFF616161),
-        outline = Color(0xFFBDBDBD),
-        outlineVariant = Color(0xFFE0E0E0),
-        scrim = Color.Black
+        surfaceVariant = AppColors.LightSurfaceVariant,
+        onSurfaceVariant = AppColors.OnSurfaceVariant,
+        outline = AppColors.LightOutline,
+        outlineVariant = Color(0xFFD4D4D8),
+        scrim = Color.Black.copy(alpha = 0.32f)
     )
 }
 
 private fun getDarkColorScheme(themeColor: ThemeColor): ColorScheme {
-    val isTeal = themeColor == ThemeColor.TEAL
     return darkColorScheme(
-        primary = themeColor.primaryLight,
-        onPrimary = themeColor.primaryDark,
-        primaryContainer = themeColor.primaryDark,
-        onPrimaryContainer = themeColor.primaryLight.copy(alpha = 0.9f),
-        secondary = themeColor.secondary,
-        onSecondary = if (isTeal) Color(0xFF003730) else Color(0xFF3E2D00),
-        secondaryContainer = if (isTeal) themeColor.secondary.copy(alpha = 0.3f) else Color(0xFF6D4C00),
-        onSecondaryContainer = if (isTeal) Color(0xFFB1ECE3) else Color(0xFFFFE082),
-        tertiary = Color(0xFF81C784),
-        onTertiary = Color(0xFF003907),
-        tertiaryContainer = Color(0xFF1B5E20),
-        onTertiaryContainer = Color(0xFFC8E6C9),
-        error = Color(0xFFEF5350),
-        onError = Color(0xFF5F0A0A),
-        errorContainer = Color(0xFFB71C1C),
-        onErrorContainer = Color(0xFFFFCDD2),
+        primary = AppColors.Primary,
+        onPrimary = AppColors.OnPrimary,
+        primaryContainer = AppColors.OnPrimaryContainer, // Consistent container usage
+        onPrimaryContainer = AppColors.PrimaryContainer,
+        secondary = AppColors.Secondary,
+        onSecondary = AppColors.OnSecondary,
+        secondaryContainer = AppColors.SecondaryContainer,
+        onSecondaryContainer = AppColors.OnSecondaryContainer,
+        tertiary = Color(0xFF2DD4BF),
+        onTertiary = Color(0xFF003833),
+        tertiaryContainer = Color(0xFF0F766E),
+        onTertiaryContainer = Color(0xFFCCFBF1),
+        error = AppColors.Error,
+        onError = Color(0xFF450A0A),
+        errorContainer = Color(0xFF991B1B),
+        onErrorContainer = AppColors.ErrorContainer,
         background = AppColors.DarkBackground,
-        onBackground = AppColors.DarkTextPrimary,
+        onBackground = AppColors.DarkOnBackground,
         surface = AppColors.DarkSurface,
-        onSurface = AppColors.DarkTextPrimary,
-        surfaceVariant = Color(0xFF424242),
-        onSurfaceVariant = AppColors.DarkTextSecondary,
-        outline = Color(0xFF757575),
-        outlineVariant = Color(0xFF424242),
+        onSurface = AppColors.DarkOnSurface,
+        surfaceVariant = AppColors.DarkSurfaceElevated, // Use elevated surface for variant
+        onSurfaceVariant = AppColors.DarkOnSurfaceVariant,
+        outline = AppColors.DarkOutline,
+        outlineVariant = Color(0xFF64748B),
         scrim = Color.Black
     )
 }
@@ -123,6 +133,7 @@ fun FridgerTheme(
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
+            shapes = AppShapes,
             typography = Typography(),
             content = content
         )

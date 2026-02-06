@@ -16,6 +16,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -40,6 +41,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -75,15 +77,15 @@ import fridger.com.io.data.model.Freshness
 import fridger.com.io.data.model.IngredientCategory
 import fridger.com.io.presentation.ViewModelFactoryProvider
 import fridger.com.io.presentation.components.ShoppingQuickAddTopDialog
-import fridger.com.io.presentation.home.CategorySummary
-import fridger.com.io.presentation.home.InventoryViewMode
 import fridger.com.io.presentation.home.components.BottomActionBar
 import fridger.com.io.presentation.home.components.IngredientCompactCard
 import fridger.com.io.presentation.home.dashboard.HealthDashboardDetailSheet
-import fridger.com.io.presentation.home.dashboard.HealthDashboardSummaryCard
+import fridger.com.io.presentation.home.dashboard.HealthDashboardBentoGrid
+// import fridger.com.io.presentation.home.dashboard.HealthDashboardSummaryCard // Removed
+import fridger.com.io.presentation.components.RichEmptyState
 import fridger.com.io.presentation.settings.SettingsScreen
 import fridger.com.io.presentation.util.animateItemPlacementCompat
-import fridger.com.io.ui.theme.AppColors
+
 import fridger.com.io.ui.theme.sizing
 import fridger.com.io.ui.theme.spacing
 import fridger.com.io.utils.stringResourceFormat
@@ -92,14 +94,19 @@ import fridger.composeapp.generated.resources.Res
 import fridger.composeapp.generated.resources.home_refrigerated
 import fridger.composeapp.generated.resources.home_title
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.painterResource
+
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 
 @Composable
 private fun SectionTitle(title: String) {
     Text(
         text = title,
-        fontSize = 20.sp,
+        style = MaterialTheme.typography.titleLarge,
         fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.onBackground,
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.padding(vertical = 8.dp)
     )
 }
 
@@ -146,33 +153,58 @@ fun HomeScreen(
                 )
             }
         ) { innerPadding ->
-            LazyColumn(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                contentPadding = PaddingValues(bottom = MaterialTheme.sizing.contentPaddingVertical),
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.TopCenter
             ) {
-                item {
-                    HomeHeader(onSettingsClick = { showSettings = true })
-                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
-                    ) {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .widthIn(max = 800.dp), // Responsive Max Width
+                    contentPadding = PaddingValues(
+                        bottom = MaterialTheme.sizing.contentPaddingVertical + 80.dp, // contentPadding + BottomBar height
+                        top = MaterialTheme.sizing.contentPaddingVertical
+                    ),
+                ) {
+                    item {
+                        HomeHeader(onSettingsClick = { showSettings = true })
+                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+                        Row(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
                         Button(
                             onClick = viewModel::onShowAddItemDialog,
-                            colors =
-                                ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary,
-                                    contentColor = MaterialTheme.colorScheme.onPrimary
-                                )
+                            shape = MaterialTheme.shapes.medium,
+                            modifier = Modifier.weight(1f).pointerHoverIcon(PointerIcon.Hand)
                         ) {
                             Icon(Icons.Default.Add, contentDescription = null)
-                            Spacer(Modifier.width(6.dp))
+                            Spacer(Modifier.width(8.dp))
                             Text(stringResource(Res.string.home_add_ingredient))
+                        }
+
+                        OutlinedButton(
+                            onClick = viewModel::fetchRandomRecipe,
+                            shape = MaterialTheme.shapes.medium,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                            modifier = Modifier.weight(1f).pointerHoverIcon(PointerIcon.Hand)
+                        ) {
+                            Icon(
+                                Icons.Default.Dashboard, // or consider a better icon like Restaurant/Receipt
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(Res.string.home_random_recipe),
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1
+                            )
                         }
                     }
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
@@ -183,28 +215,15 @@ fun HomeScreen(
                                 .fillMaxWidth()
                                 .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
                     ) {
-                        HealthDashboardSummaryCard(
+                        HealthDashboardBentoGrid(
                             state = dashboardState,
                             onRefresh = { viewModel.refreshHealthDashboard() },
-                            onViewDetails = { showDashboardDetails = true },
-                            onToggleSection = { section, expanded -> viewModel.onDashboardSectionToggle(section, expanded) },
-                            onCollapsedImpression = { section, isDefault, duration ->
-                                viewModel.onDashboardSectionCollapsedImpression(section, isDefault, duration)
-                            },
+                            onViewDetails = { showDashboardDetails = true }
                         )
                     }
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
 
-                    Column(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
-                    ) {
-                        Button(onClick = { viewModel.fetchRandomRecipe() }) {
-                            Text("給我一個隨機食譜")
-                        }
-                    }
+                    // (moved) random recipe button now lives next to "新增食材" above
 
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
                 }
@@ -221,36 +240,12 @@ fun HomeScreen(
 
                 if (uiState.refrigeratedItems.isEmpty()) {
                     item {
-                        Column(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
-                                    .padding(vertical = MaterialTheme.spacing.large),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Image(
-                                painter =
-                                    fridger.com.io.presentation.home.resources
-                                        .emptyFridgePainter(),
-                                contentDescription = null,
-                                modifier = Modifier.size(130.dp)
-                            )
-                            Spacer(Modifier.height(16.dp))
-                            Text(
-                                text = stringResource(Res.string.home_empty_title),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                text = stringResource(Res.string.home_empty_subtitle),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                fontSize = 14.sp
-                            )
-                            Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraHuge))
-                        }
+                        RichEmptyState(
+                            message = stringResource(Res.string.home_empty_title),
+                            subMessage = stringResource(Res.string.home_empty_subtitle),
+                            actionLabel = stringResource(Res.string.home_add_ingredient),
+                            onActionClick = viewModel::onShowAddItemDialog
+                        )
                     }
                 }
 
@@ -273,6 +268,7 @@ fun HomeScreen(
                 )
             }
         }
+    }
 
         LaunchedEffect(uiState.pendingDeletion) {
             val pendingItem = uiState.pendingDeletion?.item
@@ -353,7 +349,6 @@ fun HomeScreen(
 
                     when (val state = recipeState) {
                         is RecipeUiState.Loading -> {
-                            println("🎨 UI: Displaying loading state")
                             Box(
                                 modifier =
                                     Modifier
@@ -367,11 +362,9 @@ fun HomeScreen(
                             }
                         }
                         is RecipeUiState.Success -> {
-                            println("🎨 UI: Displaying success state with ${state.meals.size} meals")
                             LazyColumn {
                                 if (state.meals.isNotEmpty()) {
                                     items(state.meals) { meal ->
-                                        println("🎨 UI: Rendering meal: ${meal.strMeal}")
                                         RecipeDetails(meal = meal)
                                         if (state.meals.size > 1) {
                                             Spacer(Modifier.height(24.dp))
@@ -379,7 +372,6 @@ fun HomeScreen(
                                     }
                                 } else {
                                     item {
-                                        println("🎨 UI: Displaying no recipes found message")
                                         Text(
                                             "沒有找到相關食譜",
                                             style = MaterialTheme.typography.bodyLarge,
@@ -390,7 +382,6 @@ fun HomeScreen(
                             }
                         }
                         is RecipeUiState.Error -> {
-                            println("🎨 UI: Displaying error state: ${state.message}")
                             Column(
                                 modifier =
                                     Modifier
@@ -409,7 +400,6 @@ fun HomeScreen(
                             }
                         }
                         is RecipeUiState.Idle -> {
-                            println("🎨 UI: Displaying idle state")
                             // This shouldn't happen when sheet is visible, but just in case
                             Box(modifier = Modifier.fillMaxWidth().height(100.dp))
                         }
@@ -421,12 +411,7 @@ fun HomeScreen(
         if (showDashboardDetails) {
             HealthDashboardDetailSheet(
                 state = dashboardState,
-                onDismiss = { showDashboardDetails = false },
-                onRefresh = { viewModel.refreshHealthDashboard(includeTrends = true) },
-                onToggleSection = { section, expanded -> viewModel.onDashboardSectionToggle(section, expanded) },
-                onCollapsedImpression = { section, isDefault, duration ->
-                    viewModel.onDashboardSectionCollapsedImpression(section, isDefault, duration)
-                },
+                onDismiss = { showDashboardDetails = false }
             )
         }
         if (showSettings) {
@@ -717,6 +702,7 @@ private fun SortChip(
                 .clip(RoundedCornerShape(16.dp))
                 .background(bg)
                 .clickable(onClick = onClick)
+                .pointerHoverIcon(PointerIcon.Hand)
                 .padding(horizontal = 12.dp, vertical = 6.dp)
     ) {
         Text(label, color = fg, fontSize = 12.sp)
@@ -730,7 +716,6 @@ private fun CategorySummaryRow(
     onCategorySelected: (IngredientCategory?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val totalCount = summaries.sumOf { it.totalCount }
     val totalExpiring = summaries.sumOf { it.expiringSoonCount }
     LazyRow(
         modifier = modifier,
@@ -740,10 +725,8 @@ private fun CategorySummaryRow(
             CategorySummaryCard(
                 title = stringResource(Res.string.home_category_all),
                 icon = "✨",
-                totalCount = totalCount,
                 expiringSoon = totalExpiring,
                 isSelected = activeCategory == null,
-                secondaryLabel = stringResource(Res.string.home_category_chip_clear),
                 onClick = { onCategorySelected(null) }
             )
         }
@@ -754,7 +737,6 @@ private fun CategorySummaryRow(
             CategorySummaryCard(
                 title = categoryLabel(summary.category),
                 icon = categoryIcon(summary.category),
-                totalCount = summary.totalCount,
                 expiringSoon = summary.expiringSoonCount,
                 isSelected = activeCategory == summary.category,
                 onClick = { onCategorySelected(summary.category) }
@@ -767,7 +749,6 @@ private fun CategorySummaryRow(
 private fun CategorySummaryCard(
     title: String,
     icon: String,
-    totalCount: Int,
     expiringSoon: Int,
     isSelected: Boolean,
     onClick: () -> Unit,
@@ -775,24 +756,39 @@ private fun CategorySummaryCard(
     modifier: Modifier = Modifier,
 ) {
     val borderColor by animateColorAsState(
-        targetValue =
-            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+        targetValue = MaterialTheme.colorScheme.outlineVariant,
         label = "category_card_border"
     )
+
+    val containerColor by animateColorAsState(
+        targetValue =
+            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+        label = "category_card_container"
+    )
+
+    val contentColor by animateColorAsState(
+        targetValue =
+            if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+        label = "category_card_content"
+    )
+
+    val secondaryContentColor by animateColorAsState(
+        targetValue =
+            if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.80f)
+            else MaterialTheme.colorScheme.onSurfaceVariant,
+        label = "category_card_secondary"
+    )
+
     Surface(
         modifier =
             modifier
                 .widthIn(min = 120.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .clickable(onClick = onClick),
-        tonalElevation = if (isSelected) 4.dp else 0.dp,
-        color =
-            if (isSelected) {
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
-            } else {
-                MaterialTheme.colorScheme.surface
-            },
-        border = BorderStroke(1.dp, borderColor)
+                .clickable(onClick = onClick)
+                .pointerHoverIcon(PointerIcon.Hand),
+        tonalElevation = if (isSelected) 0.dp else 0.dp,
+        color = containerColor,
+        border = if (isSelected) null else BorderStroke(1.dp, borderColor)
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
@@ -806,27 +802,24 @@ private fun CategorySummaryCard(
                 Text(
                     text = title,
                     fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = contentColor
                 )
             }
-            Text(
-                text = stringResource(Res.string.home_category_total, totalCount),
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+
             if (expiringSoon > 0) {
                 Text(
                     text = stringResource(Res.string.home_category_expiring_badge, expiringSoon),
                     fontSize = 12.sp,
-                    color = AppColors.Warning,
+                    color = if (isSelected) secondaryContentColor else MaterialTheme.colorScheme.secondary,
                     fontWeight = FontWeight.Medium
                 )
             }
+
             secondaryLabel?.let {
                 Text(
                     text = it,
                     fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = secondaryContentColor
                 )
             }
         }
@@ -957,7 +950,7 @@ private fun LazyListScope.expirySection(
         items(weekItems, key = { "week_${it.id}" }) { item ->
             ExpiringListItemCard(
                 item = item,
-                accentColor = AppColors.Warning,
+                accentColor = MaterialTheme.colorScheme.secondary,
                 modifier =
                     Modifier
                         .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
@@ -1055,7 +1048,7 @@ private fun ExpiryCard(
                 Text(
                     text = label,
                     fontSize = 14.sp,
-                    color = AppColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -1088,10 +1081,15 @@ private fun ExpiringListItemCard(
                     Modifier
                         .size(MaterialTheme.sizing.iconHuge)
                         .clip(CircleShape)
-                        .background(AppColors.IconBackground),
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = item.icon, fontSize = MaterialTheme.sizing.iconLarge.value.sp)
+                Icon(
+                    painter = painterResource(item.icon),
+                    contentDescription = item.name,
+                    modifier = Modifier.size(MaterialTheme.sizing.iconLarge),
+                    tint = Color.Unspecified
+                )
             }
 
             Spacer(modifier = Modifier.width(MaterialTheme.spacing.large))
@@ -1110,7 +1108,7 @@ private fun ExpiringListItemCard(
                             item.count.toString()
                         ),
                     fontSize = 14.sp,
-                    color = AppColors.TextSecondary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -1218,6 +1216,9 @@ private fun RefrigeratedItemCard(
                         }
                     }
 
+
+
+// ... (in RefrigeratedItemCard compact view)
                     Column(
                         modifier =
                             Modifier
@@ -1226,9 +1227,11 @@ private fun RefrigeratedItemCard(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Text(
-                            text = item.icon,
-                            fontSize = 44.sp,
+                        Icon(
+                            painter = painterResource(item.icon),
+                            contentDescription = item.name,
+                            modifier = Modifier.size(44.dp),
+                            tint = Color.Unspecified
                         )
                         Spacer(Modifier.height(12.dp))
                         Text(
@@ -1253,12 +1256,14 @@ private fun RefrigeratedItemCard(
                             Modifier
                                 .size(MaterialTheme.sizing.iconHuge)
                                 .clip(CircleShape)
-                                .background(AppColors.IconBackground),
+                                .background(MaterialTheme.colorScheme.surfaceVariant),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text(
-                            text = item.icon,
-                            fontSize = MaterialTheme.sizing.iconLarge.value.sp,
+                        Icon(
+                            painter = painterResource(item.icon),
+                            contentDescription = item.name,
+                            modifier = Modifier.size(MaterialTheme.sizing.iconLarge),
+                            tint = Color.Unspecified
                         )
                     }
 
@@ -1276,12 +1281,12 @@ private fun RefrigeratedItemCard(
                         Text(
                             text = item.quantity,
                             fontSize = 14.sp,
-                            color = AppColors.TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Text(
                             text = stringResourceFormat(Res.string.home_age_days, item.ageDays),
                             fontSize = 12.sp,
-                            color = AppColors.TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
 
@@ -1326,7 +1331,7 @@ private fun RefrigeratedItemCard(
                                             }
 
                                     Freshness.NearingExpiration ->
-                                        AppColors.Warning to
+                                        MaterialTheme.colorScheme.secondary to
                                             when (val d = item.expiryDisplay) {
                                                 is ExpiryDisplay.Overdue ->
                                                     stringResourceFormat(
@@ -1343,7 +1348,7 @@ private fun RefrigeratedItemCard(
                                             }
 
                                     Freshness.Fresh ->
-                                        AppColors.TextSecondary to
+                                        MaterialTheme.colorScheme.onSurfaceVariant to
                                             when (val d = item.expiryDisplay) {
                                                 is ExpiryDisplay.Overdue ->
                                                     stringResourceFormat(

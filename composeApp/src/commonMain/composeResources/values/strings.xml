@@ -9,6 +9,7 @@
     <string name="home_today">今天</string>
     <string name="home_this_week">本週內</string>
     <string name="home_add_ingredient">新增食材</string>
+    <string name="home_random_recipe">隨機食譜</string>
     <string name="home_refrigerated">食材</string>
     <string name="home_days_until_expiry">%d天後到期</string>
     <string name="home_item_quantity">x%s</string>
@@ -28,7 +29,6 @@
     <string name="home_view_mode_grid">卡片</string>
     <string name="home_category_all">全部</string>
     <string name="home_category_expiring_badge">%d 項快過期</string>
-    <string name="home_category_total">%d 項</string>
     <string name="home_category_chip_clear">顯示全部</string>
     <string name="home_category_vegetables">蔬菜</string>
     <string name="home_category_fruits">水果</string>
@@ -112,4 +112,26 @@
     <string name="recipe_sheet_servings">%d 人份</string>
     <string name="recipe_sheet_try_again">重新生成</string>
     <string name="recipe_sheet_close">關閉</string>
+    <!-- Health Dashboard -->
+    <string name="dashboard_title">健康總覽</string>
+    <string name="dashboard_updated_prefix">更新於: </string>
+    <string name="dashboard_refresh">重新整理</string>
+    <string name="dashboard_no_data">尚無資料</string>
+    <string name="dashboard_error_title">無法載入儀表板</string>
+    <string name="dashboard_retry">重試</string>
+    <string name="dashboard_detail_title">詳細分析</string>
+    <string name="dashboard_nutrition_breakdown">營養分佈</string>
+    <string name="dashboard_recommendations">建議</string>
+
+    <!-- Dashboard Widgets -->
+    <string name="dashboard_widget_nutrition_balance">營養均衡</string>
+    <string name="dashboard_widget_diversity">多樣性</string>
+    <string name="dashboard_widget_expiring_soon">即將過期</string>
+    <string name="dashboard_widget_smart_tips">小撇步</string>
+    <string name="dashboard_widget_items_suffix">項</string>
+    <string name="dashboard_default_tip">您的冰箱管理得很好！</string>
+
+    <!-- Rich Empty State (Defaults) -->
+    <string name="empty_state_default_message">您的冰箱看起來有點空！</string>
+    <string name="empty_state_default_submessage">有效的冰箱管理從第一樣食材開始。</string>
 </resources>

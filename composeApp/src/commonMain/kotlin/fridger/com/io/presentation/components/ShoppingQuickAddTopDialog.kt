@@ -46,6 +46,8 @@ import fridger.composeapp.generated.resources.quick_add_search_hint
 import fridger.composeapp.generated.resources.quick_add_selected_prefix
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -59,7 +61,7 @@ fun ShoppingQuickAddTopDialog(
 ) {
     data class QuickItem(
         val name: String,
-        val icon: String
+        val icon: DrawableResource
     )
 
     var localQuery by rememberSaveable { mutableStateOf("") }
@@ -115,8 +117,18 @@ fun ShoppingQuickAddTopDialog(
                                 },
                                 label = { Text(stringResource(Res.string.quick_add_search_hint)) },
                                 modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(12.dp)
+                                shape = RoundedCornerShape(12.dp),
+                                trailingIcon = {
+                                    if (query.isNotEmpty()) {
+                                        IconButton(onClick = {
+                                                if (onSearchTextChange != null) onSearchTextChange("") else localQuery = ""
+                                        }) {
+                                            Icon(Icons.Default.Close, contentDescription = stringResource(Res.string.quick_add_clear_selection))
+                                        }
+                                    }
+                                }
                             )
+                            Spacer(Modifier.width(8.dp))
                             IconButton(onClick = { visible = false }) {
                                 Icon(Icons.Default.Close, contentDescription = stringResource(Res.string.quick_add_close))
                             }
@@ -138,61 +150,74 @@ fun ShoppingQuickAddTopDialog(
                         val favoriteList = remember(filtered, favorites) { filtered.filter { favorites.contains(it.name) } }
                         val otherList = remember(filtered, favorites) { filtered.filterNot { favorites.contains(it.name) } }
 
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(3),
-                            modifier = Modifier.fillMaxWidth().weight(1f),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                            contentPadding = PaddingValues(bottom = 20.dp)
-                        ) {
-                            if (favoriteList.isNotEmpty()) {
-                                item(span = { GridItemSpan(maxLineSpan) }) {
+                        if (favoriteList.isEmpty() && otherList.isEmpty()) {
+                            Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text(
-                                        stringResource(Res.string.quick_add_favorites),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        text = "🤷‍♂️",
+                                        fontSize = 48.sp
                                     )
-                                }
-                                items(favoriteList.size) { index ->
-                                    val item = favoriteList[index]
-                                    QuickPickCell(
-                                        name = item.name,
-                                        icon = item.icon,
-                                        isFavorite = true,
-                                        isSelected = selected.contains(item.name),
-                                        onToggleFavorite = { scope.launch { SettingsManager.toggleQuickFavorite(item.name) } }
-                                    ) {
-                                        if (selected.contains(item.name)) selected.remove(item.name) else selected.add(item.name)
-                                    }
-                                }
-                                item(span = { GridItemSpan(maxLineSpan) }) { Spacer(Modifier.height(8.dp)) }
-                                item(span = { GridItemSpan(maxLineSpan) }) {
+                                    Spacer(Modifier.height(16.dp))
                                     Text(
-                                        stringResource(Res.string.quick_add_quick_pick),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            } else {
-                                item(span = { GridItemSpan(maxLineSpan) }) {
-                                    Text(
-                                        stringResource(Res.string.quick_add_quick_pick),
-                                        style = MaterialTheme.typography.titleMedium,
+                                        text = "找不到相關食材",
+                                        style = MaterialTheme.typography.bodyLarge,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
-
-                            items(otherList.size) { index ->
-                                val item = otherList[index]
-                                QuickPickCell(
-                                    name = item.name,
-                                    icon = item.icon,
-                                    isFavorite = favorites.contains(item.name),
-                                    isSelected = selected.contains(item.name),
-                                    onToggleFavorite = { scope.launch { SettingsManager.toggleQuickFavorite(item.name) } }
-                                ) {
-                                    if (selected.contains(item.name)) selected.remove(item.name) else selected.add(item.name)
+                        } else {
+                            LazyVerticalGrid(
+                                columns = GridCells.Adaptive(minSize = 100.dp),
+                                modifier = Modifier.fillMaxWidth().weight(1f),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                                contentPadding = PaddingValues(bottom = 20.dp)
+                            ) {
+                                if (favoriteList.isNotEmpty()) {
+                                    item(span = { GridItemSpan(maxLineSpan) }) {
+                                        Text(
+                                            stringResource(Res.string.quick_add_favorites),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.padding(bottom = 8.dp, top = 8.dp)
+                                        )
+                                    }
+                                    items(favoriteList.size) { index ->
+                                        val item = favoriteList[index]
+                                        QuickPickCell(
+                                            name = item.name,
+                                            icon = item.icon,
+                                            isFavorite = true,
+                                            isSelected = selected.contains(item.name),
+                                            onToggleFavorite = { scope.launch { SettingsManager.toggleQuickFavorite(item.name) } }
+                                        ) {
+                                            if (selected.contains(item.name)) selected.remove(item.name) else selected.add(item.name)
+                                        }
+                                    }
+                                    item(span = { GridItemSpan(maxLineSpan) }) { Spacer(Modifier.height(16.dp)) }
+                                }
+                                
+                                if (otherList.isNotEmpty()) {
+                                    item(span = { GridItemSpan(maxLineSpan) }) {
+                                        Text(
+                                            stringResource(Res.string.quick_add_quick_pick),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.padding(bottom = 8.dp)
+                                        )
+                                    }
+                                    items(otherList.size) { index ->
+                                        val item = otherList[index]
+                                        QuickPickCell(
+                                            name = item.name,
+                                            icon = item.icon,
+                                            isFavorite = favorites.contains(item.name),
+                                            isSelected = selected.contains(item.name),
+                                            onToggleFavorite = { scope.launch { SettingsManager.toggleQuickFavorite(item.name) } }
+                                        ) {
+                                            if (selected.contains(item.name)) selected.remove(item.name) else selected.add(item.name)
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -253,43 +278,66 @@ fun ShoppingQuickAddTopDialog(
 @Composable
 private fun QuickPickCell(
     name: String,
-    icon: String,
+    icon: DrawableResource,
     isFavorite: Boolean,
     isSelected: Boolean,
     onToggleFavorite: () -> Unit,
     onClick: () -> Unit
 ) {
+    val containerColor = if (isSelected) {
+        MaterialTheme.colorScheme.secondaryContainer
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
+    }
+    
+    val borderColor = if (isSelected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        Color.Transparent
+    }
+
     Card(
         onClick = onClick,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 4.dp else 2.dp),
         shape = RoundedCornerShape(16.dp),
-        border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
+        border = BorderStroke(2.dp, borderColor)
     ) {
         Box(modifier = Modifier.fillMaxWidth().heightIn(min = 110.dp).padding(6.dp)) {
             Box(
                 modifier =
                     Modifier
                         .align(Alignment.TopEnd)
-                        .padding(3.dp)
-                        .size(28.dp)
-                        .clickable(onClick = onToggleFavorite)
+                        .size(48.dp) // Accessibility: min 44dp touch target
+                        .clickable(onClick = onToggleFavorite),
+                contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                     contentDescription = stringResource(if (isFavorite) Res.string.quick_add_fav_remove else Res.string.quick_add_fav_add),
                     tint = if (isFavorite) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.align(Alignment.Center).size(18.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
             Column(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 16.dp),
+                modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp, vertical = 12.dp), // Adjusted padding
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Text(text = icon, fontSize = MaterialTheme.sizing.iconHuge.value.sp, modifier = Modifier.padding(top = 6.dp))
+                Icon(
+                    painter = painterResource(icon),
+                    contentDescription = null,
+                    modifier = Modifier.size(MaterialTheme.sizing.iconHuge).padding(top = 12.dp),
+                    tint = Color.Unspecified
+                )
                 Spacer(Modifier.height(12.dp))
-                Text(text = name, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), maxLines = 1, color = MaterialTheme.colorScheme.onSurface)
+                Text(
+                    text = name, 
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), 
+                    maxLines = 1, 
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
             }
         }
     }

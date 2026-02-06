@@ -14,10 +14,15 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -37,6 +42,16 @@ import fridger.composeapp.generated.resources.home_group_section_fresh
 import fridger.composeapp.generated.resources.home_group_section_nearing
 import fridger.composeapp.generated.resources.home_remove_ingredient
 import org.jetbrains.compose.resources.stringResource
+import androidx.compose.foundation.interaction.InteractionSource
+import androidx.compose.foundation.interaction.HoverInteraction
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.State
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.animation.core.animateDpAsState
+import org.jetbrains.compose.resources.painterResource
+
 
 @Composable
 fun IngredientItem(
@@ -47,43 +62,66 @@ fun IngredientItem(
     onRemove: (() -> Unit)? = null
 ) {
     val borderColor by animateColorAsState(
-        targetValue = if (isSelected) Color(0xFF4CAF50) else Color.Transparent,
+        targetValue = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
         label = "borderColorAnimation"
+    )
+
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val isHovered by interactionSource.collectIsHoveredAsState()
+    
+    // Smooth scale animation for hover/press
+    val scale by animateFloatAsState(
+        targetValue = when {
+            isPressed -> 0.98f
+            isHovered -> 1.01f
+            else -> 1f
+        },
+        label = "scale"
+    )
+    
+    // Elevate on hover
+    val elevation by animateDpAsState(
+        targetValue = if (isHovered) 4.dp else 0.dp,
+        label = "elevation"
     )
 
     Card(
         onClick = onClick,
-        shape = RoundedCornerShape(12.dp),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = Color.White
-            ),
-        border = if (isSelected) BorderStroke(2.dp, borderColor) else null,
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp)
+        shape = MaterialTheme.shapes.large, // 16.dp
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        border = BorderStroke(if (isSelected) 2.dp else 1.dp, borderColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = elevation),
+        interactionSource = interactionSource,
+        modifier = modifier
+            .fillMaxWidth()
+            .scale(scale)
+            .pointerHoverIcon(PointerIcon.Hand)
     ) {
         Row(
-            modifier =
-                Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icon Placeholder
+            // Icon Placeholder with soft background
             Box(
-                modifier =
-                    Modifier
-                        .size(48.dp)
-                        .background(
-                            color = getFreshnessColor(item.freshness).copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(8.dp)
-                        ),
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(
+                        color = getFreshnessColor(item.freshness).copy(alpha = 0.08f)
+                    ),
                 contentAlignment = Alignment.Center
             ) {
-                Text(item.icon, fontSize = 24.sp)
+                Icon(
+                    painter = painterResource(item.icon),
+                    contentDescription = item.name,
+                    modifier = Modifier.size(32.dp),
+                    tint = Color.Unspecified
+                )
             }
 
             Spacer(modifier = Modifier.width(16.dp))
@@ -91,47 +129,59 @@ fun IngredientItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = item.name,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = Color(0xFF2D5A27) // 森林綠
+                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = item.category.name,
-                    fontSize = 12.sp,
-                    color = Color.Gray
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
             Column(horizontalAlignment = Alignment.End) {
-                val expiryText =
-                    when (val display = item.expiryDisplay) {
-                        is ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
-                        is ExpiryDisplay.Overdue -> stringResourceFormat(Res.string.home_days_overdue, display.days)
-                        is ExpiryDisplay.Until -> stringResourceFormat(Res.string.home_days_until, display.days)
-                    }
+                val expiryText = when (val display = item.expiryDisplay) {
+                    is ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
+                    is ExpiryDisplay.Overdue -> stringResourceFormat(Res.string.home_days_overdue, display.days)
+                    is ExpiryDisplay.Until -> stringResourceFormat(Res.string.home_days_until, display.days)
+                }
 
-                Text(
-                    text = expiryText,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = getFreshnessColor(item.freshness)
-                )
+                Surface(
+                    color = getFreshnessColor(item.freshness).copy(alpha = 0.1f),
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text(
+                        text = expiryText,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = getFreshnessColor(item.freshness),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
 
                 if (item.hasWarning) {
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = stringResource(Res.string.home_eat_it_soon),
-                        fontSize = 10.sp,
-                        color = Color(0xFFFF9800) // 暖橙色
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error
                     )
                 }
             }
 
             if (onRemove != null && !isSelected) {
-                IconButton(onClick = onRemove) {
+                Spacer(modifier = Modifier.width(8.dp))
+                IconButton(
+                    onClick = onRemove,
+                    modifier = Modifier.size(32.dp)
+                ) {
                     Icon(
                         imageVector = Icons.Default.Delete,
                         contentDescription = stringResource(Res.string.home_remove_ingredient),
-                        tint = Color.Gray.copy(alpha = 0.5f)
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
@@ -142,9 +192,9 @@ fun IngredientItem(
 @Composable
 private fun getFreshnessColor(freshness: Freshness): Color =
     when (freshness) {
-        Freshness.Fresh -> Color(0xFF4CAF50) // 新鮮綠
-        Freshness.NearingExpiration -> Color(0xFFFF9800) // 暖橙色
-        Freshness.Expired -> Color(0xFFF44336) // 紅色
+        Freshness.Fresh -> MaterialTheme.colorScheme.primary
+        Freshness.NearingExpiration -> MaterialTheme.colorScheme.secondary
+        Freshness.Expired -> MaterialTheme.colorScheme.error
     }
 
 @Composable
@@ -156,53 +206,87 @@ fun IngredientCompactCard(
     onRemove: (() -> Unit)? = null,
 ) {
     val borderColor by animateColorAsState(
-        targetValue = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+        targetValue = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
         label = "compact_border"
     )
+    
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val isHovered by interactionSource.collectIsHoveredAsState()
+    
+    // Subtle scale animation
+    val scale by animateFloatAsState(
+        targetValue = when {
+            isPressed -> 0.98f
+            isHovered -> 1.01f
+            else -> 1f
+        },
+        label = "scale"
+    )
+    
+    // Elevate on hover
+    val elevation by animateDpAsState(
+        targetValue = if (isHovered) 3.dp else 0.dp,
+        label = "elevation"
+    )
+
     Card(
         onClick = onClick,
-        modifier = modifier,
-        shape = RoundedCornerShape(18.dp),
+        modifier = modifier
+            .scale(scale)
+            .pointerHoverIcon(PointerIcon.Hand),
+        shape = MaterialTheme.shapes.large, // 16.dp
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(width = if (isSelected) 2.dp else 1.dp, color = borderColor)
+        border = BorderStroke(width = if (isSelected) 2.dp else 1.dp, color = borderColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = elevation),
+        interactionSource = interactionSource
     ) {
         Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Box(
-                    modifier =
-                        Modifier
-                            .size(44.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(getFreshnessColor(item.freshness).copy(alpha = 0.12f)),
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(getFreshnessColor(item.freshness).copy(alpha = 0.1f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = item.icon, fontSize = 22.sp)
+                    Icon(
+                        painter = painterResource(item.icon),
+                        contentDescription = item.name,
+                        modifier = Modifier.size(24.dp),
+                        tint = Color.Unspecified
+                    )
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = item.name,
-                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold, // Increased weight
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1
                     )
                     Text(
                         text = item.quantity,
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 if (onRemove != null && !isSelected) {
-                    IconButton(onClick = onRemove) {
+                    IconButton(
+                        onClick = onRemove,
+                        modifier = Modifier.size(28.dp) // Slightly bigger target
+                    ) {
                         Icon(
                             imageVector = Icons.Default.Delete,
                             contentDescription = stringResource(Res.string.home_remove_ingredient),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
@@ -220,8 +304,8 @@ fun IngredientCompactCard(
                     }
                 Text(
                     text = expiryText,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold, // Bold for readability
                     color = getFreshnessColor(item.freshness)
                 )
             }
@@ -233,19 +317,33 @@ fun IngredientCompactCard(
 private fun FreshnessBadge(freshness: Freshness) {
     val (label, color) =
         when (freshness) {
-            Freshness.Fresh -> Res.string.home_group_section_fresh to Color(0xFF4CAF50)
-            Freshness.NearingExpiration -> Res.string.home_group_section_nearing to Color(0xFFFF9800)
-            Freshness.Expired -> Res.string.home_group_section_expired to Color(0xFFF44336)
+            Freshness.Fresh -> Res.string.home_group_section_fresh to MaterialTheme.colorScheme.primary
+            Freshness.NearingExpiration -> Res.string.home_group_section_nearing to MaterialTheme.colorScheme.secondary
+            Freshness.Expired -> Res.string.home_group_section_expired to MaterialTheme.colorScheme.error
         }
     Surface(
-        shape = RoundedCornerShape(999.dp),
-        color = color.copy(alpha = 0.15f)
+        shape = RoundedCornerShape(percent = 50),
+        color = color.copy(alpha = 0.1f)
     ) {
         Text(
             text = stringResource(label),
             color = color,
-            fontSize = 11.sp,
+            style = MaterialTheme.typography.labelSmall,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
         )
     }
+}
+// Helper to collect hover state
+@Composable
+fun InteractionSource.collectIsHoveredAsState(): State<Boolean> {
+    val isHovered = remember { mutableStateOf(false) }
+    LaunchedEffect(this) {
+        interactions.collect { interaction ->
+            when (interaction) {
+                is HoverInteraction.Enter -> isHovered.value = true
+                is HoverInteraction.Exit -> isHovered.value = false
+            }
+        }
+    }
+    return isHovered
 }

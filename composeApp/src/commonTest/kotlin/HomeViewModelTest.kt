@@ -398,7 +398,8 @@ class HomeViewModelTest {
             advanceUntilIdle()
 
             val state = viewModel.uiState.value.healthDashboard
-            assertEquals("network", state.error)
+            // When local fallback metrics are available, we keep showing the dashboard and suppress the backend error.
+            assertEquals(null, state.error)
             assertTrue(state.metrics != null)
         }
 

@@ -5,6 +5,7 @@ import fridger.com.io.data.model.IngredientCategory
 import fridger.com.io.presentation.home.dashboard.DashboardSection
 import fridger.com.io.presentation.home.dashboard.DashboardSectionDefaults
 import kotlinx.coroutines.Job
+import org.jetbrains.compose.resources.DrawableResource
 
 // UI state for Home screen
 
@@ -69,7 +70,7 @@ sealed class ExpiryDisplay {
 data class ExpiringItem(
     val id: String,
     val name: String,
-    val icon: String,
+    val icon: DrawableResource,
     val count: Int,
     val daysUntil: Int,
     val expiryDisplay: ExpiryDisplay =
@@ -83,7 +84,7 @@ data class ExpiringItem(
 data class RefrigeratedItem(
     val id: String,
     val name: String,
-    val icon: String,
+    val icon: DrawableResource,
     val quantity: String,
     val daysUntilExpiry: Int,
     val ageDays: Int,

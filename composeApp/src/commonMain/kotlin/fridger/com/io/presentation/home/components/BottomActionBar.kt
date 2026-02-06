@@ -19,6 +19,8 @@ import fridger.composeapp.generated.resources.Res
 import fridger.composeapp.generated.resources.home_selection_cancel
 import fridger.composeapp.generated.resources.home_selection_generate_recipe
 import org.jetbrains.compose.resources.stringResource
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 
 @Composable
 fun BottomActionBar(
@@ -38,7 +40,7 @@ fun BottomActionBar(
                 Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.surface),
-            shadowElevation = 8.dp
+            shadowElevation = 4.dp
         ) {
             Row(
                 modifier =
@@ -55,7 +57,7 @@ fun BottomActionBar(
                         ButtonDefaults.outlinedButtonColors(
                             contentColor = MaterialTheme.colorScheme.onSurface
                         ),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f).pointerHoverIcon(PointerIcon.Hand)
                 ) {
                     Text(
                         text = stringResource(Res.string.home_selection_cancel),
@@ -91,7 +93,7 @@ fun BottomActionBar(
                             containerColor = buttonContainerColor,
                             contentColor = buttonContentColor
                         ),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f).pointerHoverIcon(PointerIcon.Hand)
                 ) {
                     Text(
                         text = stringResource(Res.string.home_selection_generate_recipe),

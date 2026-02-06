@@ -233,14 +233,11 @@ class HomeViewModel(
     private fun updateDashboardWithLocalSnapshot() {
         val localMetrics = computeLocalDashboardMetrics()
         _uiState.update { state ->
-            if (!shouldUseLocalMetrics(state.healthDashboard.metrics, localMetrics)) {
-                return@update state
-            }
             state.copy(
                 healthDashboard =
                     state.healthDashboard.copy(
                         isLoading = false,
-                        error = null,
+                        // Keep any existing backend error surfaced; this function's job is just to keep metrics in sync.
                         metrics = localMetrics,
                     ),
             )
@@ -500,10 +497,9 @@ class HomeViewModel(
 
         // Get the first selected item's name to search for recipes
         val selectedItem = originalRefrigeratedItems.find { it.id in _uiState.value.selectedItemIds }
-        selectedItem?.let { item ->
-//            generateRecipeFromIngredient(item.name)
-            generateRecipeFromIngredient("tofu")
-        }
+            selectedItem?.let { item ->
+                generateRecipeFromIngredient(item.name)
+            }
     }
 
     fun generateRecipeFromIngredient(ingredientName: String) {
