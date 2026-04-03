@@ -19,7 +19,7 @@ import fridger.com.io.presentation.navigation.AppTab
 @Composable
 fun BottomNavigationBar() {
     val tabNavigator = LocalTabNavigator.current
-    val tabs = listOf(AppTab.Home, AppTab.Recipes, AppTab.ShoppingList)
+    val tabs = listOf(AppTab.Home, AppTab.Recipes, AppTab.ShoppingList, AppTab.Profile)
 
     NavigationBar {
         tabs.forEach { tab ->

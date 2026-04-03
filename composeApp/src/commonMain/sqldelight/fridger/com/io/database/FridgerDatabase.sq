@@ -44,6 +44,9 @@ insertShoppingItem:
 INSERT INTO ShoppingListItem(name, quantity, isChecked, category)
 VALUES (?, ?, ?, ?);
 
+selectLastShoppingItemIdByCategory:
+SELECT id FROM ShoppingListItem WHERE category = ? ORDER BY id DESC LIMIT 1;
+
 updateShoppingItemChecked:
 UPDATE ShoppingListItem SET isChecked = ? WHERE id = ?;
 

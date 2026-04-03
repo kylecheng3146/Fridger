@@ -9,6 +9,7 @@ object ApiPaths {
     const val AUTH_LOGOUT = "/logout"
     const val HEALTH = "/health"
     const val HEALTH_DASHBOARD = "$API_V1/health/dashboard"
+    const val SHOPPING_LISTS = "$API_V1/shopping-lists"
     const val ROOT = "/"
 }
 

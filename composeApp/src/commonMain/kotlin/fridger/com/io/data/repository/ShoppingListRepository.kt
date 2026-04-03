@@ -17,6 +17,8 @@ data class ShoppingListItem(
 interface ShoppingListRepository {
     suspend fun getShoppingList(listId: String? = null): List<ShoppingListItem>
 
+    suspend fun getLastItemId(listId: String): Long?
+
     suspend fun addItem(
         name: String,
         quantity: String?,
@@ -55,6 +57,11 @@ class ShoppingListRepositoryImpl(
                     category = row.category
                 )
             }
+        }
+
+    override suspend fun getLastItemId(listId: String): Long? =
+        withContext(Dispatchers.Default) {
+            db.fridgerDatabaseQueries.selectLastShoppingItemIdByCategory(listId).executeAsOneOrNull()
         }
 
     override suspend fun addItem(

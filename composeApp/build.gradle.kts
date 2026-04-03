@@ -70,6 +70,7 @@ kotlin {
             implementation(libs.sqldelight.androidDriver)
             // Ktor engine for Android
             implementation("io.ktor:ktor-client-android:3.0.2")
+            implementation("com.google.android.gms:play-services-auth:21.2.0")
         }
         commonMain.dependencies {
             implementation(compose.runtime)

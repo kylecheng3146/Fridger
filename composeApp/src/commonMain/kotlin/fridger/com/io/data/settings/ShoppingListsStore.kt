@@ -59,6 +59,7 @@ class ShoppingListsStore(
 object ShoppingListsManager {
     private val store by lazy { ShoppingListsStore(SharedDataStoreProvider.instance) }
     val lists: Flow<List<ShoppingListMeta>> = store.lists
+    var currentList: ShoppingListMeta? = null
 
     suspend fun addList(meta: ShoppingListMeta) = store.addList(meta)
 

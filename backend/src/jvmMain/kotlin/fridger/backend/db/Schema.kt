@@ -37,6 +37,26 @@ object FridgeItemsTable : Table("fridge_items") {
     override val primaryKey = PrimaryKey(id)
 }
 
+object ShoppingListsTable : Table("shopping_lists") {
+    val id = text("id")
+    val userId = uuid("user_id")
+    val name = text("name")
+    val listDate = text("list_date").nullable()
+    val createdAt = timestamp("created_at")
+    override val primaryKey = PrimaryKey(id)
+}
+
+object ShoppingListItemsTable : Table("shopping_list_items") {
+    val id = text("id")
+    val listId = text("list_id")
+    val userId = uuid("user_id")
+    val name = text("name")
+    val quantity = text("quantity").nullable()
+    val isChecked = bool("is_checked")
+    val createdAt = timestamp("created_at")
+    override val primaryKey = PrimaryKey(id)
+}
+
 data class User(
     val id: UUID,
     val name: String,

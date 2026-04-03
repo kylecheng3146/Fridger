@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		B9C2A0F22DD1F3A000A2F901 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = B9C2A0F12DD1F3A000A2F901 /* GoogleSignIn */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		B9DA97B12DC1472C00A4DA20 /* Fridger.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Fridger.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -41,6 +45,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B9C2A0F22DD1F3A000A2F901 /* GoogleSignIn in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -85,6 +90,7 @@
 			);
 			name = iosApp;
 			packageProductDependencies = (
+				B9C2A0F12DD1F3A000A2F901 /* GoogleSignIn */,
 			);
 			productName = iosApp;
 			productReference = B9DA97B12DC1472C00A4DA20 /* Fridger.app */;
@@ -118,6 +124,9 @@
 			productRefGroup = B9DA97B22DC1472C00A4DA20 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
+			packageReferences = (
+				B9C2A0F02DD1F3A000A2F901 /* XCRemoteSwiftPackageReference "GoogleSignIn" */,
+			);
 			targets = (
 				B9DA97B02DC1472C00A4DA20 /* iosApp */,
 			);
@@ -385,3 +394,21 @@
 	};
 	rootObject = B9DA97A92DC1472C00A4DA20 /* Project object */;
 }
+/* Begin XCRemoteSwiftPackageReference section */
+		B9C2A0F02DD1F3A000A2F901 /* XCRemoteSwiftPackageReference "GoogleSignIn" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 7.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		B9C2A0F12DD1F3A000A2F901 /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = GoogleSignIn;
+			package = B9C2A0F02DD1F3A000A2F901 /* XCRemoteSwiftPackageReference "GoogleSignIn" */;
+		};
+/* End XCSwiftPackageProductDependency section */

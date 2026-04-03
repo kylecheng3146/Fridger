@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -14,9 +15,14 @@ import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import fridger.com.io.presentation.ViewModelFactoryProvider
 import fridger.com.io.presentation.home.HomeScreen
+import fridger.com.io.presentation.auth.LoginScreen
+import fridger.com.io.presentation.profile.ProfileScreen
 import fridger.com.io.presentation.recipes.RecipesScreen
 import fridger.com.io.presentation.recipes.RecipesViewModel
 import fridger.com.io.presentation.shoppinglist.ShoppingListScreen
+import fridger.com.io.data.user.UserSessionManager
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 
 private object RecipesRootScreen : Screen {
     @Composable
@@ -59,6 +65,18 @@ sealed class AppTab(
         @Composable
         override fun Content() {
             ShoppingListScreen()
+        }
+    }
+
+    object Profile : AppTab("profile", "個人", Icons.Filled.Person) {
+        @Composable
+        override fun Content() {
+            val userId by UserSessionManager.userId.collectAsState()
+            if (userId.isBlank()) {
+                LoginScreen()
+            } else {
+                ProfileScreen(userId)
+            }
         }
     }
 }

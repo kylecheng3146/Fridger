@@ -24,6 +24,34 @@ import fridger.com.io.data.repository.ShoppingListItem
 import fridger.com.io.presentation.ViewModelFactoryProvider
 import fridger.com.io.ui.theme.sizing
 import fridger.com.io.ui.theme.spacing
+import fridger.composeapp.generated.resources.Res
+import fridger.composeapp.generated.resources.shopping_list_add_item
+import fridger.composeapp.generated.resources.shopping_list_clear_done
+import fridger.composeapp.generated.resources.shopping_list_create
+import fridger.composeapp.generated.resources.shopping_list_create_confirm
+import fridger.composeapp.generated.resources.shopping_list_create_dialog_title
+import fridger.composeapp.generated.resources.shopping_list_empty_body
+import fridger.composeapp.generated.resources.shopping_list_empty_title
+import fridger.composeapp.generated.resources.shopping_list_error_body
+import fridger.composeapp.generated.resources.shopping_list_error_title
+import fridger.composeapp.generated.resources.shopping_list_offline_banner
+import fridger.composeapp.generated.resources.shopping_list_sync_queue_action
+import fridger.composeapp.generated.resources.shopping_list_sync_queue_body
+import fridger.composeapp.generated.resources.shopping_list_sync_queue_empty
+import fridger.composeapp.generated.resources.shopping_list_sync_queue_title
+import fridger.composeapp.generated.resources.shopping_list_sync_pending
+import fridger.composeapp.generated.resources.shopping_list_sync_queue
+import fridger.composeapp.generated.resources.shopping_list_sync_error
+import fridger.composeapp.generated.resources.shopping_list_sync_retry
+import fridger.composeapp.generated.resources.shopping_list_sync_action_add
+import fridger.composeapp.generated.resources.shopping_list_sync_action_update
+import fridger.composeapp.generated.resources.shopping_list_sync_action_delete
+import fridger.composeapp.generated.resources.shopping_list_sync_action_clear
+import fridger.composeapp.generated.resources.shopping_list_sync_action_time
+import fridger.composeapp.generated.resources.shopping_list_title
+import org.jetbrains.compose.resources.stringResource
+import fridger.com.io.data.sync.ShoppingSyncActionType
+import fridger.com.io.utils.epochMillisToDateString
 import kotlinx.datetime.toLocalDateTime
 import fridger.com.io.utils.epochMillisToDateString
 
@@ -39,6 +67,7 @@ fun ShoppingListScreen(
     var showAddDialog by rememberSaveable { mutableStateOf(false) } // add item dialog (detail view)
     var showCreateListDialog by rememberSaveable { mutableStateOf(false) } // create list dialog (overview)
     var pendingDeleteList by remember { mutableStateOf<fridger.com.io.data.settings.ShoppingListMeta?>(null) }
+    var showSyncQueueDialog by rememberSaveable { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -51,6 +80,13 @@ fun ShoppingListScreen(
                         .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
                         .weight(1f)
             ) {
+                if (state.isOffline) {
+                    OfflineSyncBanner(
+                        pendingCount = state.pendingSyncCount,
+                        onViewQueue = { showSyncQueueDialog = true }
+                    )
+                    Spacer(Modifier.height(10.dp))
+                }
                 if (state.currentList == null) {
                     Button(
                         onClick = { showCreateListDialog = true },
@@ -62,7 +98,7 @@ fun ShoppingListScreen(
                     ) {
                         Icon(Icons.Default.Add, contentDescription = null)
                         Spacer(Modifier.width(6.dp))
-                        Text("新增購物清單")
+                        Text(stringResource(Res.string.shopping_list_create))
                     }
 
                     Spacer(Modifier.height(16.dp))
@@ -111,7 +147,7 @@ fun ShoppingListScreen(
                         ) {
                             Icon(Icons.Default.Add, contentDescription = null)
                             Spacer(Modifier.width(6.dp))
-                            Text("新增食材")
+                            Text(stringResource(Res.string.shopping_list_add_item))
                         }
 
                         OutlinedButton(
@@ -121,7 +157,7 @@ fun ShoppingListScreen(
                                 ButtonDefaults.outlinedButtonColors(
                                     contentColor = MaterialTheme.colorScheme.primary
                                 )
-                        ) { Text("清除清單") }
+                        ) { Text(stringResource(Res.string.shopping_list_clear_done)) }
                     }
 
                     Spacer(Modifier.height(12.dp))
@@ -133,11 +169,29 @@ fun ShoppingListScreen(
                             }
                         }
                         state.error != null -> {
-                            Text(
-                                text = "載入失敗：${state.error}",
-                                color = MaterialTheme.colorScheme.error,
-                                fontSize = 14.sp
-                            )
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = stringResource(Res.string.shopping_list_error_title),
+                                    color = MaterialTheme.colorScheme.error,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Spacer(Modifier.height(6.dp))
+                                Text(
+                                    text = stringResource(Res.string.shopping_list_error_body),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 14.sp
+                                )
+                                Spacer(Modifier.height(6.dp))
+                                Text(
+                                    text = stringResource(Res.string.shopping_list_sync_error),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 13.sp
+                                )
+                            }
                         }
                         state.items.isEmpty() -> {
                             Column(
@@ -152,14 +206,14 @@ fun ShoppingListScreen(
                                 )
                                 Spacer(Modifier.height(12.dp))
                                 Text(
-                                    text = "清單空空如也～",
+                                    text = stringResource(Res.string.shopping_list_empty_title),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Medium
                                 )
                                 Spacer(Modifier.height(8.dp))
                                 Text(
-                                    text = "點擊上方「新增食材」開始採買吧！",
+                                    text = stringResource(Res.string.shopping_list_empty_body),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                                     fontSize = 14.sp
                                 )
@@ -174,8 +228,8 @@ fun ShoppingListScreen(
                         items(state.items, key = { it.id }) { item ->
                             ShoppingListRow(
                                 item = item,
-                                onCheckedChange = { vm.toggleChecked(item.id, it) },
-                                onDelete = { vm.deleteItem(item.id) }
+                                onCheckedChange = { vm.toggleChecked(item, it) },
+                                onDelete = { vm.deleteItem(item) }
                             )
                         }
                     }
@@ -200,6 +254,47 @@ fun ShoppingListScreen(
                 onConfirm = { name, date ->
                     vm.createNewList(name, date)
                     showCreateListDialog = false
+                }
+            )
+        }
+
+        if (showSyncQueueDialog) {
+            AlertDialog(
+                onDismissRequest = { showSyncQueueDialog = false },
+                title = { Text(stringResource(Res.string.shopping_list_sync_queue_title)) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(stringResource(Res.string.shopping_list_sync_queue_body, state.pendingSyncCount))
+                        if (state.pendingSyncActions.isEmpty()) {
+                            Text(stringResource(Res.string.shopping_list_sync_queue_empty))
+                        } else {
+                            state.pendingSyncActions.take(6).forEach { action ->
+                                val label = when (action.type) {
+                                    ShoppingSyncActionType.ADD -> stringResource(Res.string.shopping_list_sync_action_add, action.itemName ?: "")
+                                    ShoppingSyncActionType.UPDATE -> stringResource(Res.string.shopping_list_sync_action_update, action.itemName ?: "")
+                                    ShoppingSyncActionType.DELETE -> stringResource(Res.string.shopping_list_sync_action_delete, action.itemName ?: "")
+                                    ShoppingSyncActionType.CLEAR -> stringResource(Res.string.shopping_list_sync_action_clear)
+                                }
+                                Text(label, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                val timeLabel = epochMillisToDateString(action.createdAtEpochMillis)
+                                Text(
+                                    text = stringResource(Res.string.shopping_list_sync_action_time, timeLabel),
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                                )
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showSyncQueueDialog = false }) {
+                        Text(stringResource(Res.string.shopping_list_sync_queue_action))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { vm.retrySyncQueue(); showSyncQueueDialog = false }) {
+                        Text(stringResource(Res.string.shopping_list_sync_retry))
+                    }
                 }
             )
         }
@@ -274,7 +369,7 @@ private fun CreateShoppingListDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("新增購物清單") },
+        title = { Text(stringResource(Res.string.shopping_list_create_dialog_title)) },
         text = {
             Column {
                 OutlinedTextField(
@@ -304,7 +399,7 @@ private fun CreateShoppingListDialog(
                     onConfirm(name.ifBlank { "未命名清單" }, date.ifBlank { todayDisplay() })
                 },
                 enabled = name.isNotBlank() || date.isNotBlank()
-            ) { Text("建立") }
+            ) { Text(stringResource(Res.string.shopping_list_create_confirm)) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } }
     )
@@ -340,7 +435,40 @@ private fun todayDisplay(): String {
 @Composable
 private fun ShoppingHeader() {
     fridger.com.io.presentation.components
-        .AppTopTitle(title = "購物清單")
+        .AppTopTitle(title = stringResource(Res.string.shopping_list_title))
+}
+
+@Composable
+private fun OfflineSyncBanner(
+    pendingCount: Int,
+    onViewQueue: () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        tonalElevation = 2.dp
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+            Text(
+                text = stringResource(Res.string.shopping_list_offline_banner),
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium
+            )
+            Spacer(Modifier.height(6.dp))
+            if (pendingCount > 0) {
+                Text(
+                    text = stringResource(Res.string.shopping_list_sync_pending, pendingCount),
+                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f),
+                    fontSize = 13.sp
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+            TextButton(onClick = onViewQueue) {
+                Text(stringResource(Res.string.shopping_list_sync_queue))
+            }
+        }
+    }
 }
 
 @Composable

@@ -12,7 +12,10 @@ import fridger.com.io.data.repository.IngredientRepositoryImpl
 import fridger.com.io.data.repository.RecipeRepositoryImpl
 import fridger.com.io.data.settings.DataStoreHealthDashboardPreferences
 import fridger.com.io.data.settings.SharedDataStoreProvider
-import fridger.com.io.data.user.DemoUserSessionProvider
+import fridger.com.io.data.user.AppUserSessionProvider
+import fridger.com.io.data.remote.ShoppingSyncApiService
+import fridger.com.io.data.remote.ShoppingListApiService
+import fridger.com.io.data.sync.ApiShoppingSyncProcessor
 import fridger.com.io.presentation.home.HomeViewModel
 import fridger.com.io.presentation.recipes.RecipesViewModel
 import fridger.com.io.presentation.settings.SettingsViewModel
@@ -38,13 +41,27 @@ class ViewModelFactory : ViewModelProvider.Factory {
                     RecipeRepositoryImpl(RecipeApiService()),
                     MockTranslator(),
                     HealthDashboardRepositoryImpl(HealthDashboardApiService()),
-                    DemoUserSessionProvider,
+                    AppUserSessionProvider,
                     dashboardPreferences,
                     dashboardAnalytics,
                 ) as T
             SettingsViewModel::class -> SettingsViewModel() as T
             ShoppingListViewModel::class ->
-                ShoppingListViewModel() as T
+                ShoppingListViewModel(
+                    syncProcessor =
+                        ApiShoppingSyncProcessor(
+                            listIdProvider = {
+                                // Use current list from ShoppingListsManager if available
+                                fridger.com.io.data.settings.ShoppingListsManager.currentList?.id.orEmpty()
+                            },
+                            tokenProvider = {
+                                AppUserSessionProvider.accessToken()
+                            },
+                            api = ShoppingSyncApiService()
+                        ),
+                    listApi = ShoppingListApiService(),
+                    sessionProvider = AppUserSessionProvider
+                ) as T
             RecipesViewModel::class ->
                 RecipesViewModel(
                     RecipeRepositoryImpl(RecipeApiService())

@@ -159,7 +159,7 @@ fun ShoppingQuickAddTopDialog(
                                     )
                                     Spacer(Modifier.height(16.dp))
                                     Text(
-                                        text = "找不到相關食材",
+                                        text = "找不到相關項目",
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )

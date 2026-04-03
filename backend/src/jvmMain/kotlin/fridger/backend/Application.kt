@@ -31,6 +31,6 @@ fun Application.module() {
     configureSerialization()
     configureLogging()
     configureStatusPages()
-    configureSecurity() // Placeholder for future implementation
+    configureSecurity()
     configureRouting()
 }
