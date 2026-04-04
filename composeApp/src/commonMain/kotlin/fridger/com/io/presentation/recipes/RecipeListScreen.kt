@@ -25,6 +25,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil3.compose.AsyncImage
 import fridger.com.data.remote.RecipeApiService
+import fridger.com.io.data.user.AppUserSessionProvider
 import fridger.com.io.data.repository.RecipeRepositoryImpl
 import kotlin.reflect.KClass
 
@@ -43,7 +44,11 @@ class RecipeListScreen(
                             modelClass: KClass<T>,
                             extras: CreationExtras
                         ): T {
-                            val repo = RecipeRepositoryImpl(RecipeApiService())
+                            val repo = RecipeRepositoryImpl(
+                                RecipeApiService(),
+                                fridger.com.io.data.database.DatabaseProvider.database,
+                                AppUserSessionProvider,
+                            )
                             @Suppress("UNCHECKED_CAST")
                             return RecipeListViewModel(repo, categoryName) as T
                         }

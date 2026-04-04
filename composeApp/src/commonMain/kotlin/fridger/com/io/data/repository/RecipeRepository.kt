@@ -2,15 +2,161 @@ package fridger.com.io.data.repository
 
 import fridger.com.data.model.remote.MealDto
 import fridger.com.data.remote.RecipeApiService
+import fridger.com.io.data.user.UserSessionProvider
 import fridger.com.io.presentation.home.RecipeSuggestion
+import fridger.shared.recipe.GeneratedRecipe
 import fridger.shared.recipe.RecipeFeedbackType
+import fridger.shared.recipe.SaveRecipeRequest
+import kotlinx.datetime.Clock
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.Json
+
+private val recipeJsonKeyPattern = Regex(
+    "\"(recipeId|title|description|ingredients|instructions|cookingTime|difficulty|servings|success|data|error)\"",
+    RegexOption.IGNORE_CASE,
+)
+private val quotedValuePattern = Regex("\"([^\"]+)\"")
+
+private fun String.looksLikeJsonScalar(fieldName: String): Boolean =
+    Regex("^\\s*[{,]?\\s*\"?$fieldName\"?\\s*:", RegexOption.IGNORE_CASE).containsMatchIn(this)
+
+private fun String.looksLikeJsonListFragment(fieldName: String): Boolean {
+    val trimmed = trim()
+    return recipeJsonKeyPattern.containsMatchIn(trimmed) ||
+        Regex("^\\s*\"?$fieldName\"?\\s*:", RegexOption.IGNORE_CASE).containsMatchIn(trimmed) ||
+        Regex("^\\s*\".*\"\\s*,?\\s*$").matches(trimmed) ||
+        (trimmed.startsWith("[") && trimmed.contains('"')) ||
+        (trimmed.startsWith("{") && trimmed.contains('"'))
+}
+
+internal fun sanitizeRecipeSuggestion(recipe: GeneratedRecipe): RecipeSuggestion =
+    RecipeSuggestion(
+        recipeId = sanitizeScalarRecipeText(recipe.recipeId, "recipeId"),
+        title = sanitizeScalarRecipeText(recipe.title, "title"),
+        description = sanitizeScalarRecipeText(recipe.description, "description"),
+        ingredients = sanitizeRecipeList(recipe.ingredients, "ingredients"),
+        instructions = sanitizeRecipeList(recipe.instructions, "instructions"),
+        cookingTime = sanitizeScalarRecipeText(recipe.cookingTime, "cookingTime"),
+        difficulty = sanitizeScalarRecipeText(recipe.difficulty, "difficulty"),
+        servings = recipe.servings,
+    )
+
+internal fun sanitizeScalarRecipeText(raw: String, fieldName: String): String {
+    val trimmed = raw.trim()
+    if (trimmed.looksLikeJsonScalar(fieldName)) {
+        val fieldPattern =
+            Regex(
+                "^\\s*[{,]?\\s*\"?$fieldName\"?\\s*:\\s*\"([^\"]+)\"",
+                RegexOption.IGNORE_CASE,
+            )
+        fieldPattern.find(trimmed)?.groupValues?.getOrNull(1)?.let { return it.trim() }
+    }
+
+    val cleaned =
+        trimmed
+            .replace("```json", "", ignoreCase = true)
+            .replace("```", "")
+            .trim()
+
+    val minimallySanitized =
+        if (cleaned.looksLikeJsonScalar(fieldName)) {
+            cleaned
+                .replace(
+                    Regex("^\\s*[{,]?\\s*\"?$fieldName\"?\\s*:\\s*", RegexOption.IGNORE_CASE),
+                    "",
+                ).trim()
+                .trim(',', '，', ':', '：', '"', '\'', '[', ']', '{', '}')
+        } else {
+            cleaned
+        }
+
+    return minimallySanitized.ifBlank { trimmed }
+}
+
+internal fun sanitizeRecipeList(values: List<String>, fieldName: String): List<String> {
+    val combined = values.joinToString("\n").trim()
+    val extractedQuotedValues =
+        quotedValuePattern
+            .findAll(combined)
+            .map { it.groupValues[1].trim() }
+            .filterNot { it.isBlank() || recipeJsonKeyPattern.matches("\"$it\"") }
+            .toList()
+
+    if (combined.looksLikeJsonListFragment(fieldName) && extractedQuotedValues.isNotEmpty()) {
+        return extractedQuotedValues
+    }
+
+    return values
+        .flatMap { value ->
+            val cleaned =
+                value
+                    .replace("```json", "", ignoreCase = true)
+                    .replace("```", "")
+                    .trim()
+
+            val normalized =
+                cleaned
+                    .let {
+                        if (it.looksLikeJsonListFragment(fieldName)) {
+                            it.replace(
+                                Regex("^\\s*[{,]?\\s*\"?$fieldName\"?\\s*:\\s*", RegexOption.IGNORE_CASE),
+                                "",
+                            )
+                        } else {
+                            it
+                        }
+                    }.let {
+                        if (fieldName == "instructions") {
+                            it.replace(Regex("^\\s*\\d+\\.\\s+"), "")
+                        } else {
+                            it
+                        }
+                    }.trim()
+
+            val nestedQuotedValues =
+                if (normalized.looksLikeJsonListFragment(fieldName)) {
+                    quotedValuePattern
+                        .findAll(normalized)
+                        .map { it.groupValues[1].trim() }
+                        .filterNot { it.isBlank() || recipeJsonKeyPattern.matches("\"$it\"") }
+                        .toList()
+                } else {
+                    emptyList()
+                }
+
+            when {
+                nestedQuotedValues.isNotEmpty() -> nestedQuotedValues
+                else ->
+                    listOf(
+                        if (normalized.looksLikeJsonListFragment(fieldName)) {
+                            normalized.trim(',', '，', ':', '：', '"', '\'', '[', ']', '{', '}')
+                        } else {
+                            normalized
+                        },
+                    )
+            }
+        }.map { it.trim() }
+        .filter { it.isNotBlank() }
+}
 
 interface RecipeRepository {
     suspend fun getRemoteRandomRecipe(): Result<MealDto>
 
-    suspend fun generateRecipeFromInventory(ingredients: List<String>): Result<RecipeSuggestion>
+    suspend fun generateRecipeFromInventory(
+        ingredients: List<String>,
+        styles: List<String> = emptyList(),
+    ): Result<RecipeSuggestion>
 
-    suspend fun submitRecipeFeedback(recipeId: String, feedbackType: RecipeFeedbackType, accessToken: String): Result<Unit>
+    suspend fun saveRecipeLocally(recipe: RecipeSuggestion): Result<Unit>
+
+    suspend fun saveRecipeRemotely(recipe: RecipeSuggestion, accessToken: String): Result<Unit>
+
+    suspend fun submitRecipeFeedback(
+        recipeId: String,
+        feedbackType: RecipeFeedbackType,
+        accessToken: String,
+    ): Result<Unit>
 
     suspend fun getRecipesByIngredient(ingredient: String): Result<List<MealDto>>
 
@@ -25,26 +171,69 @@ interface RecipeRepository {
 
 class RecipeRepositoryImpl(
     private val apiService: RecipeApiService,
+    private val database: fridger.com.io.database.FridgerDatabase,
+    private val userSessionProvider: UserSessionProvider? = null,
 ) : RecipeRepository {
-    override suspend fun generateRecipeFromInventory(ingredients: List<String>): Result<RecipeSuggestion> =
+    override suspend fun generateRecipeFromInventory(
+        ingredients: List<String>,
+        styles: List<String>,
+    ): Result<RecipeSuggestion> =
         try {
-            val response = apiService.generateRecipeFromInventory(ingredients)
+            val response = apiService.generateRecipeFromInventory(ingredients, styles)
             val recipe = response.data
             if (response.success && recipe != null) {
-                Result.success(
-                    RecipeSuggestion(
-                        recipeId = recipe.recipeId,
-                        title = recipe.title,
-                        description = recipe.description,
-                        ingredients = recipe.ingredients,
-                        instructions = recipe.instructions,
-                        cookingTime = recipe.cookingTime,
-                        difficulty = recipe.difficulty,
-                        servings = recipe.servings,
-                    ),
-                )
+                Result.success(sanitizeRecipeSuggestion(recipe))
             } else {
                 Result.failure(IllegalStateException(response.error ?: "Failed to generate recipe"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+
+    override suspend fun saveRecipeLocally(recipe: RecipeSuggestion): Result<Unit> =
+        try {
+            val json = Json { encodeDefaults = true }
+            val stringListSerializer = ListSerializer(String.serializer())
+            database.fridgerDatabaseQueries.insertSavedRecipe(
+                id = recipe.recipeId,
+                title = recipe.title,
+                description = recipe.description,
+                ingredients = json.encodeToString(stringListSerializer, recipe.ingredients),
+                instructions = json.encodeToString(stringListSerializer, recipe.instructions),
+                cookingTime = recipe.cookingTime,
+                difficulty = recipe.difficulty,
+                servings = recipe.servings.toLong(),
+                savedAt = Clock.System.now().toEpochMilliseconds(),
+            )
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+
+    override suspend fun saveRecipeRemotely(
+        recipe: RecipeSuggestion,
+        accessToken: String,
+    ): Result<Unit> =
+        try {
+            val resolvedToken = accessToken.ifBlank { userSessionProvider?.accessToken().orEmpty() }
+            if (resolvedToken.isBlank()) {
+                Result.failure(IllegalStateException("Missing access token for remote recipe save"))
+            } else {
+                apiService.saveRecipe(
+                    payload =
+                        SaveRecipeRequest(
+                            recipeId = recipe.recipeId,
+                            title = recipe.title,
+                            description = recipe.description,
+                            ingredients = recipe.ingredients,
+                            instructions = recipe.instructions,
+                            cookingTime = recipe.cookingTime,
+                            difficulty = recipe.difficulty,
+                            servings = recipe.servings,
+                        ),
+                    accessToken = resolvedToken,
+                )
+                Result.success(Unit)
             }
         } catch (e: Exception) {
             Result.failure(e)

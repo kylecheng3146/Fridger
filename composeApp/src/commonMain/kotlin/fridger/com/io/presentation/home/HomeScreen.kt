@@ -23,8 +23,10 @@ import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -109,7 +111,16 @@ fun HomeScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var showDashboardDetails by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
+    var showAiRecipeSheet by remember { mutableStateOf(false) }
     val dashboardState = uiState.healthDashboard
+
+    fun openAiRecipeSheet() {
+        showAiRecipeSheet = true
+    }
+
+    fun closeAiRecipeSheet() {
+        showAiRecipeSheet = false
+    }
 
     // Random recipe bottom sheet state
     val randomRecipeSheetState = rememberModalBottomSheetState()
@@ -158,7 +169,9 @@ fun HomeScreen(
                     ),
                 ) {
                     item {
-                        HomeHeader(onSettingsClick = { showSettings = true })
+                        HomeHeader(
+                            onSettingsClick = { showSettings = true },
+                        )
                         Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
                         Row(
                             modifier =
@@ -178,7 +191,7 @@ fun HomeScreen(
                             }
 
                             OutlinedButton(
-                                onClick = viewModel::fetchRandomRecipe,
+                                onClick = ::openAiRecipeSheet,
                                 shape = RoundedCornerShape(8.dp),
                                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
                                 modifier = Modifier.weight(1f).pointerHoverIcon(PointerIcon.Hand)
@@ -295,7 +308,14 @@ fun HomeScreen(
                         viewModel.onToggleItemSelection(itemId)
                     }
                 },
-                onGenerateRecipeClick = viewModel::onGenerateRecipeClick
+                onGenerateRecipeClick = ::openAiRecipeSheet
+            )
+        }
+
+        if (showAiRecipeSheet) {
+            AiRecipeGeneratorSheet(
+                visible = showAiRecipeSheet,
+                onDismiss = ::closeAiRecipeSheet,
             )
         }
 
@@ -833,16 +853,18 @@ private fun HomeHeader(onSettingsClick: () -> Unit) {
                     end = MaterialTheme.sizing.contentPaddingHorizontal
                 ),
     ) {
-        Text(
-            text = stringResource(Res.string.home_title),
-            fontSize = 32.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
+        Column {
+            Text(
+                text = stringResource(Res.string.home_title),
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+        }
 
         IconButton(
             onClick = onSettingsClick,
-            modifier = Modifier.align(Alignment.CenterEnd)
+            modifier = Modifier.align(Alignment.TopEnd)
         ) {
             Icon(
                 imageVector = Icons.Default.Settings,

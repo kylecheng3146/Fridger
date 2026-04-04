@@ -2,17 +2,16 @@ package fridger.backend.routes
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import fridger.backend.config.ApiPaths
 import fridger.backend.config.AppConfig
 import fridger.backend.config.AppConfigAttribute
-import fridger.backend.config.ApiPaths
 import fridger.backend.config.JwtClaims
 import fridger.backend.config.TokenTypes
-import fridger.backend.services.RecipeFeedbackService
 import fridger.backend.security.configureJwtAuth
+import fridger.backend.services.RecipeFeedbackService
 import fridger.shared.models.ApiResponse
 import fridger.shared.recipe.RecipeFeedbackType
 import fridger.shared.recipe.SubmitRecipeFeedbackRequest
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation as ClientContentNegotiation
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -31,6 +30,7 @@ import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation as ClientContentNegotiation
 
 class RecipeFeedbackRoutesTest {
     private val appConfig =
@@ -65,9 +65,10 @@ class RecipeFeedbackRoutesTest {
                     recipeFeedbackRoutes(service)
                 }
             }
-            val jsonClient = createClient {
-                install(ClientContentNegotiation) { json() }
-            }
+            val jsonClient =
+                createClient {
+                    install(ClientContentNegotiation) { json() }
+                }
 
             val response =
                 jsonClient.post(ApiPaths.RECIPE_FEEDBACK) {
@@ -85,7 +86,10 @@ class RecipeFeedbackRoutesTest {
             val payload = Json.decodeFromString<ApiResponse<Unit>>(response.bodyAsText())
             assertTrue(payload.success)
             assertEquals(userId, service.lastUserId)
-            assertEquals(SubmitRecipeFeedbackRequest(recipeId = "recipe-123", feedbackType = RecipeFeedbackType.LIKE), service.lastRequest)
+            assertEquals(
+                SubmitRecipeFeedbackRequest(recipeId = "recipe-123", feedbackType = RecipeFeedbackType.LIKE),
+                service.lastRequest
+            )
         }
 
     @Test
@@ -99,14 +103,18 @@ class RecipeFeedbackRoutesTest {
                     recipeFeedbackRoutes(FakeRecipeFeedbackService())
                 }
             }
-            val jsonClient = createClient {
-                install(ClientContentNegotiation) { json() }
-            }
+            val jsonClient =
+                createClient {
+                    install(ClientContentNegotiation) { json() }
+                }
 
             val response =
                 jsonClient.post(ApiPaths.RECIPE_FEEDBACK) {
                     contentType(ContentType.Application.Json)
-                    header("Authorization", "Bearer ${createAccessToken(UUID.fromString("00000000-0000-0000-0000-000000000123"))}")
+                    header(
+                        "Authorization",
+                        "Bearer ${createAccessToken(UUID.fromString("00000000-0000-0000-0000-000000000123"))}"
+                    )
                     setBody(
                         SubmitRecipeFeedbackRequest(
                             recipeId = "   ",
@@ -122,7 +130,10 @@ class RecipeFeedbackRoutesTest {
         var lastUserId: UUID? = null
         var lastRequest: SubmitRecipeFeedbackRequest? = null
 
-        override suspend fun submitFeedback(userId: UUID, request: SubmitRecipeFeedbackRequest) {
+        override suspend fun submitFeedback(
+            userId: UUID,
+            request: SubmitRecipeFeedbackRequest
+        ) {
             lastUserId = userId
             lastRequest = request
         }

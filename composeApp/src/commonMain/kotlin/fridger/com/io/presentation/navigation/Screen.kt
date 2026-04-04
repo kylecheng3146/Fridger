@@ -20,4 +20,6 @@ sealed class Screen(
 
     // Not shown in bottom bar, but supported for app navigation
     data object Settings : Screen("settings", "設定", Icons.Default.Settings)
+    
+    data object AiRecipeGenerator : Screen("ai_recipe_generator", "AI 大廚上菜", Icons.Default.Restaurant)
 }

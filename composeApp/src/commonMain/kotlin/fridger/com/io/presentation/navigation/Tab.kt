@@ -32,6 +32,13 @@ private object RecipesRootScreen : Screen {
     }
 }
 
+private object HomeRootScreen : Screen {
+    @Composable
+    override fun Content() {
+        HomeScreen()
+    }
+}
+
 sealed class AppTab(
     private val tabKey: String,
     private val title: String,
@@ -50,7 +57,7 @@ sealed class AppTab(
     object Home : AppTab("home", "首頁", Icons.Filled.Home) {
         @Composable
         override fun Content() {
-            HomeScreen()
+            Navigator(HomeRootScreen)
         }
     }
 

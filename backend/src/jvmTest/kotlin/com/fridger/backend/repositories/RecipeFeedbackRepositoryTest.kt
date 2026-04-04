@@ -2,7 +2,6 @@ package com.fridger.backend.repositories
 
 import com.fridger.backend.DatabaseTestHelper
 import fridger.backend.db.UsersTable
-import fridger.backend.repositories.RecipeFeedbackRecord
 import fridger.backend.repositories.RecipeFeedbackRepository
 import fridger.shared.recipe.RecipeFeedbackType
 import kotlinx.coroutines.test.runTest

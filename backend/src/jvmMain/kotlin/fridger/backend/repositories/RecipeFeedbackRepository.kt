@@ -34,7 +34,9 @@ class RecipeFeedbackRepository {
                     it[updatedAt] = now
                 }
             } else {
-                RecipeFeedbackTable.update({ (RecipeFeedbackTable.userId eq userId) and (RecipeFeedbackTable.recipeId eq recipeId) }) {
+                RecipeFeedbackTable.update(
+                    { (RecipeFeedbackTable.userId eq userId) and (RecipeFeedbackTable.recipeId eq recipeId) }
+                ) {
                     it[RecipeFeedbackTable.feedbackType] = feedbackType.name
                     it[updatedAt] = now
                 }
@@ -43,10 +45,15 @@ class RecipeFeedbackRepository {
             requireNotNull(findByUserAndRecipeInternal(userId, recipeId))
         }
 
-    suspend fun findByUserAndRecipe(userId: UUID, recipeId: String): RecipeFeedbackRecord? =
-        dbQuery { findByUserAndRecipeInternal(userId, recipeId) }
+    suspend fun findByUserAndRecipe(
+        userId: UUID,
+        recipeId: String
+    ): RecipeFeedbackRecord? = dbQuery { findByUserAndRecipeInternal(userId, recipeId) }
 
-    private fun findByUserAndRecipeInternal(userId: UUID, recipeId: String): RecipeFeedbackRecord? =
+    private fun findByUserAndRecipeInternal(
+        userId: UUID,
+        recipeId: String
+    ): RecipeFeedbackRecord? =
         RecipeFeedbackTable
             .selectAll()
             .where { (RecipeFeedbackTable.userId eq userId) and (RecipeFeedbackTable.recipeId eq recipeId) }

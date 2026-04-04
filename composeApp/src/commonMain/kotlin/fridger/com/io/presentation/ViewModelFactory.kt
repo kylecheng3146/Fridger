@@ -17,6 +17,7 @@ import fridger.com.io.data.remote.ShoppingSyncApiService
 import fridger.com.io.data.remote.ShoppingListApiService
 import fridger.com.io.data.sync.ApiShoppingSyncProcessor
 import fridger.com.io.presentation.home.HomeViewModel
+import fridger.com.io.presentation.home.AiRecipeViewModel
 import fridger.com.io.presentation.recipes.RecipesViewModel
 import fridger.com.io.presentation.settings.SettingsViewModel
 import fridger.com.io.presentation.shoppinglist.ShoppingListViewModel
@@ -38,7 +39,7 @@ class ViewModelFactory : ViewModelProvider.Factory {
             HomeViewModel::class ->
                 HomeViewModel(
                     IngredientRepositoryImpl(),
-                    RecipeRepositoryImpl(RecipeApiService()),
+                    RecipeRepositoryImpl(RecipeApiService(), fridger.com.io.data.database.DatabaseProvider.database, AppUserSessionProvider),
                     MockTranslator(),
                     HealthDashboardRepositoryImpl(HealthDashboardApiService()),
                     AppUserSessionProvider,
@@ -64,7 +65,13 @@ class ViewModelFactory : ViewModelProvider.Factory {
                 ) as T
             RecipesViewModel::class ->
                 RecipesViewModel(
-                    RecipeRepositoryImpl(RecipeApiService())
+                    RecipeRepositoryImpl(RecipeApiService(), fridger.com.io.data.database.DatabaseProvider.database, AppUserSessionProvider)
+                ) as T
+            AiRecipeViewModel::class ->
+                AiRecipeViewModel(
+                    IngredientRepositoryImpl(),
+                    RecipeRepositoryImpl(RecipeApiService(), fridger.com.io.data.database.DatabaseProvider.database, AppUserSessionProvider),
+                    AppUserSessionProvider,
                 ) as T
             else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.simpleName}")
         }

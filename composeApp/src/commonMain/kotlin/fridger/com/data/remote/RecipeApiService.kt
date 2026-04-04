@@ -6,6 +6,7 @@ import fridger.shared.models.ApiResponse
 import fridger.shared.recipe.GenerateRecipeRequest
 import fridger.shared.recipe.GeneratedRecipe
 import fridger.shared.recipe.RecipeFeedbackType
+import fridger.shared.recipe.SaveRecipeRequest
 import fridger.shared.recipe.SubmitRecipeFeedbackRequest
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -50,6 +51,7 @@ class RecipeApiService {
     private val baseUrl = "https://www.themealdb.com/api/json/v1/1"
     private val recipeGenerationPath = "/api/v1/recipes/generate"
     private val recipeFeedbackPath = "/api/v1/recipes/feedback"
+    private val recipeSavePath = "/api/v1/recipes/save"
 
     suspend fun getRandomRecipe(): MealApiResponse {
         println("📞 API CALL: Getting random recipe")
@@ -144,13 +146,13 @@ class RecipeApiService {
         }
     }
 
-    suspend fun generateRecipeFromInventory(ingredients: List<String>): ApiResponse<GeneratedRecipe> {
-        println("📞 API CALL: Generating recipe from inventory (${ingredients.size} items)")
+    suspend fun generateRecipeFromInventory(ingredients: List<String>, styles: List<String> = emptyList()): ApiResponse<GeneratedRecipe> {
+        println("📞 API CALL: Generating recipe from inventory (${ingredients.size} items, styles: $styles)")
         return try {
             client
                 .post("$backendBaseUrl$recipeGenerationPath") {
                     contentType(ContentType.Application.Json)
-                    setBody(GenerateRecipeRequest(ingredients))
+                    setBody(GenerateRecipeRequest(ingredients, styles))
                 }.body<ApiResponse<GeneratedRecipe>>()
         } catch (e: Exception) {
             println("❌ API ERROR: Failed to generate inventory recipe - ${e.message}")
@@ -173,5 +175,16 @@ class RecipeApiService {
                         feedbackType = feedbackType,
                     ),
                 )
+            }.body()
+
+    suspend fun saveRecipe(
+        payload: SaveRecipeRequest,
+        accessToken: String,
+    ): ApiResponse<Unit> =
+        client
+            .post("$backendBaseUrl$recipeSavePath") {
+                contentType(ContentType.Application.Json)
+                header("Authorization", "Bearer $accessToken")
+                setBody(payload)
             }.body()
 }

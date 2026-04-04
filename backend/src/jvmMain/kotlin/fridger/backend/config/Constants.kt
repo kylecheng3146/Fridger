@@ -11,6 +11,7 @@ object ApiPaths {
     const val HEALTH_DASHBOARD = "$API_V1/health/dashboard"
     const val RECIPE_GENERATION = "$API_V1/recipes/generate"
     const val RECIPE_FEEDBACK = "$API_V1/recipes/feedback"
+    const val RECIPE_SAVE = "$API_V1/recipes/save"
     const val SHOPPING_LISTS = "$API_V1/shopping-lists"
     const val ROOT = "/"
 }

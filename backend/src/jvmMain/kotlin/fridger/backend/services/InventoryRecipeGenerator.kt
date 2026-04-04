@@ -5,11 +5,11 @@ import fridger.backend.exceptions.UpstreamServiceException
 import fridger.shared.recipe.GeneratedRecipe
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.ResponseException
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
-import io.ktor.client.plugins.ResponseException
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -22,7 +22,10 @@ import kotlinx.serialization.json.Json
 import java.util.UUID
 
 interface InventoryRecipeGenerator {
-    suspend fun generate(ingredients: List<String>): GeneratedRecipe
+    suspend fun generate(
+        ingredients: List<String>,
+        styles: List<String> = emptyList()
+    ): GeneratedRecipe
 }
 
 class GroqInventoryRecipeGenerator(
@@ -54,7 +57,10 @@ class GroqInventoryRecipeGenerator(
             explicitNulls = false
         }
 
-    override suspend fun generate(ingredients: List<String>): GeneratedRecipe {
+    override suspend fun generate(
+        ingredients: List<String>,
+        styles: List<String>
+    ): GeneratedRecipe {
         val normalizedIngredients =
             ingredients
                 .map { it.trim() }
@@ -63,6 +69,8 @@ class GroqInventoryRecipeGenerator(
                 .take(MAX_INGREDIENTS)
 
         require(normalizedIngredients.isNotEmpty()) { "At least one ingredient is required" }
+
+        val styleText = if (styles.isNotEmpty()) "，請盡量符合以下料理風格：${styles.joinToString(separator = "、")}" else ""
 
         val apiKey = config.groqApiKey ?: throw IllegalStateException("GROQ_API_KEY is not configured")
         val response =
@@ -102,7 +110,9 @@ class GroqInventoryRecipeGenerator(
                                         ),
                                         GroqMessage(
                                             role = "user",
-                                            content = "目前庫存食材：${normalizedIngredients.joinToString(separator = "、")}。請生成一道適合這些食材的食譜。",
+                                            content = "目前庫存食材：${normalizedIngredients.joinToString(
+                                                separator = "、"
+                                            )}$styleText。請生成一道適合這些食材的食譜。",
                                         ),
                                     ),
                                 temperature = 0.7,

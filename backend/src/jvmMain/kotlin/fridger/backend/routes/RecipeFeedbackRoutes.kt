@@ -17,8 +17,9 @@ import io.ktor.server.routing.post
 fun Route.recipeFeedbackRoutes(service: RecipeFeedbackService) {
     authenticate("access") {
         post(ApiPaths.RECIPE_FEEDBACK) {
-            val principal = call.principal<JWTPrincipal>()
-                ?: return@post call.respond(HttpStatusCode.Unauthorized, ApiResponse.fail<Unit>("Authentication failed"))
+            val principal =
+                call.principal<JWTPrincipal>()
+                    ?: return@post call.respond(HttpStatusCode.Unauthorized, ApiResponse.fail<Unit>("Authentication failed"))
             val body = call.receive<SubmitRecipeFeedbackRequest>()
             if (body.recipeId.isBlank()) {
                 call.respond(HttpStatusCode.BadRequest, ApiResponse.fail<Unit>("Missing recipeId"))

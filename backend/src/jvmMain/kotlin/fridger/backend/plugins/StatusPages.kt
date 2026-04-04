@@ -1,8 +1,8 @@
 package fridger.backend.plugins
 
 import fridger.backend.exceptions.ForbiddenException
-import fridger.backend.exceptions.UpstreamServiceException
 import fridger.backend.exceptions.UnauthorizedException
+import fridger.backend.exceptions.UpstreamServiceException
 import fridger.shared.models.ApiResponse
 import io.ktor.http.*
 import io.ktor.server.application.*

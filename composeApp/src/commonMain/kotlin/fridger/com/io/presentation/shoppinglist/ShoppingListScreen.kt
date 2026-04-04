@@ -53,7 +53,6 @@ import org.jetbrains.compose.resources.stringResource
 import fridger.com.io.data.sync.ShoppingSyncActionType
 import fridger.com.io.utils.epochMillisToDateString
 import kotlinx.datetime.toLocalDateTime
-import fridger.com.io.utils.epochMillisToDateString
 
 // Import the new reusable ShoppingQuickAddTopDialog from components
 import fridger.com.io.presentation.components.ShoppingQuickAddTopDialog
@@ -66,6 +65,7 @@ fun ShoppingListScreen(
     val state by vm.uiState.collectAsState()
     var showAddDialog by rememberSaveable { mutableStateOf(false) } // add item dialog (detail view)
     var showCreateListDialog by rememberSaveable { mutableStateOf(false) } // create list dialog (overview)
+    var defaultListName by rememberSaveable { mutableStateOf("") }
     var pendingDeleteList by remember { mutableStateOf<fridger.com.io.data.settings.ShoppingListMeta?>(null) }
     var showSyncQueueDialog by rememberSaveable { mutableStateOf(false) }
 
@@ -88,33 +88,55 @@ fun ShoppingListScreen(
                     Spacer(Modifier.height(10.dp))
                 }
                 if (state.currentList == null) {
-                    Button(
-                        onClick = { showCreateListDialog = true },
-                        colors =
-                            ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary
+                    if (state.lists.isEmpty()) {
+                        ShoppingListEmptyOverview(onCreateClick = { name -> 
+                            defaultListName = name
+                            showCreateListDialog = true 
+                        })
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "所有清單",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null)
-                        Spacer(Modifier.width(6.dp))
-                        Text(stringResource(Res.string.shopping_list_create))
-                    }
+                            Button(
+                                onClick = { 
+                                    defaultListName = ""
+                                    showCreateListDialog = true 
+                                },
+                                colors =
+                                    ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        contentColor = MaterialTheme.colorScheme.onPrimary
+                                    )
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null)
+                                Spacer(Modifier.width(6.dp))
+                                Text(stringResource(Res.string.shopping_list_create))
+                            }
+                        }
 
-                    Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(16.dp))
 
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        items(state.lists.size) { index ->
-                            val list = state.lists[index]
-                            ShoppingListCard(
-                                name = list.name,
-                                date = list.date,
-                                onClick = { vm.openList(list) },
-                                onDelete = { pendingDeleteList = list }
-                            )
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            items(state.lists.size) { index ->
+                                val list = state.lists[index]
+                                ShoppingListCard(
+                                    name = list.name,
+                                    date = list.date,
+                                    onClick = { vm.openList(list) },
+                                    onDelete = { pendingDeleteList = list }
+                                )
+                            }
                         }
                     }
                 } else {
@@ -238,7 +260,6 @@ fun ShoppingListScreen(
         }
 
         if (showAddDialog) {
-            // Use the imported ShoppingQuickAddTopDialog
             ShoppingQuickAddTopDialog(
                 onDismiss = { showAddDialog = false },
                 onAdd = { name, qty ->
@@ -250,6 +271,7 @@ fun ShoppingListScreen(
 
         if (showCreateListDialog) {
             CreateShoppingListDialog(
+                defaultName = defaultListName,
                 onDismiss = { showCreateListDialog = false },
                 onConfirm = { name, date ->
                     vm.createNewList(name, date)
@@ -269,12 +291,13 @@ fun ShoppingListScreen(
                             Text(stringResource(Res.string.shopping_list_sync_queue_empty))
                         } else {
                             state.pendingSyncActions.take(6).forEach { action ->
-                                val label = when (action.type) {
-                                    ShoppingSyncActionType.ADD -> stringResource(Res.string.shopping_list_sync_action_add, action.itemName ?: "")
-                                    ShoppingSyncActionType.UPDATE -> stringResource(Res.string.shopping_list_sync_action_update, action.itemName ?: "")
-                                    ShoppingSyncActionType.DELETE -> stringResource(Res.string.shopping_list_sync_action_delete, action.itemName ?: "")
-                                    ShoppingSyncActionType.CLEAR -> stringResource(Res.string.shopping_list_sync_action_clear)
-                                }
+                                val label =
+                                    when (action.type) {
+                                        ShoppingSyncActionType.ADD -> stringResource(Res.string.shopping_list_sync_action_add, action.itemName ?: "")
+                                        ShoppingSyncActionType.UPDATE -> stringResource(Res.string.shopping_list_sync_action_update, action.itemName ?: "")
+                                        ShoppingSyncActionType.DELETE -> stringResource(Res.string.shopping_list_sync_action_delete, action.itemName ?: "")
+                                        ShoppingSyncActionType.CLEAR -> stringResource(Res.string.shopping_list_sync_action_clear)
+                                    }
                                 Text(label, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 val timeLabel = epochMillisToDateString(action.createdAtEpochMillis)
                                 Text(
@@ -292,14 +315,16 @@ fun ShoppingListScreen(
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { vm.retrySyncQueue(); showSyncQueueDialog = false }) {
+                    TextButton(onClick = {
+                        vm.retrySyncQueue()
+                        showSyncQueueDialog = false
+                    }) {
                         Text(stringResource(Res.string.shopping_list_sync_retry))
                     }
                 }
             )
         }
 
-        // Confirm delete shopping list
         pendingDeleteList?.let { list ->
             AlertDialog(
                 onDismissRequest = { pendingDeleteList = null },
@@ -314,6 +339,100 @@ fun ShoppingListScreen(
                 dismissButton = {
                     TextButton(onClick = { pendingDeleteList = null }) { Text("取消") }
                 }
+            )
+        }
+    }
+}
+
+@Composable
+private fun ShoppingListEmptyOverview(onCreateClick: (String) -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp, vertical = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Surface(
+            shape = androidx.compose.foundation.shape.CircleShape,
+            color = MaterialTheme.colorScheme.primaryContainer,
+            modifier = Modifier.size(120.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = Icons.Outlined.ShoppingCart,
+                    contentDescription = null,
+                    modifier = Modifier.size(56.dp),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+        
+        Spacer(Modifier.height(32.dp))
+        
+        Text(
+            text = "準備好要去採買了嗎？",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        
+        Spacer(Modifier.height(12.dp))
+        
+        Text(
+            text = "建立您的第一份購物清單，輕鬆記錄需要補貨的食材與日常用品，讓採買更有效率！",
+            fontSize = 15.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            lineHeight = 24.sp
+        )
+        
+        Spacer(Modifier.height(40.dp))
+        
+        Button(
+            onClick = { onCreateClick("") },
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
+        ) {
+            Icon(Icons.Default.Add, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(Res.string.shopping_list_create), fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+        }
+        
+        Spacer(Modifier.height(48.dp))
+        
+        Text(
+            text = "💡 常用清單靈感",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(16.dp))
+        @OptIn(ExperimentalLayoutApi::class)
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            SuggestionChip(
+                onClick = { onCreateClick("週末大採購") },
+                label = { Text("週末大採購") }
+            )
+            SuggestionChip(
+                onClick = { onCreateClick("全聯補貨") },
+                label = { Text("全聯補貨") }
+            )
+            SuggestionChip(
+                onClick = { onCreateClick("好市多必買") },
+                label = { Text("好市多必買") }
+            )
+            SuggestionChip(
+                onClick = { onCreateClick("今晚的晚餐") },
+                label = { Text("今晚的晚餐") }
             )
         }
     }
@@ -353,10 +472,11 @@ private fun ShoppingListCard(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CreateShoppingListDialog(
+    defaultName: String = "",
     onDismiss: () -> Unit,
     onConfirm: (name: String, date: String) -> Unit
 ) {
-    var name by rememberSaveable { mutableStateOf("") }
+    var name by rememberSaveable { mutableStateOf(defaultName) }
     var date by rememberSaveable { mutableStateOf(todayDisplay()) }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     val datePickerState =

@@ -16,6 +16,29 @@ CREATE TABLE ShoppingListItem (
     category TEXT
 );
 
+CREATE TABLE SavedRecipe (
+    id TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    ingredients TEXT NOT NULL,
+    instructions TEXT NOT NULL,
+    cookingTime TEXT NOT NULL,
+    difficulty TEXT NOT NULL,
+    servings INTEGER NOT NULL,
+    savedAt INTEGER NOT NULL
+);
+
+-- Queries for SavedRecipe
+selectAllSavedRecipes:
+SELECT * FROM SavedRecipe ORDER BY savedAt DESC;
+
+insertSavedRecipe:
+INSERT OR REPLACE INTO SavedRecipe(id, title, description, ingredients, instructions, cookingTime, difficulty, servings, savedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteSavedRecipeById:
+DELETE FROM SavedRecipe WHERE id = ?;
+
 -- Queries for Ingredient
 selectAllIngredients:
 SELECT * FROM Ingredient;

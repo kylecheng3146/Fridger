@@ -1,7 +1,7 @@
 package com.fridger.backend
 
-import fridger.backend.db.RefreshTokensTable
 import fridger.backend.db.RecipeFeedbackTable
+import fridger.backend.db.RefreshTokensTable
 import fridger.backend.db.UsersTable
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils

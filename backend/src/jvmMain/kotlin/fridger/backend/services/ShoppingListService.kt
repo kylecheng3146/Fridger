@@ -1,7 +1,7 @@
 package fridger.backend.services
 
-import fridger.backend.models.ShoppingListResponse
 import fridger.backend.models.ShoppingListItemDto
+import fridger.backend.models.ShoppingListResponse
 import fridger.backend.repositories.ShoppingListRepository
 import java.util.UUID
 
@@ -24,7 +24,10 @@ class ShoppingListService(
         }
     }
 
-    suspend fun fetchItems(userId: UUID, listId: String): List<ShoppingListItemDto> {
+    suspend fun fetchItems(
+        userId: UUID,
+        listId: String
+    ): List<ShoppingListItemDto> {
         return repository.fetchItems(listId, userId).map { item ->
             ShoppingListItemDto(
                 id = item.id,
@@ -35,7 +38,10 @@ class ShoppingListService(
         }
     }
 
-    suspend fun deleteList(userId: UUID, listId: String) {
+    suspend fun deleteList(
+        userId: UUID,
+        listId: String
+    ) {
         repository.deleteList(listId, userId)
     }
 }

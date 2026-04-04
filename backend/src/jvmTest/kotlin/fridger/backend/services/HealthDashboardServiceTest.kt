@@ -5,12 +5,12 @@ import fridger.backend.repositories.FridgeItemRecord
 import fridger.shared.health.HealthDashboardCalculator
 import fridger.shared.health.HealthDashboardMetrics
 import fridger.shared.health.NutritionCategory
-import kotlinx.datetime.LocalDate as KotlinLocalDate
 import java.time.LocalDate
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlinx.datetime.LocalDate as KotlinLocalDate
 
 class HealthDashboardServiceTest {
     private val userId = UUID.randomUUID()
