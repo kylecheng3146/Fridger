@@ -4,8 +4,10 @@ import fridger.backend.db.ShoppingListItemsTable
 import fridger.backend.db.ShoppingListsTable
 import fridger.backend.db.dbQuery
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 import java.time.Instant
 import java.util.UUID
@@ -91,7 +93,7 @@ class ShoppingListRepository {
     }
 
     suspend fun fetchLists(userId: UUID): List<ShoppingListMetaRecord> = dbQuery {
-        ShoppingListsTable.select { ShoppingListsTable.userId eq userId }.map { row ->
+        ShoppingListsTable.selectAll().where { ShoppingListsTable.userId eq userId }.map { row ->
             ShoppingListMetaRecord(
                 id = row[ShoppingListsTable.id],
                 name = row[ShoppingListsTable.name],
@@ -102,7 +104,7 @@ class ShoppingListRepository {
 
     suspend fun fetchItems(listId: String, userId: UUID): List<ShoppingListItemRecord> = dbQuery {
         ShoppingListItemsTable
-            .select { (ShoppingListItemsTable.listId eq listId) and (ShoppingListItemsTable.userId eq userId) }
+            .selectAll().where { (ShoppingListItemsTable.listId eq listId) and (ShoppingListItemsTable.userId eq userId) }
             .map { row ->
                 ShoppingListItemRecord(
                     id = row[ShoppingListItemsTable.id],

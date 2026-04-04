@@ -9,7 +9,8 @@
     <string name="home_today">今天</string>
     <string name="home_this_week">本週內</string>
     <string name="home_add_ingredient">新增食材</string>
-    <string name="home_random_recipe">隨機食譜</string>
+    <string name="home_random_recipe">變出一道菜</string>
+    <string name="recipe_sheet_ai_generated_tag">AI 生成</string>
     <string name="home_refrigerated">食材</string>
     <string name="home_days_until_expiry">%d天後到期</string>
     <string name="home_item_quantity">x%s</string>
@@ -133,9 +134,10 @@
     <string name="recipe_sheet_description">根據您選擇的食材為您推薦</string>
     <string name="recipe_sheet_ingredients_title">食材</string>
     <string name="recipe_sheet_instructions_title">做法</string>
-    <string name="recipe_sheet_cooking_time">烹飪時間：%s</string>
-    <string name="recipe_sheet_difficulty">難度：%s</string>
-    <string name="recipe_sheet_servings">%d 人份</string>
+    <string name="recipe_sheet_cooking_time">烹飪時間</string>
+    <string name="recipe_sheet_difficulty">難度</string>
+    <string name="recipe_sheet_servings_label">人份</string>
+    <string name="recipe_sheet_servings_unit">人份</string>
     <string name="recipe_sheet_try_again">重新生成</string>
     <string name="recipe_sheet_close">關閉</string>
     <!-- Health Dashboard -->

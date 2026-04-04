@@ -2,9 +2,15 @@ package fridger.com.io.data.repository
 
 import fridger.com.data.model.remote.MealDto
 import fridger.com.data.remote.RecipeApiService
+import fridger.com.io.presentation.home.RecipeSuggestion
+import fridger.shared.recipe.RecipeFeedbackType
 
 interface RecipeRepository {
     suspend fun getRemoteRandomRecipe(): Result<MealDto>
+
+    suspend fun generateRecipeFromInventory(ingredients: List<String>): Result<RecipeSuggestion>
+
+    suspend fun submitRecipeFeedback(recipeId: String, feedbackType: RecipeFeedbackType, accessToken: String): Result<Unit>
 
     suspend fun getRecipesByIngredient(ingredient: String): Result<List<MealDto>>
 
@@ -20,6 +26,42 @@ interface RecipeRepository {
 class RecipeRepositoryImpl(
     private val apiService: RecipeApiService,
 ) : RecipeRepository {
+    override suspend fun generateRecipeFromInventory(ingredients: List<String>): Result<RecipeSuggestion> =
+        try {
+            val response = apiService.generateRecipeFromInventory(ingredients)
+            val recipe = response.data
+            if (response.success && recipe != null) {
+                Result.success(
+                    RecipeSuggestion(
+                        recipeId = recipe.recipeId,
+                        title = recipe.title,
+                        description = recipe.description,
+                        ingredients = recipe.ingredients,
+                        instructions = recipe.instructions,
+                        cookingTime = recipe.cookingTime,
+                        difficulty = recipe.difficulty,
+                        servings = recipe.servings,
+                    ),
+                )
+            } else {
+                Result.failure(IllegalStateException(response.error ?: "Failed to generate recipe"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+
+    override suspend fun submitRecipeFeedback(
+        recipeId: String,
+        feedbackType: RecipeFeedbackType,
+        accessToken: String,
+    ): Result<Unit> =
+        try {
+            apiService.submitRecipeFeedback(recipeId, feedbackType, accessToken)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+
     override suspend fun getRecipesByIngredient(ingredient: String): Result<List<MealDto>> {
         println("🏪 REPOSITORY: Starting getRecipesByIngredient for '$ingredient'")
 

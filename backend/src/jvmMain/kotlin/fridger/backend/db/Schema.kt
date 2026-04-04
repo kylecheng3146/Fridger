@@ -1,5 +1,6 @@
 package fridger.backend.db
 
+import fridger.shared.recipe.RecipeFeedbackType
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.date
 import org.jetbrains.exposed.sql.javatime.timestamp
@@ -57,6 +58,21 @@ object ShoppingListItemsTable : Table("shopping_list_items") {
     override val primaryKey = PrimaryKey(id)
 }
 
+object RecipeFeedbackTable : Table("recipe_feedback") {
+    val id = uuid("id")
+    val userId = uuid("user_id")
+    val recipeId = text("recipe_id")
+    val feedbackType = text("feedback_type")
+    val createdAt = timestamp("created_at")
+    val updatedAt = timestamp("updated_at")
+
+    init {
+        uniqueIndex(userId, recipeId)
+    }
+
+    override val primaryKey = PrimaryKey(id)
+}
+
 data class User(
     val id: UUID,
     val name: String,
@@ -72,4 +88,13 @@ data class RefreshTokenRecord(
     val tokenHash: String,
     val expiresAt: Instant,
     val createdAt: Instant
+)
+
+data class RecipeFeedbackRow(
+    val id: UUID,
+    val userId: UUID,
+    val recipeId: String,
+    val feedbackType: RecipeFeedbackType,
+    val createdAt: Instant,
+    val updatedAt: Instant,
 )

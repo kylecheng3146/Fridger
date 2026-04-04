@@ -4,33 +4,29 @@ import fridger.com.io.data.settings.AuthTokenStoreProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 object UserSessionManager {
     private val store = AuthTokenStoreProvider.store
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    private val _accessToken = MutableStateFlow("")
-    val accessToken: StateFlow<String> = _accessToken
+    // Direct DataStore flows — always reflect persisted state (for Compose observation)
+    val accessToken: Flow<String> = store.accessToken
+    val refreshToken: Flow<String> = store.refreshToken
+    val userId: Flow<String> = store.userId
 
-    private val _refreshToken = MutableStateFlow("")
-    val refreshToken: StateFlow<String> = _refreshToken
+    // In-memory cache for synchronous reads (e.g. ViewModel HTTP calls)
+    private val _cachedAccessToken = MutableStateFlow("")
+    private val _cachedUserId = MutableStateFlow("")
 
-    private val _userId = MutableStateFlow("")
-    val userId: StateFlow<String> = _userId
+    val cachedAccessToken: String get() = _cachedAccessToken.value
+    val cachedUserId: String get() = _cachedUserId.value
 
     init {
-        scope.launch {
-            store.accessToken.collect { _accessToken.value = it }
-        }
-        scope.launch {
-            store.refreshToken.collect { _refreshToken.value = it }
-        }
-        scope.launch {
-            store.userId.collect { _userId.value = it }
-        }
+        scope.launch { store.accessToken.collect { _cachedAccessToken.value = it } }
+        scope.launch { store.userId.collect { _cachedUserId.value = it } }
     }
 
     suspend fun setTokens(accessToken: String, refreshToken: String, userId: String) {

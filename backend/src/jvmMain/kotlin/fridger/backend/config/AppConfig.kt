@@ -20,8 +20,19 @@ data class AppConfig(
     val accessTokenMinutes: Int,
     val refreshTokenDays: Int,
     val refreshTokenBytes: Int,
-    val jwksRefreshIntervalHours: Int
+    val jwksRefreshIntervalHours: Int,
+    val groqApiKey: String?,
+    val groqModel: String,
+    val groqBaseUrl: String,
 )
+
+private fun normalizeGroqModel(rawModel: String): String {
+    val normalized = rawModel.trim().lowercase()
+    return when (normalized) {
+        "llama", "llama3", "llama-3", "meta-llama" -> "llama-3.3-70b-versatile"
+        else -> rawModel
+    }
+}
 
 object EnvKeys {
     const val PORT = "PORT"
@@ -36,6 +47,9 @@ object EnvKeys {
     const val REFRESH_TOKEN_BYTES = "REFRESH_TOKEN_BYTES"
     const val JWKS_REFRESH_INTERVAL_HOURS = "JWKS_REFRESH_INTERVAL_HOURS"
     const val JWKS_URL = "JWKS_URL"
+    const val GROQ_API_KEY = "GROQ_API_KEY"
+    const val GROQ_MODEL = "GROQ_MODEL"
+    const val GROQ_BASE_URL = "GROQ_BASE_URL"
 }
 
 object Defaults {
@@ -49,6 +63,8 @@ object Defaults {
     const val REFRESH_TOKEN_BYTES = 64
     const val JWKS_REFRESH_INTERVAL_HOURS = 6
     const val JWKS_URL = "https://www.googleapis.com/oauth2/v3/certs"
+    const val GROQ_MODEL = "openai/gpt-oss-20b"
+    const val GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 }
 
 /** Loader */
@@ -80,7 +96,10 @@ fun loadAppConfig(env: Map<String, String> = System.getenv()): AppConfig {
         accessTokenMinutes = env.int(EnvKeys.ACCESS_TOKEN_MINUTES, Defaults.ACCESS_TOKEN_MINUTES),
         refreshTokenDays = env.int(EnvKeys.REFRESH_TOKEN_DAYS, Defaults.REFRESH_TOKEN_DAYS),
         refreshTokenBytes = env.int(EnvKeys.REFRESH_TOKEN_BYTES, Defaults.REFRESH_TOKEN_BYTES),
-        jwksRefreshIntervalHours = env.int(EnvKeys.JWKS_REFRESH_INTERVAL_HOURS, Defaults.JWKS_REFRESH_INTERVAL_HOURS)
+        jwksRefreshIntervalHours = env.int(EnvKeys.JWKS_REFRESH_INTERVAL_HOURS, Defaults.JWKS_REFRESH_INTERVAL_HOURS),
+        groqApiKey = env[EnvKeys.GROQ_API_KEY]?.takeIf { it.isNotBlank() },
+        groqModel = normalizeGroqModel(env[EnvKeys.GROQ_MODEL] ?: Defaults.GROQ_MODEL),
+        groqBaseUrl = env[EnvKeys.GROQ_BASE_URL] ?: Defaults.GROQ_BASE_URL,
     )
 }
 

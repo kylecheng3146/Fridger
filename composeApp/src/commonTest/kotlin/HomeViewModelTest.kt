@@ -12,6 +12,7 @@ import fridger.com.io.data.repository.IngredientRepository
 import fridger.com.io.data.repository.RecipeRepository
 import fridger.com.io.data.settings.HealthDashboardPreferences
 import fridger.com.io.data.user.UserSessionProvider
+import fridger.com.io.presentation.home.RecipeSuggestion
 import fridger.com.io.presentation.home.dashboard.DashboardSection
 import fridger.com.io.presentation.home.dashboard.DashboardSectionDefaults
 import fridger.shared.health.CalorieBucket
@@ -22,6 +23,7 @@ import fridger.shared.health.HealthDashboardMetrics
 import fridger.shared.health.HealthRecommendation
 import fridger.shared.health.NutritionCategory
 import fridger.shared.health.RecommendationReason
+import fridger.shared.recipe.RecipeFeedbackType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -55,7 +57,12 @@ class HomeViewModelTest {
     private lateinit var dashboardRepository: HealthDashboardRepository
     private lateinit var dashboardPreferences: FakeDashboardPreferences
     private lateinit var analytics: RecordingAnalytics
-    private val userSessionProvider = UserSessionProvider { "test-user" }
+    private val userSessionProvider =
+        object : UserSessionProvider {
+            override fun userId(): String = "test-user"
+
+            override fun accessToken(): String = "test-access-token"
+        }
     private val dashboardMetrics =
         HealthDashboardMetrics(
             nutritionDistribution =
@@ -99,6 +106,9 @@ class HomeViewModelTest {
 
     // Fake RecipeRepository for tests
     private class FakeRecipeRepository : RecipeRepository {
+        var lastInventoryRequest: List<String>? = null
+        val feedbackRequests = mutableListOf<Triple<String, RecipeFeedbackType, String>>()
+
         override suspend fun getRemoteRandomRecipe(): Result<MealDto> =
             Result.success(
                 MealDto(
@@ -118,6 +128,31 @@ class HomeViewModelTest {
             )
 
         override suspend fun getRecipesByIngredient(ingredient: String): Result<List<MealDto>> = Result.success(emptyList())
+
+        override suspend fun generateRecipeFromInventory(ingredients: List<String>): Result<RecipeSuggestion> {
+            lastInventoryRequest = ingredients
+            return Result.success(
+                RecipeSuggestion(
+                    recipeId = "recipe-${ingredients.joinToString(separator = "-")}",
+                    title = ingredients.joinToString(prefix = "Recipe with ", separator = ", "),
+                    description = "A generated inventory recipe",
+                    ingredients = ingredients,
+                    instructions = listOf("Cook everything together"),
+                    cookingTime = "20 分鐘",
+                    difficulty = "簡單",
+                    servings = 2,
+                )
+            )
+        }
+
+        override suspend fun submitRecipeFeedback(
+            recipeId: String,
+            feedbackType: RecipeFeedbackType,
+            accessToken: String,
+        ): Result<Unit> {
+            feedbackRequests += Triple(recipeId, feedbackType, accessToken)
+            return Result.success(Unit)
+        }
 
         override suspend fun getRecipeById(id: String): Result<MealDto> = Result.failure(UnsupportedOperationException("Not needed in this test"))
 
@@ -140,11 +175,11 @@ class HomeViewModelTest {
     private class FakeDashboardPreferences(
         initial: Map<DashboardSection, Boolean> = DashboardSectionDefaults.defaultStates(),
     ) : HealthDashboardPreferences {
-        private val _states = MutableStateFlow(initial)
-        override val sectionStates: Flow<Map<DashboardSection, Boolean>> = _states
+        private val statesFlow = MutableStateFlow(initial)
+        override val sectionStates: Flow<Map<DashboardSection, Boolean>> = statesFlow
 
         override suspend fun setSectionStates(states: Map<DashboardSection, Boolean>) {
-            _states.value = states
+            statesFlow.value = states
         }
     }
 
@@ -497,5 +532,191 @@ class HomeViewModelTest {
 
             assertEquals(true, capturedInclude)
             assertEquals(30, capturedRange)
+        }
+
+    @Test
+    fun `when random recipe requested then all current inventory ingredients are used`() =
+        runTest(testDispatcher) {
+            val today =
+                Clock.System
+                    .now()
+                    .toLocalDateTime(TimeZone.currentSystemDefault())
+                    .date
+            val ingredients =
+                listOf(
+                    Ingredient(
+                        id = 1,
+                        name = "Eggs",
+                        addDate = today,
+                        expirationDate = today.plus(DatePeriod(days = 4)),
+                        category = fridger.com.io.data.model.IngredientCategory.OTHERS,
+                        freshness = Freshness.Fresh
+                    ),
+                    Ingredient(
+                        id = 2,
+                        name = "Tomato",
+                        addDate = today,
+                        expirationDate = today.plus(DatePeriod(days = 2)),
+                        category = fridger.com.io.data.model.IngredientCategory.VEGETABLES,
+                        freshness = Freshness.NearingExpiration
+                    ),
+                    Ingredient(
+                        id = 3,
+                        name = "Cheese",
+                        addDate = today,
+                        expirationDate = today.plus(DatePeriod(days = 5)),
+                        category = fridger.com.io.data.model.IngredientCategory.DAIRY,
+                        freshness = Freshness.Fresh
+                    )
+                )
+            repository = FakeIngredientRepository(flowOf(ingredients))
+            val fakeRecipeRepository = FakeRecipeRepository()
+            recipeRepository = fakeRecipeRepository
+
+            viewModel = HomeViewModel(repository, recipeRepository, translator, dashboardRepository, userSessionProvider, dashboardPreferences, analytics)
+            advanceUntilIdle()
+
+            viewModel.fetchRandomRecipe()
+            advanceUntilIdle()
+
+            assertEquals(listOf("Tomato", "Eggs", "Cheese"), fakeRecipeRepository.lastInventoryRequest)
+            val recipeState = viewModel.recipeState.value as RecipeUiState.Success
+            assertEquals("Recipe with Tomato, Eggs, Cheese", recipeState.recipe.title)
+        }
+
+    @Test
+    fun `when generating recipe from selection then all selected ingredients are used`() =
+        runTest(testDispatcher) {
+            val today =
+                Clock.System
+                    .now()
+                    .toLocalDateTime(TimeZone.currentSystemDefault())
+                    .date
+            val ingredients =
+                listOf(
+                    Ingredient(
+                        id = 10,
+                        name = "Chicken",
+                        addDate = today,
+                        expirationDate = today.plus(DatePeriod(days = 3)),
+                        category = fridger.com.io.data.model.IngredientCategory.MEAT,
+                        freshness = Freshness.Fresh
+                    ),
+                    Ingredient(
+                        id = 11,
+                        name = "Garlic",
+                        addDate = today,
+                        expirationDate = today.plus(DatePeriod(days = 8)),
+                        category = fridger.com.io.data.model.IngredientCategory.VEGETABLES,
+                        freshness = Freshness.Fresh
+                    ),
+                    Ingredient(
+                        id = 12,
+                        name = "Rice",
+                        addDate = today,
+                        expirationDate = today.plus(DatePeriod(days = 20)),
+                        category = fridger.com.io.data.model.IngredientCategory.GRAINS,
+                        freshness = Freshness.Fresh
+                    )
+                )
+            repository = FakeIngredientRepository(flowOf(ingredients))
+            val fakeRecipeRepository = FakeRecipeRepository()
+            recipeRepository = fakeRecipeRepository
+
+            viewModel = HomeViewModel(repository, recipeRepository, translator, dashboardRepository, userSessionProvider, dashboardPreferences, analytics)
+            advanceUntilIdle()
+
+            viewModel.onToggleItemSelection("10")
+            viewModel.onToggleItemSelection("12")
+            viewModel.onGenerateRecipeClick()
+            advanceUntilIdle()
+
+            assertEquals(listOf("Chicken", "Rice"), fakeRecipeRepository.lastInventoryRequest)
+            val recipeState = viewModel.recipeState.value as RecipeUiState.Success
+            assertEquals("Recipe with Chicken, Rice", recipeState.recipe.title)
+        }
+
+    @Test
+    fun `when liking generated recipe then repository stores feedback and ui reflects like`() =
+        runTest(testDispatcher) {
+            val today =
+                Clock.System
+                    .now()
+                    .toLocalDateTime(TimeZone.currentSystemDefault())
+                    .date
+            repository =
+                FakeIngredientRepository(
+                    flowOf(
+                        listOf(
+                            Ingredient(
+                                id = 21,
+                                name = "Eggs",
+                                addDate = today,
+                                expirationDate = today.plus(DatePeriod(days = 1)),
+                                category = fridger.com.io.data.model.IngredientCategory.OTHERS,
+                                freshness = Freshness.NearingExpiration,
+                            ),
+                        ),
+                    ),
+                )
+            val fakeRecipeRepository = FakeRecipeRepository()
+            recipeRepository = fakeRecipeRepository
+            viewModel = HomeViewModel(repository, recipeRepository, translator, dashboardRepository, userSessionProvider, dashboardPreferences, analytics)
+            advanceUntilIdle()
+
+            viewModel.fetchRandomRecipe()
+            advanceUntilIdle()
+
+            viewModel.submitRecipeFeedback(RecipeFeedbackType.LIKE)
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf(Triple("recipe-Eggs", RecipeFeedbackType.LIKE, "test-access-token")),
+                fakeRecipeRepository.feedbackRequests,
+            )
+            val recipeState = viewModel.recipeState.value as RecipeUiState.Success
+            assertEquals(RecipeFeedbackType.LIKE, recipeState.recipe.userFeedback)
+        }
+
+    @Test
+    fun `when disliking generated recipe then repository stores feedback and ui reflects dislike`() =
+        runTest(testDispatcher) {
+            val today =
+                Clock.System
+                    .now()
+                    .toLocalDateTime(TimeZone.currentSystemDefault())
+                    .date
+            repository =
+                FakeIngredientRepository(
+                    flowOf(
+                        listOf(
+                            Ingredient(
+                                id = 22,
+                                name = "Tomato",
+                                addDate = today,
+                                expirationDate = today.plus(DatePeriod(days = 2)),
+                                category = fridger.com.io.data.model.IngredientCategory.VEGETABLES,
+                                freshness = Freshness.NearingExpiration,
+                            ),
+                        ),
+                    ),
+                )
+            val fakeRecipeRepository = FakeRecipeRepository()
+            recipeRepository = fakeRecipeRepository
+            viewModel = HomeViewModel(repository, recipeRepository, translator, dashboardRepository, userSessionProvider, dashboardPreferences, analytics)
+            advanceUntilIdle()
+
+            viewModel.fetchRandomRecipe()
+            advanceUntilIdle()
+
+            viewModel.submitRecipeFeedback(RecipeFeedbackType.DISLIKE)
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf(Triple("recipe-Tomato", RecipeFeedbackType.DISLIKE, "test-access-token")),
+                fakeRecipeRepository.feedbackRequests,
+            )
+            val recipeState = viewModel.recipeState.value as RecipeUiState.Success
+            assertEquals(RecipeFeedbackType.DISLIKE, recipeState.recipe.userFeedback)
         }
 }

@@ -3,6 +3,7 @@ package fridger.com.io.presentation.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
@@ -93,7 +94,7 @@ fun RichEmptyState(
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
                     onClick = onActionClick,
-                    shape = MaterialTheme.shapes.medium, // Consistent shape
+                    shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary

@@ -26,8 +26,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import fridger.com.io.presentation.ViewModelFactoryProvider
 import kotlinx.coroutines.launch
-import fridger.com.io.presentation.settings.components.LocalGoogleSignInLauncher
-import fridger.com.io.presentation.settings.components.LocalGoogleSignInStatus
 
 @Composable
 fun SettingsScreen(
@@ -52,41 +50,6 @@ fun SettingsScreen(
 
         // General Settings Section
         SettingsSection(title = "一般設定") {
-            val launcher = LocalGoogleSignInLauncher.current
-            val signInStatus = LocalGoogleSignInStatus.current
-            Button(
-                onClick = {
-                    scope.launch {
-                        fridger.com.io.presentation.settings.components.GoogleSignInStatusStore.setSigningIn()
-                        launcher?.invoke()
-                    }
-                },
-                enabled = launcher != null,
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text(if (signInStatus?.isSigningIn == true) "登入中…" else "Google 登入")
-            }
-
-            signInStatus?.errorMessage?.let { message ->
-                Text(
-                    text = message,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                )
-            }
-            signInStatus?.successMessage?.let { message ->
-                Text(
-                    text = message,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                )
-            }
-
-            HorizontalDivider(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-            )
-
             // Theme Setting
             SettingsItem(
                 icon = Icons.Default.Brightness4,

@@ -1,6 +1,12 @@
 package fridger.com.data.remote
 
 import fridger.com.data.model.remote.MealApiResponse
+import fridger.com.io.data.remote.BackendConfig
+import fridger.shared.models.ApiResponse
+import fridger.shared.recipe.GenerateRecipeRequest
+import fridger.shared.recipe.GeneratedRecipe
+import fridger.shared.recipe.RecipeFeedbackType
+import fridger.shared.recipe.SubmitRecipeFeedbackRequest
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -8,10 +14,16 @@ import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
 class RecipeApiService {
+    private val backendBaseUrl = BackendConfig.baseUrl
     private val client =
         HttpClient {
             install(ContentNegotiation) {
@@ -36,6 +48,8 @@ class RecipeApiService {
         }
 
     private val baseUrl = "https://www.themealdb.com/api/json/v1/1"
+    private val recipeGenerationPath = "/api/v1/recipes/generate"
+    private val recipeFeedbackPath = "/api/v1/recipes/feedback"
 
     suspend fun getRandomRecipe(): MealApiResponse {
         println("📞 API CALL: Getting random recipe")
@@ -129,4 +143,35 @@ class RecipeApiService {
             throw e
         }
     }
+
+    suspend fun generateRecipeFromInventory(ingredients: List<String>): ApiResponse<GeneratedRecipe> {
+        println("📞 API CALL: Generating recipe from inventory (${ingredients.size} items)")
+        return try {
+            client
+                .post("$backendBaseUrl$recipeGenerationPath") {
+                    contentType(ContentType.Application.Json)
+                    setBody(GenerateRecipeRequest(ingredients))
+                }.body<ApiResponse<GeneratedRecipe>>()
+        } catch (e: Exception) {
+            println("❌ API ERROR: Failed to generate inventory recipe - ${e.message}")
+            throw e
+        }
+    }
+
+    suspend fun submitRecipeFeedback(
+        recipeId: String,
+        feedbackType: RecipeFeedbackType,
+        accessToken: String,
+    ): ApiResponse<Unit> =
+        client
+            .post("$backendBaseUrl$recipeFeedbackPath") {
+                contentType(ContentType.Application.Json)
+                header("Authorization", "Bearer $accessToken")
+                setBody(
+                    SubmitRecipeFeedbackRequest(
+                        recipeId = recipeId,
+                        feedbackType = feedbackType,
+                    ),
+                )
+            }.body()
 }

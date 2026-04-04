@@ -31,26 +31,23 @@ object AppColors {
     val ErrorContainer = Color(0xFFFEE2E2) // Red 100
     val OnError = Color(0xFFFFFFFF)
 
-    // Backgrounds & Surfaces (Light)
-    val LightBackground = Color(0xFFFAFAFA) // Zinc 50
-    val LightSurface = Color(0xFFFFFFFF) // White
-    val LightSurfaceVariant = Color(0xFFF4F4F5) // Zinc 100
-    val LightOutline = Color(0xFFE4E4E7) // Zinc 200
+    val LightBackground = Color(0xFFFFFFFF)
+    val LightSurface = Color(0xFFFFFFFF)
+    val LightSurfaceVariant = Color(0xFFF7F7F5)
+    val LightOutline = Color(0xFFE9E9E7)
 
-    // Backgrounds & Surfaces (Dark) - Elevated & Rich
-    val DarkBackground = Color(0xFF0F172A) // Slate 900
-    val DarkSurface = Color(0xFF1E293B) // Slate 800
-    val DarkSurfaceElevated = Color(0xFF334155) // Slate 700
-    val DarkOutline = Color(0xFF475569) // Slate 600
+    val DarkBackground = Color(0xFF191919)
+    val DarkSurface = Color(0xFF202020)
+    val DarkSurfaceElevated = Color(0xFF2C2C2C)
+    val DarkOutline = Color(0xFF373737)
     
-    // Text Colors
-    val OnBackground = Color(0xFF18181B) // Zinc 900
-    val OnSurface = Color(0xFF18181B) // Zinc 900
-    val OnSurfaceVariant = Color(0xFF71717A) // Zinc 500
+    val OnBackground = Color(0xFF37352F)
+    val OnSurface = Color(0xFF37352F)
+    val OnSurfaceVariant = Color(0xFF787774)
     
-    val DarkOnBackground = Color(0xFFF1F5F9) // Slate 100
-    val DarkOnSurface = Color(0xFFF1F5F9) // Slate 100
-    val DarkOnSurfaceVariant = Color(0xFF94A3B8) // Slate 400
+    val DarkOnBackground = Color(0xFFEBEBEB)
+    val DarkOnSurface = Color(0xFFEBEBEB)
+    val DarkOnSurfaceVariant = Color(0xFF9B9B9B)
 }
 
 private fun getLightColorScheme(themeColor: ThemeColor): ColorScheme {

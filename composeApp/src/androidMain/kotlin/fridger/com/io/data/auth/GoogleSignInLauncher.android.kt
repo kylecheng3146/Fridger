@@ -13,7 +13,8 @@ import com.google.android.gms.common.api.ApiException
 class GoogleSignInLauncher(
     activity: ComponentActivity,
     private val onToken: (String) -> Unit,
-    private val onError: (Throwable) -> Unit
+    private val onError: (Throwable) -> Unit,
+    private val onCancel: () -> Unit = {}
 ) {
     private val signInClient: GoogleSignInClient
     private val launcher =
@@ -36,7 +37,7 @@ class GoogleSignInLauncher(
 
     private fun handleResult(result: ActivityResult) {
         if (result.resultCode != Activity.RESULT_OK) {
-            onError(IllegalStateException("Google sign-in canceled"))
+            onCancel()
             return
         }
         val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)

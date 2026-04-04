@@ -6,3 +6,5 @@ sealed class AuthException(message: String? = null) : RuntimeException(message)
 class UnauthorizedException(message: String? = null) : AuthException(message)
 
 class ForbiddenException(message: String? = null) : AuthException(message)
+
+class UpstreamServiceException(message: String? = null) : RuntimeException(message)

@@ -80,15 +80,11 @@ fun IngredientItem(
         label = "scale"
     )
     
-    // Elevate on hover
-    val elevation by animateDpAsState(
-        targetValue = if (isHovered) 4.dp else 0.dp,
-        label = "elevation"
-    )
+    val elevation = 0.dp
 
     Card(
         onClick = onClick,
-        shape = MaterialTheme.shapes.large, // 16.dp
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
@@ -224,18 +220,14 @@ fun IngredientCompactCard(
         label = "scale"
     )
     
-    // Elevate on hover
-    val elevation by animateDpAsState(
-        targetValue = if (isHovered) 3.dp else 0.dp,
-        label = "elevation"
-    )
+    val elevation = 0.dp
 
     Card(
         onClick = onClick,
         modifier = modifier
             .scale(scale)
             .pointerHoverIcon(PointerIcon.Hand),
-        shape = MaterialTheme.shapes.large, // 16.dp
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(width = if (isSelected) 2.dp else 1.dp, color = borderColor),
         elevation = CardDefaults.cardElevation(defaultElevation = elevation),

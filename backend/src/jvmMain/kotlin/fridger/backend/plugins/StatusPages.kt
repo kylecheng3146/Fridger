@@ -1,6 +1,7 @@
 package fridger.backend.plugins
 
 import fridger.backend.exceptions.ForbiddenException
+import fridger.backend.exceptions.UpstreamServiceException
 import fridger.backend.exceptions.UnauthorizedException
 import fridger.shared.models.ApiResponse
 import io.ktor.http.*
@@ -33,6 +34,11 @@ fun Application.configureStatusPages() {
             // Never leak raw SQL error outward
             call.application.environment.log.error("Database error", cause)
             call.respond(HttpStatusCode.InternalServerError, ApiResponse.fail<Unit>("Database error"))
+        }
+        exception<UpstreamServiceException> { call, cause ->
+            val safeMsg = (cause.message ?: "Upstream service error").take(240)
+            call.application.environment.log.warn("502 Upstream error: $safeMsg")
+            call.respond(HttpStatusCode.BadGateway, ApiResponse.fail<Unit>(safeMsg))
         }
         exception<Throwable> { call, cause ->
             call.application.environment.log.error("Unhandled server error", cause)

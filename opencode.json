@@ -4,5 +4,15 @@
       "*": "allow"
     }
   },
-  "$schema": "https://opencode.ai/config.json"
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "# Type: local": {
+      "type": "local",
+      "command": [
+        "#",
+        "Type:",
+        "local"
+      ]
+    }
+  }
 }

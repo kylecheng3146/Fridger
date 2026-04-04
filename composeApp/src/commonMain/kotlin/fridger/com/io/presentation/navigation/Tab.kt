@@ -71,8 +71,9 @@ sealed class AppTab(
     object Profile : AppTab("profile", "個人", Icons.Filled.Person) {
         @Composable
         override fun Content() {
-            val userId by UserSessionManager.userId.collectAsState()
-            if (userId.isBlank()) {
+            val accessToken by UserSessionManager.accessToken.collectAsState(initial = "")
+            val userId by UserSessionManager.userId.collectAsState(initial = "")
+            if (accessToken.isBlank()) {
                 LoginScreen()
             } else {
                 ProfileScreen(userId)

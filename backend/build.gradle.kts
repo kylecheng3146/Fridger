@@ -51,6 +51,8 @@ dependencies {
 
     // Ktor client (for fetching Google JWKS if needed later)
     implementation(libs.ktor.client.cio)
+    implementation("io.ktor:ktor-client-content-negotiation:3.0.2")
+    implementation("io.ktor:ktor-client-logging:3.0.2")
 
     // Auth & crypto
     implementation(libs.bcrypt)
@@ -101,6 +103,18 @@ tasks.named<JavaExec>("run") {
     val jwtSecret = localProperties.getProperty("JWT_SECRET")
     if (jwtSecret != null) {
         environment("JWT_SECRET", jwtSecret)
+    }
+    val groqApiKey = localProperties.getProperty("GROQ_API_KEY")
+    if (groqApiKey != null) {
+        environment("GROQ_API_KEY", groqApiKey)
+    }
+    val groqModel = localProperties.getProperty("GROQ_MODEL")
+    if (groqModel != null) {
+        environment("GROQ_MODEL", groqModel)
+    }
+    val groqBaseUrl = localProperties.getProperty("GROQ_BASE_URL")
+    if (groqBaseUrl != null) {
+        environment("GROQ_BASE_URL", groqBaseUrl)
     }
 }
 

@@ -39,7 +39,7 @@ class FridgeItemRepositoryTest : BaseDbTest() {
             }
             FridgeItemsTable.insert {
                 it[id] = UUID.randomUUID()
-                it[userId] = userId
+                it[FridgeItemsTable.userId] = userId
                 it[name] = "Kale"
                 it[category] = NutritionCategory.PRODUCE.name
                 it[quantity] = 4.0
@@ -49,7 +49,7 @@ class FridgeItemRepositoryTest : BaseDbTest() {
             }
             FridgeItemsTable.insert {
                 it[id] = UUID.randomUUID()
-                it[userId] = userId
+                it[FridgeItemsTable.userId] = userId
                 it[name] = "Chicken Breast"
                 it[category] = NutritionCategory.PROTEIN.name
                 it[quantity] = 2.0
@@ -59,7 +59,7 @@ class FridgeItemRepositoryTest : BaseDbTest() {
             }
             FridgeItemsTable.insert {
                 it[id] = UUID.randomUUID()
-                it[userId] = anotherUser
+                it[FridgeItemsTable.userId] = anotherUser
                 it[name] = "Yogurt"
                 it[category] = NutritionCategory.OTHER.name
                 it[quantity] = 1.0

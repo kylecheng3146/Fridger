@@ -4,6 +4,7 @@ import fridger.com.io.data.model.Freshness
 import fridger.com.io.data.model.IngredientCategory
 import fridger.com.io.presentation.home.dashboard.DashboardSection
 import fridger.com.io.presentation.home.dashboard.DashboardSectionDefaults
+import fridger.shared.recipe.RecipeFeedbackType
 import kotlinx.coroutines.Job
 import org.jetbrains.compose.resources.DrawableResource
 
@@ -115,11 +116,13 @@ data class NewItem(
 
 // Recipe suggestion data class
 data class RecipeSuggestion(
+    val recipeId: String,
     val title: String,
     val description: String,
     val ingredients: List<String>,
     val instructions: List<String>,
     val cookingTime: String,
     val difficulty: String,
-    val servings: Int
+    val servings: Int,
+    val userFeedback: RecipeFeedbackType? = null,
 )

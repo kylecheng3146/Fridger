@@ -45,6 +45,10 @@ class MainActivity : ComponentActivity() {
                 onError = { ex ->
                     GoogleSignInStatusStore.setError(ex.message)
                     signInStatus = GoogleSignInStatusStore.status.value
+                },
+                onCancel = {
+                    GoogleSignInStatusStore.clear()
+                    signInStatus = GoogleSignInStatusStore.status.value
                 }
             )
 

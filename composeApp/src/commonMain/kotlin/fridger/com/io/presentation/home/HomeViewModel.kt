@@ -2,7 +2,6 @@ package fridger.com.io.presentation.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import fridger.com.data.model.remote.MealDto
 import fridger.com.domain.translator.Translator
 import fridger.com.io.data.QuickAddCatalog
 import fridger.com.io.data.analytics.DashboardSectionAction
@@ -22,6 +21,7 @@ import fridger.shared.health.HealthDashboardCalculator
 import fridger.shared.health.HealthDashboardMetrics
 import fridger.shared.health.InventoryItem
 import fridger.shared.health.NutritionCategory
+import fridger.shared.recipe.RecipeFeedbackType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -52,6 +52,7 @@ class HomeViewModel(
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     private var originalRefrigeratedItems: List<RefrigeratedItem> = emptyList()
+    private var lastRecipeRequestIngredients: List<String> = emptyList()
 
     private val dashboardCalculator = HealthDashboardCalculator()
     private val defaultSectionStates = DashboardSectionDefaults.defaultStates()
@@ -491,41 +492,29 @@ class HomeViewModel(
 
     // Recipe generation functions
     fun onGenerateRecipeClick() {
-        if (_uiState.value.selectedItemIds.isEmpty()) {
+        val selectedNames =
+            originalRefrigeratedItems
+                .filter { it.id in _uiState.value.selectedItemIds }
+                .map { it.name }
+                .distinct()
+
+        if (selectedNames.isEmpty()) {
             return
         }
 
-        // Get the first selected item's name to search for recipes
-        val selectedItem = originalRefrigeratedItems.find { it.id in _uiState.value.selectedItemIds }
-            selectedItem?.let { item ->
-                generateRecipeFromIngredient(item.name)
-            }
+        generateRecipeFromInventory(selectedNames)
     }
 
-    fun generateRecipeFromIngredient(ingredientName: String) {
+    private fun generateRecipeFromInventory(ingredientNames: List<String>) {
         viewModelScope.launch {
             _recipeState.value = RecipeUiState.Loading
+            lastRecipeRequestIngredients = ingredientNames
 
             try {
                 recipeRepository
-                    .getRecipesByIngredient(ingredientName)
-                    .onSuccess { mealDtos ->
-
-                        val translatedMeals =
-                            mealDtos.map { mealDto ->
-                                val originalTitle = mealDto.strMeal.orEmpty()
-                                val originalInstructions = mealDto.strInstructions.orEmpty()
-
-                                val translatedTitle = translator.translate(originalTitle)
-                                val translatedInstructions = translator.translate(originalInstructions)
-
-                                mealDto.copy(
-                                    strMeal = translatedTitle,
-                                    strInstructions = translatedInstructions
-                                )
-                            }
-
-                        _recipeState.value = RecipeUiState.Success(translatedMeals)
+                    .generateRecipeFromInventory(ingredientNames)
+                    .onSuccess { recipe ->
+                        _recipeState.value = RecipeUiState.Success(recipe)
                     }.onFailure { e ->
                         _recipeState.value = RecipeUiState.Error(e.message ?: "Unknown error")
                     }
@@ -540,33 +529,41 @@ class HomeViewModel(
     }
 
     fun fetchRandomRecipe() {
+        val inventoryNames =
+            originalRefrigeratedItems
+                .sortedBy { it.daysUntilExpiry }
+                .map { it.name }
+                .distinct()
+                .take(12)
+
+        if (inventoryNames.isEmpty()) {
+            _recipeState.value = RecipeUiState.Error("目前沒有庫存食材可生成食譜")
+            return
+        }
+
+        generateRecipeFromInventory(inventoryNames)
+    }
+
+    fun retryLastRecipeRequest() {
+        if (lastRecipeRequestIngredients.isNotEmpty()) {
+            generateRecipeFromInventory(lastRecipeRequestIngredients)
+        }
+    }
+
+    fun submitRecipeFeedback(feedbackType: RecipeFeedbackType) {
+        val current = _recipeState.value as? RecipeUiState.Success ?: return
+        val accessToken = userSessionProvider.accessToken()
+        if (accessToken.isBlank()) return
+
         viewModelScope.launch {
-            _recipeState.value = RecipeUiState.Loading
-
-            try {
-                recipeRepository
-                    .getRemoteRandomRecipe()
-                    .onSuccess { mealDto ->
-
-                        val originalTitle = mealDto.strMeal.orEmpty()
-                        val originalInstructions = mealDto.strInstructions.orEmpty()
-
-                        val translatedTitle = translator.translate(originalTitle)
-                        val translatedInstructions = translator.translate(originalInstructions)
-
-                        val translated =
-                            mealDto.copy(
-                                strMeal = translatedTitle,
-                                strInstructions = translatedInstructions
-                            )
-
-                        _recipeState.value = RecipeUiState.Success(listOf(translated))
-                    }.onFailure { e ->
-                        _recipeState.value = RecipeUiState.Error(e.message ?: "Unknown error")
-                    }
-            } catch (e: Exception) {
-                _recipeState.value = RecipeUiState.Error(e.message ?: "Unknown error")
-            }
+            recipeRepository
+                .submitRecipeFeedback(
+                    recipeId = current.recipe.recipeId,
+                    feedbackType = feedbackType,
+                    accessToken = accessToken,
+                ).onSuccess {
+                    _recipeState.value = current.copy(recipe = current.recipe.copy(userFeedback = feedbackType))
+                }
         }
     }
 }
@@ -577,7 +574,7 @@ sealed interface RecipeUiState {
     data object Loading : RecipeUiState
 
     data class Success(
-        val meals: List<MealDto>
+        val recipe: RecipeSuggestion
     ) : RecipeUiState
 
     data class Error(

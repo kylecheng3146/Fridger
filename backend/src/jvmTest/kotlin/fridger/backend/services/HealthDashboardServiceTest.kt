@@ -2,8 +2,10 @@ package fridger.backend.services
 
 import fridger.backend.repositories.FridgeItemDataSource
 import fridger.backend.repositories.FridgeItemRecord
+import fridger.shared.health.HealthDashboardCalculator
 import fridger.shared.health.HealthDashboardMetrics
 import fridger.shared.health.NutritionCategory
+import kotlinx.datetime.LocalDate as KotlinLocalDate
 import java.time.LocalDate
 import java.util.UUID
 import kotlin.test.Test
@@ -25,12 +27,16 @@ class HealthDashboardServiceTest {
                     )
                 }
             }
-        val service = HealthDashboardService(dataSource = dataSource)
+        val service =
+            HealthDashboardService(
+                dataSource = dataSource,
+                calculator = HealthDashboardCalculator(nowProvider = { KotlinLocalDate(2024, 1, 10) }),
+            )
 
         val metrics: HealthDashboardMetrics = service.getDashboard(userId)
 
-        assertEquals(50.0, metrics.nutritionDistribution[NutritionCategory.PRODUCE])
-        assertEquals(25.0, metrics.nutritionDistribution[NutritionCategory.PROTEIN])
+        assertEquals(57.1, metrics.nutritionDistribution[NutritionCategory.PRODUCE])
+        assertEquals(28.6, metrics.nutritionDistribution[NutritionCategory.PROTEIN])
         assertTrue(metrics.expiryAlerts.any { it.itemName == "Salmon" })
         assertTrue(metrics.recommendations.isNotEmpty())
     }

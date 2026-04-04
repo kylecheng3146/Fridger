@@ -2,21 +2,15 @@
 
 package fridger.com.io.presentation.home
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -25,17 +19,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Dashboard
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -64,6 +55,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -73,31 +66,27 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import fridger.com.data.model.remote.MealDto
-import fridger.com.io.data.model.Freshness
-import fridger.com.io.data.model.IngredientCategory
-import fridger.com.io.presentation.ViewModelFactoryProvider
-import fridger.com.io.presentation.components.ShoppingQuickAddTopDialog
-import fridger.com.io.presentation.home.components.BottomActionBar
-import fridger.com.io.presentation.home.components.IngredientCompactCard
-import fridger.com.io.presentation.home.dashboard.HealthDashboardDetailSheet
-import fridger.com.io.presentation.home.dashboard.HealthDashboardBentoGrid
-// import fridger.com.io.presentation.home.dashboard.HealthDashboardSummaryCard // Removed
-import fridger.com.io.presentation.components.RichEmptyState
-import fridger.com.io.presentation.settings.SettingsScreen
-import fridger.com.io.presentation.util.animateItemPlacementCompat
-
-import fridger.com.io.ui.theme.sizing
-import fridger.com.io.ui.theme.spacing
-import fridger.com.io.utils.stringResourceFormat
 import fridger.composeapp.generated.resources.*
 import fridger.composeapp.generated.resources.Res
 import fridger.composeapp.generated.resources.home_refrigerated
 import fridger.composeapp.generated.resources.home_title
+import fridger.com.io.data.model.Freshness
+import fridger.com.io.data.model.IngredientCategory
+import fridger.com.io.presentation.ViewModelFactoryProvider
+import fridger.com.io.presentation.components.RichEmptyState
+import fridger.com.io.presentation.components.ShoppingQuickAddTopDialog
+import fridger.com.io.presentation.home.components.BottomActionBar
+import fridger.com.io.presentation.home.components.IngredientCompactCard
+import fridger.com.io.presentation.home.components.RecipeResultSheet
+import fridger.com.io.presentation.home.dashboard.HealthDashboardDetailSheet
+import fridger.com.io.presentation.home.dashboard.HealthDashboardBentoGrid
+import fridger.com.io.presentation.settings.SettingsScreen
+import fridger.com.io.presentation.util.animateItemPlacementCompat
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.painterResource
-
-import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.pointerHoverIcon
+import fridger.com.io.ui.theme.sizing
+import fridger.com.io.ui.theme.spacing
+import fridger.com.io.utils.stringResourceFormat
 
 @Composable
 private fun SectionTitle(title: String) {
@@ -178,55 +167,53 @@ fun HomeScreen(
                                     .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                        Button(
-                            onClick = viewModel::onShowAddItemDialog,
-                            shape = MaterialTheme.shapes.medium,
-                            modifier = Modifier.weight(1f).pointerHoverIcon(PointerIcon.Hand)
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(Res.string.home_add_ingredient))
+                            Button(
+                                onClick = viewModel::onShowAddItemDialog,
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.weight(1f).pointerHoverIcon(PointerIcon.Hand)
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text(stringResource(Res.string.home_add_ingredient))
+                            }
+
+                            OutlinedButton(
+                                onClick = viewModel::fetchRandomRecipe,
+                                shape = RoundedCornerShape(8.dp),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
+                                modifier = Modifier.weight(1f).pointerHoverIcon(PointerIcon.Hand)
+                            ) {
+                                Icon(
+                                    Icons.Default.Dashboard,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    text = stringResource(Res.string.home_random_recipe),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    maxLines = 1
+                                )
+                            }
                         }
+                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
 
-                        OutlinedButton(
-                            onClick = viewModel::fetchRandomRecipe,
-                            shape = MaterialTheme.shapes.medium,
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-                            modifier = Modifier.weight(1f).pointerHoverIcon(PointerIcon.Hand)
+                        Column(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
                         ) {
-                            Icon(
-                                Icons.Default.Dashboard, // or consider a better icon like Restaurant/Receipt
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                text = stringResource(Res.string.home_random_recipe),
-                                color = MaterialTheme.colorScheme.primary,
-                                maxLines = 1
+                            HealthDashboardBentoGrid(
+                                state = dashboardState,
+                                onRefresh = { viewModel.refreshHealthDashboard() },
+                                onViewDetails = { showDashboardDetails = true }
                             )
                         }
+                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
+
+                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
                     }
-                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
-
-                    Column(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal),
-                    ) {
-                        HealthDashboardBentoGrid(
-                            state = dashboardState,
-                            onRefresh = { viewModel.refreshHealthDashboard() },
-                            onViewDetails = { showDashboardDetails = true }
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
-
-                    // (moved) random recipe button now lives next to "新增食材" above
-
-                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
-                }
 
                 expirySection(
                     todayItems = uiState.todayExpiringItems,
@@ -261,7 +248,6 @@ fun HomeScreen(
                     onGroupChange = { group -> viewModel.updateSortingAndGrouping(group = group) },
                     onCategoryFilterChange = viewModel::onCategoryFilterChange,
                     onViewModeChange = viewModel::onViewModeChange,
-                    onItemClick = { id -> viewModel.onItemClick(id) },
                     onRemoveItem = { id -> viewModel.onRemoveItemInitiated(id) },
                     selectedItemIds = uiState.selectedItemIds,
                     onToggleItemSelection = { id -> viewModel.onToggleItemSelection(id) }
@@ -349,37 +335,20 @@ fun HomeScreen(
 
                     when (val state = recipeState) {
                         is RecipeUiState.Loading -> {
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .height(200.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator()
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Text("正在搜尋食譜...")
-                            }
+                            RecipeResultSheet(
+                                isGenerating = true,
+                                recipe = null,
+                                onTryAgain = viewModel::retryLastRecipeRequest,
+                                onFeedbackClick = viewModel::submitRecipeFeedback,
+                            )
                         }
                         is RecipeUiState.Success -> {
-                            LazyColumn {
-                                if (state.meals.isNotEmpty()) {
-                                    items(state.meals) { meal ->
-                                        RecipeDetails(meal = meal)
-                                        if (state.meals.size > 1) {
-                                            Spacer(Modifier.height(24.dp))
-                                        }
-                                    }
-                                } else {
-                                    item {
-                                        Text(
-                                            "沒有找到相關食譜",
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            modifier = Modifier.padding(16.dp)
-                                        )
-                                    }
-                                }
-                            }
+                            RecipeResultSheet(
+                                isGenerating = false,
+                                recipe = state.recipe,
+                                onTryAgain = viewModel::retryLastRecipeRequest,
+                                onFeedbackClick = viewModel::submitRecipeFeedback,
+                            )
                         }
                         is RecipeUiState.Error -> {
                             Column(
@@ -394,7 +363,7 @@ fun HomeScreen(
                                     color = MaterialTheme.colorScheme.error,
                                     modifier = Modifier.padding(bottom = 16.dp)
                                 )
-                                Button(onClick = { viewModel.fetchRandomRecipe() }) {
+                                Button(onClick = { viewModel.retryLastRecipeRequest() }) {
                                     Text("重試")
                                 }
                             }
@@ -445,7 +414,6 @@ private fun LazyListScope.refrigeratedSection(
     onGroupChange: (GroupOption) -> Unit,
     onCategoryFilterChange: (IngredientCategory?) -> Unit,
     onViewModeChange: (InventoryViewMode) -> Unit,
-    onItemClick: (String) -> Unit,
     onRemoveItem: (String) -> Unit,
     selectedItemIds: Set<String>,
     onToggleItemSelection: (String) -> Unit
@@ -613,7 +581,7 @@ private fun InventoryViewModeToggle(
                 icon = {
                     val icon =
                         when (option) {
-                            InventoryViewMode.LIST -> Icons.Default.ViewList
+                            InventoryViewMode.LIST -> Icons.AutoMirrored.Filled.ViewList
                             InventoryViewMode.GRID -> Icons.Default.Dashboard
                         }
                     Icon(
@@ -699,7 +667,7 @@ private fun SortChip(
     Box(
         modifier =
             Modifier
-                .clip(RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(8.dp))
                 .background(bg)
                 .clickable(onClick = onClick)
                 .pointerHoverIcon(PointerIcon.Hand)
@@ -783,12 +751,12 @@ private fun CategorySummaryCard(
         modifier =
             modifier
                 .widthIn(min = 120.dp)
-                .clip(RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(12.dp))
                 .clickable(onClick = onClick)
                 .pointerHoverIcon(PointerIcon.Hand),
-        tonalElevation = if (isSelected) 0.dp else 0.dp,
+        tonalElevation = 0.dp,
         color = containerColor,
-        border = if (isSelected) null else BorderStroke(1.dp, borderColor)
+        border = if (isSelected) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, borderColor.copy(alpha = 0.4f))
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
@@ -1004,14 +972,15 @@ private fun ExpiryCard(
 ) {
     Card(
         modifier = modifier.height(MaterialTheme.sizing.cardHeightMedium),
-        shape = RoundedCornerShape(MaterialTheme.sizing.cornerRadiusExtraLarge),
+        shape = RoundedCornerShape(12.dp),
         colors =
             CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface,
             ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
         elevation =
             CardDefaults.cardElevation(
-                defaultElevation = 2.dp,
+                defaultElevation = 0.dp,
             ),
     ) {
         if (!isEmpty) {
@@ -1065,9 +1034,10 @@ private fun ExpiringListItemCard(
         modifier =
             modifier
                 .fillMaxWidth(),
-        shape = RoundedCornerShape(MaterialTheme.sizing.cornerRadiusLarge),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier =
@@ -1141,237 +1111,6 @@ private fun ExpiringListItemCard(
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold
                 )
-            }
-        }
-    }
-}
-
-@Composable
-private fun RefrigeratedItemCard(
-    item: RefrigeratedItem,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    compact: Boolean = false,
-    onRemove: (() -> Unit)? = null,
-    selectedItemIds: Set<String> = emptySet(),
-    onItemClick: ((String) -> Unit)? = null,
-) {
-    val borderWidth by animateDpAsState(
-        targetValue = if (selectedItemIds.contains(item.id)) 2.dp else 0.dp,
-        label = "borderWidthAnimation"
-    )
-
-    val borderColor by animateColorAsState(
-        targetValue =
-            if (selectedItemIds.contains(item.id)) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                Color.Transparent
-            },
-        label = "borderColorAnimation"
-    )
-
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(MaterialTheme.sizing.cornerRadiusLarge),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = if (compact) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface,
-            ),
-        elevation =
-            CardDefaults.cardElevation(
-                defaultElevation = if (compact) 2.dp else 1.dp,
-            ),
-        border = BorderStroke(borderWidth, borderColor)
-    ) {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onClick)
-        ) {
-            if (compact) {
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 110.dp)
-                            .padding(6.dp)
-                ) {
-                    androidx.compose.animation.AnimatedVisibility(
-                        visible = onRemove != null && selectedItemIds.isEmpty(),
-                        enter = fadeIn() + slideInVertically(initialOffsetY = { -it / 2 }),
-                        exit = fadeOut() + slideOutVertically(targetOffsetY = { -it / 2 }),
-                        modifier = Modifier.align(Alignment.TopEnd)
-                    ) {
-                        IconButton(
-                            onClick = onRemove ?: {},
-                            modifier = Modifier.size(28.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = stringResource(Res.string.home_remove_ingredient),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-
-
-// ... (in RefrigeratedItemCard compact view)
-                    Column(
-                        modifier =
-                            Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 8.dp, vertical = 16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(item.icon),
-                            contentDescription = item.name,
-                            modifier = Modifier.size(44.dp),
-                            tint = Color.Unspecified
-                        )
-                        Spacer(Modifier.height(12.dp))
-                        Text(
-                            text = item.name,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-            } else {
-                Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(MaterialTheme.spacing.large),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(
-                        modifier =
-                            Modifier
-                                .size(MaterialTheme.sizing.iconHuge)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surfaceVariant),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            painter = painterResource(item.icon),
-                            contentDescription = item.name,
-                            modifier = Modifier.size(MaterialTheme.sizing.iconLarge),
-                            tint = Color.Unspecified
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(MaterialTheme.spacing.large))
-
-                    Column(
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Text(
-                            text = item.name,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                        Text(
-                            text = item.quantity,
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Text(
-                            text = stringResourceFormat(Res.string.home_age_days, item.ageDays),
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-
-                    AnimatedVisibility(
-                        visible = !selectedItemIds.contains(item.id),
-                        enter = slideInHorizontally(initialOffsetX = { it / 2 }) + fadeIn(),
-                        exit = slideOutHorizontally(targetOffsetX = { it / 2 }) + fadeOut(),
-                    ) {
-                        IconButton(
-                            onClick = { onItemClick?.invoke(item.id) },
-                            modifier = Modifier.size(24.dp)
-                        ) {
-                        }
-                    }
-
-                    AnimatedVisibility(
-                        visible = selectedItemIds.isEmpty(),
-                        enter = slideInHorizontally(initialOffsetX = { it / 2 }) + fadeIn(),
-                        exit = slideOutHorizontally(targetOffsetX = { it / 2 }) + fadeOut(),
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
-                        ) {
-                            val (tintColor, textDisplay) =
-                                when (item.freshness) {
-                                    Freshness.Expired ->
-                                        MaterialTheme.colorScheme.error to
-                                            when (val d = item.expiryDisplay) {
-                                                is ExpiryDisplay.Overdue ->
-                                                    stringResourceFormat(
-                                                        Res.string.home_days_overdue,
-                                                        d.days
-                                                    )
-
-                                                ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
-                                                is ExpiryDisplay.Until ->
-                                                    stringResourceFormat(
-                                                        Res.string.home_days_until,
-                                                        d.days
-                                                    )
-                                            }
-
-                                    Freshness.NearingExpiration ->
-                                        MaterialTheme.colorScheme.secondary to
-                                            when (val d = item.expiryDisplay) {
-                                                is ExpiryDisplay.Overdue ->
-                                                    stringResourceFormat(
-                                                        Res.string.home_days_overdue,
-                                                        d.days
-                                                    )
-
-                                                ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
-                                                is ExpiryDisplay.Until ->
-                                                    stringResourceFormat(
-                                                        Res.string.home_days_until,
-                                                        d.days
-                                                    )
-                                            }
-
-                                    Freshness.Fresh ->
-                                        MaterialTheme.colorScheme.onSurfaceVariant to
-                                            when (val d = item.expiryDisplay) {
-                                                is ExpiryDisplay.Overdue ->
-                                                    stringResourceFormat(
-                                                        Res.string.home_days_overdue,
-                                                        d.days
-                                                    )
-
-                                                ExpiryDisplay.DueToday -> stringResource(Res.string.home_days_due_today)
-                                                is ExpiryDisplay.Until ->
-                                                    stringResourceFormat(
-                                                        Res.string.home_days_until,
-                                                        d.days
-                                                    )
-                                            }
-                                }
-                            Text(
-                                text = textDisplay,
-                                fontSize = 14.sp,
-                                color = tintColor,
-                            )
-                        }
-                    }
-                }
             }
         }
     }

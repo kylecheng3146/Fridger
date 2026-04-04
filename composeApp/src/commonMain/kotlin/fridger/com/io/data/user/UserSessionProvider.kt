@@ -13,6 +13,6 @@ object DemoUserSessionProvider : UserSessionProvider {
 }
 
 object AppUserSessionProvider : UserSessionProvider {
-    override fun userId(): String = UserSessionManager.userId.value.ifBlank { DemoUserSessionProvider.userId() }
-    override fun accessToken(): String = UserSessionManager.accessToken.value
+    override fun userId(): String = UserSessionManager.cachedUserId.ifBlank { DemoUserSessionProvider.userId() }
+    override fun accessToken(): String = UserSessionManager.cachedAccessToken
 }
