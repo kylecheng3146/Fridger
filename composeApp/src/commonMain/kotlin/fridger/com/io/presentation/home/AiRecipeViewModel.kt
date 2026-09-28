@@ -29,13 +29,14 @@ class AiRecipeViewModel(
     private val _uiState = MutableStateFlow(AiRecipeUiState())
     val uiState: StateFlow<AiRecipeUiState> = _uiState.asStateFlow()
 
+    // Single-select: tapping a style selects only it; tapping again deselects.
     fun toggleStyle(style: String) {
         _uiState.update { state ->
             val newStyles =
                 if (state.selectedStyles.contains(style)) {
-                    state.selectedStyles - style
+                    emptyList()
                 } else {
-                    state.selectedStyles + style
+                    listOf(style)
                 }
             state.copy(selectedStyles = newStyles)
         }

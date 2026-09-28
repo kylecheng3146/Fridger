@@ -389,3 +389,10 @@ composeApp/
     中 Dispatchers.resetMain()。
     - 理由: 確保能以可控制、同步的方式測試與 viewModelScope (Dispatchers.Main)
       相關的非同步邏輯。
+
+<!-- agent-ops:start agy-routing v1 -->
+## Loop Engineering
+
+Load `.agent-ops/GEMINI.md` as the agent-ops managed baseline.
+Project-specific instructions in this file remain authoritative.
+<!-- agent-ops:end agy-routing -->
