@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 enum class NutritionCategory(val displayName: String) {
     PRODUCE("蔬果"),
     PROTEIN("蛋白質"),
-    REFINED_GRAIN("精緻澱粉"),
+    REFINED_GRAIN("穀物／澱粉"),
     OTHER("其他"),
 }
 
@@ -16,10 +16,12 @@ data class InventoryItem(
     val id: String,
     val name: String,
     val category: NutritionCategory,
-    val quantity: Double,
-    val caloriesPerPortion: Int,
+    // Retained for older callers; inventory insights count items and never infer calories.
+    val quantity: Double = 0.0,
+    val caloriesPerPortion: Int = 0,
     val expiryDate: LocalDate?,
     val ownerId: String?,
+    val isClassified: Boolean = true,
 )
 
 @Serializable
@@ -32,6 +34,8 @@ data class HealthDashboardMetrics(
     val trendSnapshots: List<TrendSnapshot> = emptyList(),
     val diversityHistory: List<DiversityHistoryEntry> = emptyList(),
     val expiryHeatmap: List<ExpiryHeatmapCell> = emptyList(),
+    val unclassifiedPercent: Double = 0.0,
+    val totalTrackedItems: Int = 0,
 )
 
 @Serializable
@@ -52,7 +56,8 @@ data class ExpiryAlert(
     val itemName: String,
     val category: NutritionCategory,
     val daysUntilExpiry: Int,
-    val calorieBucket: CalorieBucket,
+    val calorieBucket: CalorieBucket? = null,
+    val itemId: String? = null,
 )
 
 @Serializable
@@ -74,6 +79,7 @@ data class HealthRecommendation(
     val category: NutritionCategory,
     val reason: RecommendationReason,
     val message: String,
+    val itemName: String? = null,
 )
 
 @Serializable
@@ -82,6 +88,7 @@ data class TrendSnapshot(
     val distribution: Map<NutritionCategory, Double>,
     val deficitCategories: List<NutritionCategory> = emptyList(),
     val totalTrackedItems: Int,
+    val unclassifiedPercent: Double = 0.0,
 )
 
 @Serializable

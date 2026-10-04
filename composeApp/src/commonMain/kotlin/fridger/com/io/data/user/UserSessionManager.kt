@@ -1,6 +1,7 @@
 package fridger.com.io.data.user
 
 import fridger.com.io.data.settings.AuthTokenStoreProvider
+import fridger.com.io.data.settings.StoredAuthSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -16,6 +17,7 @@ object UserSessionManager {
     val accessToken: Flow<String> = store.accessToken
     val refreshToken: Flow<String> = store.refreshToken
     val userId: Flow<String> = store.userId
+    val session: Flow<StoredAuthSession> = store.session
 
     // In-memory cache for synchronous reads (e.g. ViewModel HTTP calls)
     private val _cachedAccessToken = MutableStateFlow("")

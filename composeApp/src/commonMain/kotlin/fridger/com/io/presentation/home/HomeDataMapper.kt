@@ -16,7 +16,7 @@ object HomeDataMapper {
                 id = ing.id.toString(),
                 name = ing.name,
                 icon = IngredientIconMapper.getIcon(ing.name),
-                quantity = "x1", // Quantity not yet stored; default
+                quantity = "1 項",
                 daysUntilExpiry = daysUntil,
                 ageDays = age,
                 category = ing.category,

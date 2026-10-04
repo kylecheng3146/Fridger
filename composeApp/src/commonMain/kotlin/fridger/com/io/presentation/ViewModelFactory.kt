@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.CreationExtras
 import fridger.com.data.remote.RecipeApiService
 import fridger.com.domain.translator.MockTranslator
-import fridger.com.io.data.analytics.ConsoleHealthDashboardAnalytics
+import fridger.com.io.data.analytics.ApiHealthDashboardAnalytics
 import fridger.com.io.data.remote.HealthDashboardApiService
 import fridger.com.io.data.repository.HealthDashboardRepositoryImpl
 import fridger.com.io.data.repository.IngredientRepositoryImpl
@@ -27,8 +27,9 @@ import kotlin.reflect.KClass
  * A factory for creating ViewModels in a multiplatform context.
  */
 class ViewModelFactory : ViewModelProvider.Factory {
+    private val ingredientRepository by lazy { IngredientRepositoryImpl() }
     private val dashboardPreferences by lazy { DataStoreHealthDashboardPreferences(SharedDataStoreProvider.instance) }
-    private val dashboardAnalytics by lazy { ConsoleHealthDashboardAnalytics() }
+    private val dashboardAnalytics by lazy { ApiHealthDashboardAnalytics() }
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(
@@ -38,13 +39,14 @@ class ViewModelFactory : ViewModelProvider.Factory {
         when (modelClass) {
             HomeViewModel::class ->
                 HomeViewModel(
-                    IngredientRepositoryImpl(),
+                    ingredientRepository,
                     RecipeRepositoryImpl(RecipeApiService(), fridger.com.io.data.database.DatabaseProvider.database, AppUserSessionProvider),
                     MockTranslator(),
                     HealthDashboardRepositoryImpl(HealthDashboardApiService()),
                     AppUserSessionProvider,
                     dashboardPreferences,
                     dashboardAnalytics,
+                    userChanges = fridger.com.io.data.user.UserSessionManager.userId,
                 ) as T
             SettingsViewModel::class -> SettingsViewModel() as T
             ShoppingListViewModel::class ->
@@ -69,7 +71,7 @@ class ViewModelFactory : ViewModelProvider.Factory {
                 ) as T
             AiRecipeViewModel::class ->
                 AiRecipeViewModel(
-                    IngredientRepositoryImpl(),
+                    ingredientRepository,
                     RecipeRepositoryImpl(RecipeApiService(), fridger.com.io.data.database.DatabaseProvider.database, AppUserSessionProvider),
                     AppUserSessionProvider,
                 ) as T

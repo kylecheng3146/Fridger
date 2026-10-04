@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -74,6 +75,9 @@ import fridger.composeapp.generated.resources.home_refrigerated
 import fridger.composeapp.generated.resources.home_title
 import fridger.com.io.data.model.Freshness
 import fridger.com.io.data.model.IngredientCategory
+import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
+import fridger.com.io.presentation.navigation.AppTab
+import fridger.com.io.presentation.recipes.DashboardRecipeSearchIntent
 import fridger.com.io.presentation.ViewModelFactoryProvider
 import fridger.com.io.presentation.components.RichEmptyState
 import fridger.com.io.presentation.components.ShoppingQuickAddTopDialog
@@ -112,7 +116,13 @@ fun HomeScreen(
     var showDashboardDetails by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
     var showAiRecipeSheet by remember { mutableStateOf(false) }
+    var editingCategoryItem by remember { mutableStateOf<RefrigeratedItem?>(null) }
+    val tabNavigator = LocalTabNavigator.current
     val dashboardState = uiState.healthDashboard
+
+    LaunchedEffect(tabNavigator.current) {
+        if (tabNavigator.current == AppTab.Home) viewModel.onDashboardViewed()
+    }
 
     fun openAiRecipeSheet() {
         showAiRecipeSheet = true
@@ -220,7 +230,11 @@ fun HomeScreen(
                             HealthDashboardBentoGrid(
                                 state = dashboardState,
                                 onRefresh = { viewModel.refreshHealthDashboard() },
-                                onViewDetails = { showDashboardDetails = true }
+                                onViewDetails = {
+                                    showDashboardDetails = true
+                                    viewModel.refreshHealthDashboard(includeTrends = true)
+                                },
+                                onAddIngredient = viewModel::onShowAddItemDialog,
                             )
                         }
                         Spacer(modifier = Modifier.height(MaterialTheme.spacing.huge))
@@ -263,7 +277,8 @@ fun HomeScreen(
                     onViewModeChange = viewModel::onViewModeChange,
                     onRemoveItem = { id -> viewModel.onRemoveItemInitiated(id) },
                     selectedItemIds = uiState.selectedItemIds,
-                    onToggleItemSelection = { id -> viewModel.onToggleItemSelection(id) }
+                    onToggleItemSelection = { id -> viewModel.onToggleItemSelection(id) },
+                    onEditCategory = { item -> editingCategoryItem = item },
                 )
             }
         }
@@ -400,7 +415,42 @@ fun HomeScreen(
         if (showDashboardDetails) {
             HealthDashboardDetailSheet(
                 state = dashboardState,
-                onDismiss = { showDashboardDetails = false }
+                onDismiss = { showDashboardDetails = false },
+                onRecommendationAction = { recommendation ->
+                    viewModel.onRecommendationAction(recommendation)
+                    showDashboardDetails = false
+                    if (recommendation.reason == fridger.shared.health.RecommendationReason.EXPIRY_RISK) {
+                        recommendation.itemName?.let(DashboardRecipeSearchIntent::request)
+                        tabNavigator.current = AppTab.Recipes
+                    } else {
+                        fridger.com.io.presentation.shoppinglist.DashboardShoppingIntent.category.value = recommendation.category
+                        tabNavigator.current = AppTab.ShoppingList
+                    }
+                },
+                onAddIngredient = viewModel::onShowAddItemDialog,
+                onSectionToggle = viewModel::onDashboardSectionToggle,
+                onCollapsedImpression = viewModel::onDashboardSectionCollapsedImpression,
+            )
+        }
+        editingCategoryItem?.let { item ->
+            AlertDialog(
+                onDismissRequest = { editingCategoryItem = null },
+                title = { Text("修改「${item.name}」分類") },
+                text = {
+                    Column {
+                        androidx.compose.material3.TextButton(onClick = {
+                            viewModel.updateIngredientCategory(item.id, null)
+                            editingCategoryItem = null
+                        }) { Text("自動判斷") }
+                        IngredientCategory.entries.forEach { category ->
+                            androidx.compose.material3.TextButton(onClick = {
+                                viewModel.updateIngredientCategory(item.id, category)
+                                editingCategoryItem = null
+                            }) { Text(category.displayName) }
+                        }
+                    }
+                },
+                confirmButton = {},
             )
         }
         if (showSettings) {
@@ -436,7 +486,8 @@ private fun LazyListScope.refrigeratedSection(
     onViewModeChange: (InventoryViewMode) -> Unit,
     onRemoveItem: (String) -> Unit,
     selectedItemIds: Set<String>,
-    onToggleItemSelection: (String) -> Unit
+    onToggleItemSelection: (String) -> Unit,
+    onEditCategory: (RefrigeratedItem) -> Unit,
 ) {
     if (refrigeratedItems.isNotEmpty()) {
         item {
@@ -489,6 +540,7 @@ private fun LazyListScope.refrigeratedSection(
                     item = item,
                     isSelected = selectedItemIds.contains(item.id),
                     onClick = { onToggleItemSelection(item.id) },
+                    onEditCategory = { onEditCategory(item) },
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -521,6 +573,7 @@ private fun LazyListScope.refrigeratedSection(
                                     .weight(1f)
                                     .animateItemPlacementCompat(),
                             onClick = { onToggleItemSelection(item.id) },
+                            onEditCategory = { onEditCategory(item) },
                             onRemove = { onRemoveItem(item.id) }
                         )
                     }
@@ -564,6 +617,7 @@ private fun LazyListScope.refrigeratedSection(
                         item = item,
                         isSelected = selectedItemIds.contains(item.id),
                         onClick = { onToggleItemSelection(item.id) },
+                        onEditCategory = { onEditCategory(item) },
                         modifier =
                             Modifier
                                 .fillMaxWidth()
@@ -816,6 +870,7 @@ private fun CategorySummaryCard(
 
 @Composable
 private fun categoryLabel(category: IngredientCategory): String {
+    if (category == IngredientCategory.UNCATEGORIZED) return "未分類"
     val resId =
         when (category) {
             IngredientCategory.VEGETABLES -> Res.string.home_category_vegetables
@@ -825,6 +880,7 @@ private fun categoryLabel(category: IngredientCategory): String {
             IngredientCategory.SEAFOOD -> Res.string.home_category_seafood
             IngredientCategory.GRAINS -> Res.string.home_category_grains
             IngredientCategory.OTHERS -> Res.string.home_category_others
+            IngredientCategory.UNCATEGORIZED -> Res.string.home_category_others
         }
     return stringResource(resId)
 }
@@ -838,6 +894,7 @@ private fun categoryIcon(category: IngredientCategory): String =
         IngredientCategory.SEAFOOD -> "🐟"
         IngredientCategory.GRAINS -> "🌾"
         IngredientCategory.OTHERS -> "🧂"
+        IngredientCategory.UNCATEGORIZED -> "❔"
     }
 
 @Composable

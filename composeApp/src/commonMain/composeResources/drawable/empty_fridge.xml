@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="160dp"
+    android:height="160dp"
+    android:viewportWidth="160"
+    android:viewportHeight="160">
+
+    <!-- Simple fridge-shaped placeholder icon for Android -->
+    <path
+        android:fillColor="#E0E0E0"
+        android:pathData="M32,16 h96 a8,8 0,0,1 8,8 v112 a8,8 0,0,1 -8,8 h-96 a8,8 0,0,1 -8,-8 v-112 a8,8 0,0,1 8,-8 z"/>
+
+    <path
+        android:strokeColor="#BDBDBD"
+        android:strokeWidth="2"
+        android:fillColor="#00000000"
+        android:pathData="M32,80 H128"/>
+
+    <path
+        android:fillColor="#9E9E9E"
+        android:pathData="M40,48 h8 a4,4 0,0,1 4,4 v8 a4,4 0,0,1 -4,4 h-8 z"/>
+
+    <path
+        android:fillColor="#9E9E9E"
+        android:pathData="M40,104 h8 a4,4 0,0,1 4,4 v8 a4,4 0,0,1 -4,4 h-8 z"/>
+
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillAlpha="0.25"
+        android:pathData="M36,20 h50 a6,6 0,0,1 6,6 v48 a6,6 0,0,1 -6,6 h-50 a6,6 0,0,1 -6,-6 v-48 a6,6 0,0,1 6,-6 z"/>
+</vector>

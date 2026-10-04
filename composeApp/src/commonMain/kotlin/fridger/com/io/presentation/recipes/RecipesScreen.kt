@@ -35,6 +35,7 @@ import coil3.compose.AsyncImage
 fun RecipesScreen(viewModel: RecipesViewModel) {
     val uiState by viewModel.uiState.collectAsState()
     val query by viewModel.searchQuery.collectAsState()
+    val ingredientSearch by viewModel.ingredientSearch.collectAsState()
     val navigator = LocalNavigator.currentOrThrow
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -46,6 +47,13 @@ fun RecipesScreen(viewModel: RecipesViewModel) {
             modifier = Modifier.fillMaxWidth().padding(8.dp),
             placeholder = { Text("搜尋食譜...") }
         )
+        if (ingredientSearch) {
+            Text(
+                text = "顯示含「$query」食材的食譜",
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+            )
+        }
 
         when (uiState) {
             is RecipesUiState.Loading -> {
@@ -78,6 +86,9 @@ fun RecipesScreen(viewModel: RecipesViewModel) {
             }
             is RecipesUiState.Meals -> {
                 val meals = (uiState as RecipesUiState.Meals).meals
+                if (meals.isEmpty()) {
+                    Text("找不到符合的食譜，可修改名稱再搜尋。", modifier = Modifier.padding(12.dp))
+                }
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(8.dp),

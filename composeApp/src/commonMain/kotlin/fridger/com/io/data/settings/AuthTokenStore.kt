@@ -7,6 +7,12 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
+data class StoredAuthSession(
+    val accessToken: String,
+    val refreshToken: String,
+    val userId: String,
+)
+
 class AuthTokenStore(
     private val dataStore: DataStore<Preferences>
 ) {
@@ -19,6 +25,13 @@ class AuthTokenStore(
     val accessToken: Flow<String> = dataStore.data.map { prefs -> prefs[KEY_ACCESS_TOKEN].orEmpty() }
     val refreshToken: Flow<String> = dataStore.data.map { prefs -> prefs[KEY_REFRESH_TOKEN].orEmpty() }
     val userId: Flow<String> = dataStore.data.map { prefs -> prefs[KEY_USER_ID].orEmpty() }
+    val session: Flow<StoredAuthSession> = dataStore.data.map { prefs ->
+        StoredAuthSession(
+            accessToken = prefs[KEY_ACCESS_TOKEN].orEmpty(),
+            refreshToken = prefs[KEY_REFRESH_TOKEN].orEmpty(),
+            userId = prefs[KEY_USER_ID].orEmpty(),
+        )
+    }
 
     suspend fun setTokens(
         accessToken: String,

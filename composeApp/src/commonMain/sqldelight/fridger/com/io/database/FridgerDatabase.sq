@@ -5,7 +5,12 @@ CREATE TABLE Ingredient (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     addDate TEXT NOT NULL,
-    expirationDate TEXT NOT NULL
+    expirationDate TEXT NOT NULL,
+    syncId TEXT NOT NULL DEFAULT '',
+    ownerId TEXT,
+    categoryOverride TEXT,
+    syncState TEXT NOT NULL DEFAULT 'PENDING',
+    isDeleted INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE ShoppingListItem (
@@ -41,19 +46,61 @@ DELETE FROM SavedRecipe WHERE id = ?;
 
 -- Queries for Ingredient
 selectAllIngredients:
-SELECT * FROM Ingredient;
+SELECT * FROM Ingredient WHERE isDeleted = 0;
+
+selectIngredientsByOwner:
+SELECT * FROM Ingredient WHERE ownerId IS ? AND isDeleted = 0 ORDER BY id;
+
+selectPendingInventoryItems:
+SELECT * FROM Ingredient WHERE ownerId IS ? AND syncState = 'PENDING' ORDER BY id;
+
+selectSyncedInventoryItems:
+SELECT * FROM Ingredient WHERE ownerId IS ? AND syncState = 'SYNCED' AND isDeleted = 0;
+
+selectIngredientsWithoutSyncId:
+SELECT id FROM Ingredient WHERE syncId = '';
 
 getIngredientById:
 SELECT * FROM Ingredient
-WHERE id = ?;
+WHERE id = ? AND isDeleted = 0;
 
 insertIngredient:
-INSERT INTO Ingredient(name, addDate, expirationDate)
-VALUES (?, ?, ?);
+INSERT INTO Ingredient(name, addDate, expirationDate, ownerId, syncId)
+VALUES (?, ?, ?, ?, ?);
+
+updateIngredientSyncId:
+UPDATE Ingredient SET syncId = ? WHERE id = ? AND syncId = '';
+
+claimAnonymousIngredients:
+UPDATE Ingredient SET ownerId = ?, syncState = 'PENDING' WHERE ownerId IS NULL AND isDeleted = 0;
+
+updateIngredientCategory:
+UPDATE Ingredient SET categoryOverride = ?, syncState = 'PENDING' WHERE id = ? AND ownerId IS ? AND isDeleted = 0;
+
+markIngredientSynced:
+UPDATE Ingredient SET syncState = 'SYNCED' WHERE syncId = ? AND ownerId IS ?
+AND name = ? AND addDate = ? AND expirationDate = ? AND categoryOverride IS ? AND isDeleted = 0;
+
+markIngredientDeleted:
+UPDATE Ingredient SET isDeleted = 1, syncState = 'PENDING' WHERE id = ? AND ownerId IS ?;
+
+deleteIngredientBySyncId:
+DELETE FROM Ingredient WHERE syncId = ? AND ownerId IS ?;
+
+selectIngredientBySyncId:
+SELECT * FROM Ingredient WHERE syncId = ? AND ownerId IS ?;
+
+insertRemoteIngredient:
+INSERT INTO Ingredient(name, addDate, expirationDate, syncId, ownerId, categoryOverride, syncState, isDeleted)
+VALUES (?, ?, ?, ?, ?, ?, 'SYNCED', 0);
+
+updateRemoteIngredient:
+UPDATE Ingredient SET name = ?, addDate = ?, expirationDate = ?, categoryOverride = ?, syncState = 'SYNCED', isDeleted = 0
+WHERE syncId = ? AND ownerId IS ? AND syncState = 'SYNCED' AND isDeleted = 0;
 
 deleteIngredientById:
 DELETE FROM Ingredient
-WHERE id = ?;
+WHERE id = ? AND ownerId IS ?;
 
 -- Queries for ShoppingListItem
 selectAllShoppingItems:

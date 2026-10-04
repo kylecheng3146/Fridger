@@ -8,8 +8,10 @@ import fridger.com.io.data.repository.RecipeRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 sealed interface RecipesUiState {
@@ -28,6 +30,19 @@ sealed interface RecipesUiState {
     ) : RecipesUiState
 }
 
+object DashboardRecipeSearchIntent {
+    private val _ingredient = MutableStateFlow<String?>(null)
+    val ingredient: StateFlow<String?> = _ingredient.asStateFlow()
+
+    fun request(ingredient: String) {
+        _ingredient.value = ingredient
+    }
+
+    fun consume(ingredient: String) {
+        if (_ingredient.value == ingredient) _ingredient.value = null
+    }
+}
+
 class RecipesViewModel(
     private val recipeRepository: RecipeRepository
 ) : ViewModel() {
@@ -37,7 +52,10 @@ class RecipesViewModel(
     // Search query state
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+    private val _ingredientSearch = MutableStateFlow(false)
+    val ingredientSearch: StateFlow<Boolean> = _ingredientSearch.asStateFlow()
 
+    private val ingredientRequest = MutableStateFlow(0)
     private var cachedCategories: List<RecipeCategoryDto> = emptyList()
 
     init {
@@ -49,7 +67,7 @@ class RecipesViewModel(
                     .getRecipeCategories()
                     .onSuccess { categories ->
                         cachedCategories = categories
-                        _uiState.value = RecipesUiState.Categories(categories)
+                        if (_searchQuery.value.isBlank()) _uiState.value = RecipesUiState.Categories(categories)
                     }.onFailure { error ->
                         _uiState.value = RecipesUiState.Error(error.message)
                     }
@@ -60,18 +78,22 @@ class RecipesViewModel(
 
         // Observe search query with debounce
         viewModelScope.launch {
-            searchQuery
+            combine(searchQuery, ingredientSearch, ingredientRequest) { query, byIngredient, request -> Triple(query, byIngredient, request) }
                 .debounce(500)
                 .distinctUntilChanged()
-                .collect { query ->
+                .collectLatest { (query, byIngredient, _) ->
                     if (query.isBlank()) {
                         // Show categories again
                         _uiState.value = RecipesUiState.Categories(cachedCategories)
                     } else {
                         _uiState.value = RecipesUiState.Loading
                         try {
-                            recipeRepository
-                                .searchRecipesByName(query)
+                            val searchResult = if (byIngredient) {
+                                recipeRepository.getRecipesByIngredient(fridger.com.io.data.QuickAddCatalog.recipeSearchName(query))
+                            } else {
+                                recipeRepository.searchRecipesByName(query)
+                            }
+                            searchResult
                                 .onSuccess { meals ->
                                     _uiState.value = RecipesUiState.Meals(meals)
                                 }.onFailure { error ->
@@ -83,9 +105,21 @@ class RecipesViewModel(
                     }
                 }
         }
+
+        viewModelScope.launch {
+            DashboardRecipeSearchIntent.ingredient.collect { ingredient ->
+                if (!ingredient.isNullOrBlank()) {
+                    _ingredientSearch.value = true
+                    _searchQuery.value = ingredient
+                    ingredientRequest.value++
+                    DashboardRecipeSearchIntent.consume(ingredient)
+                }
+            }
+        }
     }
 
     fun onSearchQueryChanged(newQuery: String) {
+        _ingredientSearch.value = false
         _searchQuery.value = newQuery
     }
 }

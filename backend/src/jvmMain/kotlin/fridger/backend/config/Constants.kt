@@ -9,6 +9,8 @@ object ApiPaths {
     const val AUTH_LOGOUT = "/logout"
     const val HEALTH = "/health"
     const val HEALTH_DASHBOARD = "$API_V1/health/dashboard"
+    const val HEALTH_DASHBOARD_EVENTS = "$HEALTH_DASHBOARD/events"
+    const val FRIDGE_ITEMS = "$API_V1/fridge/items"
     const val RECIPE_GENERATION = "$API_V1/recipes/generate"
     const val RECIPE_FEEDBACK = "$API_V1/recipes/feedback"
     const val RECIPE_SAVE = "$API_V1/recipes/save"

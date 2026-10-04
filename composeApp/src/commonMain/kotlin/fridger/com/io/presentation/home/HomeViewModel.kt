@@ -4,9 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import fridger.com.domain.translator.Translator
 import fridger.com.io.data.QuickAddCatalog
+import fridger.com.io.data.connectivity.ConnectivityMonitorProvider
 import fridger.com.io.data.analytics.DashboardSectionAction
 import fridger.com.io.data.analytics.DashboardStateSyncSource
 import fridger.com.io.data.analytics.HealthDashboardAnalytics
+import fridger.com.io.data.model.Ingredient
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.Job
 import fridger.com.io.data.model.Freshness
 import fridger.com.io.data.model.IngredientCategory
 import fridger.com.io.data.repository.HealthDashboardRepository
@@ -21,6 +27,7 @@ import fridger.shared.health.HealthDashboardCalculator
 import fridger.shared.health.HealthDashboardMetrics
 import fridger.shared.health.InventoryItem
 import fridger.shared.health.NutritionCategory
+import fridger.shared.health.toNutritionCategory
 import fridger.shared.recipe.RecipeFeedbackType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,6 +51,7 @@ class HomeViewModel(
     private val userSessionProvider: UserSessionProvider,
     private val dashboardPreferences: HealthDashboardPreferences,
     private val healthDashboardAnalytics: HealthDashboardAnalytics,
+    private val userChanges: Flow<String> = flowOf(userSessionProvider.userId()),
 ) : ViewModel() {
     // Recipe translation-driven state
     private val _recipeState = MutableStateFlow<RecipeUiState>(RecipeUiState.Idle)
@@ -51,6 +59,10 @@ class HomeViewModel(
     private val _uiState = MutableStateFlow(HomeUiState(isLoading = true))
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
+    private var inventoryIngredients: List<Ingredient> = emptyList()
+    private var dashboardRequest = 0
+    private var currentUserId = userSessionProvider.userId()
+    private var dashboardJob: Job? = null
     private var originalRefrigeratedItems: List<RefrigeratedItem> = emptyList()
     private var lastRecipeRequestIngredients: List<String> = emptyList()
 
@@ -58,9 +70,35 @@ class HomeViewModel(
     private val defaultSectionStates = DashboardSectionDefaults.defaultStates()
 
     init {
+        viewModelScope.launch {
+            userChanges.distinctUntilChanged().collect { userId ->
+                if (userId != currentUserId) {
+                    currentUserId = userId
+                    dashboardRequest++
+                    dashboardJob?.cancel()
+                    _uiState.value.pendingDeletion?.job?.cancel()
+                    inventoryIngredients = emptyList()
+                    originalRefrigeratedItems = emptyList()
+                    lastRecipeRequestIngredients = emptyList()
+                    _recipeState.value = RecipeUiState.Idle
+                    _uiState.update { HomeUiState(healthDashboard = HealthDashboardUiState(sectionStates = it.healthDashboard.sectionStates)) }
+                    refreshHealthDashboard()
+                }
+            }
+        }
         observeIngredients()
+        observeInventoryConnectivity()
+        viewModelScope.launch { runCatching { repository.sync() } }
         refreshHealthDashboard()
         observeDashboardSectionState()
+    }
+
+    private fun observeInventoryConnectivity() {
+        viewModelScope.launch {
+            ConnectivityMonitorProvider.monitor.isOnline.collect { online ->
+                if (online) runCatching { repository.sync() }
+            }
+        }
     }
 
     private fun observeIngredients() {
@@ -78,6 +116,7 @@ class HomeViewModel(
                             .toLocalDateTime(TimeZone.currentSystemDefault())
                             .date
 
+                    inventoryIngredients = ingredients
                     val refrigerated = HomeDataMapper.mapToRefrigeratedItems(ingredients, today)
                     originalRefrigeratedItems = refrigerated
 
@@ -136,7 +175,11 @@ class HomeViewModel(
         includeTrends: Boolean = false,
         trendRangeDays: Int? = null,
     ) {
-        viewModelScope.launch {
+        val requestId = ++dashboardRequest
+        val requestUserId = currentUserId
+        dashboardJob?.cancel()
+        dashboardJob = viewModelScope.launch {
+            runCatching { repository.sync() }
             _uiState.update { state ->
                 state.copy(
                     healthDashboard =
@@ -146,23 +189,26 @@ class HomeViewModel(
                         ),
                 )
             }
-            val userId = userSessionProvider.userId()
+            val userId = requestUserId
             val trendRange = if (includeTrends) trendRangeDays ?: DEFAULT_TREND_RANGE_DAYS else null
             val result = healthDashboardRepository.getDashboardMetrics(userId, includeTrends, trendRange)
+            if (requestId != dashboardRequest || requestUserId != currentUserId) return@launch
             val localMetrics = computeLocalDashboardMetrics()
             _uiState.update { state ->
                 val remoteMetrics = result.getOrNull()
                 val resolvedMetrics =
                     when {
                         remoteMetrics == null -> localMetrics
-                        shouldUseLocalMetrics(remoteMetrics, localMetrics) -> localMetrics
-                        else -> remoteMetrics
+                        else -> localMetrics.copy(
+                            trendMetadata = remoteMetrics.trendMetadata,
+                            trendSnapshots = remoteMetrics.trendSnapshots,
+                            diversityHistory = remoteMetrics.diversityHistory,
+                            expiryHeatmap = remoteMetrics.expiryHeatmap,
+                        )
                     }
                 val errorMessage = result.exceptionOrNull()?.message
                 val shouldSurfaceError =
-                    result.isFailure &&
-                        remoteMetrics == null &&
-                        !localMetrics.hasMeaningfulData()
+                    includeTrends && result.isFailure && remoteMetrics == null
                 state.copy(
                     healthDashboard =
                         state.healthDashboard.copy(
@@ -209,6 +255,15 @@ class HomeViewModel(
         healthDashboardAnalytics.trackCollapsedImpression(section, durationMillis, isDefault)
     }
 
+    fun onDashboardViewed() {
+        healthDashboardAnalytics.trackDashboardView()
+    }
+
+    fun onRecommendationAction(recommendation: fridger.shared.health.HealthRecommendation) {
+        val action = if (recommendation.reason == fridger.shared.health.RecommendationReason.EXPIRY_RISK) "find_recipe" else "open_shopping_list"
+        healthDashboardAnalytics.trackRecommendationAction(recommendation.reason.name.lowercase(), action)
+    }
+
     private fun computeLocalDashboardMetrics(): HealthDashboardMetrics {
         val today =
             Clock.System
@@ -216,16 +271,15 @@ class HomeViewModel(
                 .toLocalDateTime(TimeZone.currentSystemDefault())
                 .date
         val items =
-            originalRefrigeratedItems.map { item ->
-                val category = mapIngredientCategory(item.category)
+            inventoryIngredients.map { item ->
+                val category = item.category.toNutritionCategory()
                 InventoryItem(
-                    id = item.id,
+                    id = item.syncId,
                     name = item.name,
-                    category = category,
-                    quantity = 1.0,
-                    caloriesPerPortion = defaultCaloriesFor(category),
-                    expiryDate = today.plus(DatePeriod(days = item.daysUntilExpiry)),
-                    ownerId = null,
+                    category = category ?: NutritionCategory.OTHER,
+                    expiryDate = item.expirationDate,
+                    ownerId = item.ownerId,
+                    isClassified = category != null,
                 )
             }
         return dashboardCalculator.compute(items)
@@ -234,28 +288,21 @@ class HomeViewModel(
     private fun updateDashboardWithLocalSnapshot() {
         val localMetrics = computeLocalDashboardMetrics()
         _uiState.update { state ->
-            state.copy(
-                healthDashboard =
-                    state.healthDashboard.copy(
-                        isLoading = false,
-                        // Keep any existing backend error surfaced; this function's job is just to keep metrics in sync.
-                        metrics = localMetrics,
-                    ),
+                state.copy(
+                    healthDashboard =
+                        state.healthDashboard.copy(
+                            isLoading = false,
+                            // Keep any existing backend error surfaced; this function's job is just to keep metrics in sync.
+                            metrics = localMetrics.copy(
+                                trendMetadata = state.healthDashboard.metrics?.trendMetadata,
+                                trendSnapshots = state.healthDashboard.metrics?.trendSnapshots.orEmpty(),
+                                diversityHistory = state.healthDashboard.metrics?.diversityHistory.orEmpty(),
+                                expiryHeatmap = state.healthDashboard.metrics?.expiryHeatmap.orEmpty(),
+                            ),
+                        ),
             )
         }
     }
-
-    private fun shouldUseLocalMetrics(
-        current: HealthDashboardMetrics?,
-        local: HealthDashboardMetrics
-    ): Boolean {
-        val localTotal = local.nutritionDistribution.totalPercent()
-        if (localTotal <= 0.0) return false
-        val currentTotal = current?.nutritionDistribution?.totalPercent() ?: 0.0
-        return current == null || currentTotal <= 0.0
-    }
-
-    private fun Map<NutritionCategory, Double>.totalPercent(): Double = values.sum()
 
     private fun HealthDashboardMetrics.hasMeaningfulData(): Boolean =
         nutritionDistribution.values.any { it > 0.0 } ||
@@ -265,25 +312,6 @@ class HomeViewModel(
     companion object {
         private const val DEFAULT_TREND_RANGE_DAYS = 30
     }
-
-    private fun mapIngredientCategory(category: fridger.com.io.data.model.IngredientCategory): NutritionCategory =
-        when (category) {
-            fridger.com.io.data.model.IngredientCategory.VEGETABLES,
-            fridger.com.io.data.model.IngredientCategory.FRUITS -> NutritionCategory.PRODUCE
-            fridger.com.io.data.model.IngredientCategory.MEAT,
-            fridger.com.io.data.model.IngredientCategory.SEAFOOD,
-            fridger.com.io.data.model.IngredientCategory.DAIRY -> NutritionCategory.PROTEIN
-            fridger.com.io.data.model.IngredientCategory.GRAINS -> NutritionCategory.REFINED_GRAIN
-            fridger.com.io.data.model.IngredientCategory.OTHERS -> NutritionCategory.OTHER
-        }
-
-    private fun defaultCaloriesFor(category: NutritionCategory): Int =
-        when (category) {
-            NutritionCategory.PRODUCE -> 50
-            NutritionCategory.PROTEIN -> 250
-            NutritionCategory.REFINED_GRAIN -> 180
-            NutritionCategory.OTHER -> 120
-        }
 
     // Dialog visibility
     fun onShowAddItemDialog() {
@@ -308,6 +336,7 @@ class HomeViewModel(
                     val date = item.expiryDateDisplay ?: defaultExpiry
                     repository.add(name = item.name, expirationDateDisplay = date)
                 }
+                runCatching { repository.sync() }
                 _uiState.update { it.copy(showAddNewItemDialog = false) }
                 refreshHealthDashboard()
             } catch (e: Exception) {
@@ -318,6 +347,17 @@ class HomeViewModel(
 
     fun onItemClick(itemId: String) {
         // TODO: Navigate to item detail screen
+    }
+
+    fun updateIngredientCategory(itemId: String, category: IngredientCategory?) {
+        viewModelScope.launch {
+            try {
+                repository.updateCategory(itemId.toLong(), category)
+                runCatching { repository.sync() }
+            } catch (error: Exception) {
+                _uiState.update { it.copy(error = error.message) }
+            }
+        }
     }
 
     fun onRemoveItemInitiated(itemId: String) {
@@ -357,6 +397,7 @@ class HomeViewModel(
         viewModelScope.launch {
             try {
                 repository.delete(item.id.toLong())
+                runCatching { repository.sync() }
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = e.message) }
             }

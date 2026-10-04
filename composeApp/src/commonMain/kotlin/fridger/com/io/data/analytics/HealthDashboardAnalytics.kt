@@ -29,6 +29,10 @@ interface HealthDashboardAnalytics {
         sectionStates: Map<DashboardSection, Boolean>,
         source: DashboardStateSyncSource,
     )
+
+    fun trackDashboardView() {}
+
+    fun trackRecommendationAction(reason: String, action: String) {}
 }
 
 /**

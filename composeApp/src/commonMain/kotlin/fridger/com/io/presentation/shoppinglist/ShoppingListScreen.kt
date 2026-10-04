@@ -1,5 +1,7 @@
 package fridger.com.io.presentation.shoppinglist
 
+import fridger.shared.health.toNutritionCategory
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -68,6 +70,16 @@ fun ShoppingListScreen(
     var defaultListName by rememberSaveable { mutableStateOf("") }
     var pendingDeleteList by remember { mutableStateOf<fridger.com.io.data.settings.ShoppingListMeta?>(null) }
     var showSyncQueueDialog by rememberSaveable { mutableStateOf(false) }
+    val suggestedCategory by DashboardShoppingIntent.category.collectAsState()
+    var addCategory by remember { mutableStateOf<fridger.shared.health.NutritionCategory?>(null) }
+    androidx.compose.runtime.LaunchedEffect(suggestedCategory, state.currentList) {
+        if (suggestedCategory != null && state.currentList != null) {
+            addCategory = suggestedCategory
+            showAddDialog = true
+            DashboardShoppingIntent.category.value = null
+        }
+    }
+
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -80,6 +92,10 @@ fun ShoppingListScreen(
                         .padding(horizontal = MaterialTheme.sizing.contentPaddingHorizontal)
                         .weight(1f)
             ) {
+                if (suggestedCategory != null && state.currentList == null) {
+                    Text("選擇或建立購物清單，再挑選要補充的${suggestedCategory!!.displayName}食材。")
+                    TextButton(onClick = { DashboardShoppingIntent.category.value = null }) { Text("取消補貨") }
+                }
                 if (state.isOffline) {
                     OfflineSyncBanner(
                         pendingCount = state.pendingSyncCount,
@@ -160,7 +176,7 @@ fun ShoppingListScreen(
                     // Actions
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Button(
-                            onClick = { showAddDialog = true },
+                            onClick = { addCategory = null; showAddDialog = true },
                             colors =
                                 ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.primary,
@@ -261,6 +277,11 @@ fun ShoppingListScreen(
 
         if (showAddDialog) {
             ShoppingQuickAddTopDialog(
+                suggestions = addCategory?.let { category ->
+                    fridger.com.io.data.QuickAddCatalog.allNames.filter {
+                        fridger.com.io.data.IngredientCategoryClassifier.classify(it).toNutritionCategory() == category
+                    }
+                },
                 onDismiss = { showAddDialog = false },
                 onAdd = { name, qty ->
                     vm.addItem(name.trim(), qty?.trim().takeUnless { it.isNullOrBlank() })

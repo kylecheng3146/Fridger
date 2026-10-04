@@ -26,7 +26,7 @@ private fun String.looksLikeJsonListFragment(fieldName: String): Boolean {
     return recipeJsonKeyPattern.containsMatchIn(trimmed) ||
         Regex("^\\s*\"?$fieldName\"?\\s*:", RegexOption.IGNORE_CASE).containsMatchIn(trimmed) ||
         Regex("^\\s*\".*\"\\s*,?\\s*$").matches(trimmed) ||
-        (trimmed.startsWith("[") && trimmed.contains('"')) ||
+        (trimmed.removePrefix("[").trimStart().startsWith("\"") && trimmed.startsWith("[")) ||
         (trimmed.startsWith("{") && trimmed.contains('"'))
 }
 

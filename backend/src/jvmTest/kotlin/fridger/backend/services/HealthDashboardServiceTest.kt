@@ -2,6 +2,8 @@ package fridger.backend.services
 
 import fridger.backend.repositories.FridgeItemDataSource
 import fridger.backend.repositories.FridgeItemRecord
+import fridger.backend.repositories.HealthDashboardSnapshotRange
+import fridger.backend.repositories.HealthDashboardSnapshotStore
 import fridger.shared.health.HealthDashboardCalculator
 import fridger.shared.health.HealthDashboardMetrics
 import fridger.shared.health.NutritionCategory
@@ -31,12 +33,26 @@ class HealthDashboardServiceTest {
             HealthDashboardService(
                 dataSource = dataSource,
                 calculator = HealthDashboardCalculator(nowProvider = { KotlinLocalDate(2024, 1, 10) }),
+                nowProvider = { java.time.Instant.parse("2024-01-10T00:00:00Z") },
+                snapshots = object : HealthDashboardSnapshotStore {
+                    override fun users() = emptyList<Pair<UUID, String>>()
+                    override fun save(
+                        userId: UUID,
+                        date: LocalDate,
+                        timeZoneId: String,
+                        metrics: HealthDashboardMetrics,
+                        items: List<fridger.shared.health.InventoryItem>,
+                    ) = Unit
+                    override fun fetch(userId: UUID, from: LocalDate, through: LocalDate) =
+                        HealthDashboardSnapshotRange(emptyList(), emptyList(), emptyList(), emptySet())
+                },
             )
 
         val metrics: HealthDashboardMetrics = service.getDashboard(userId)
 
-        assertEquals(57.1, metrics.nutritionDistribution[NutritionCategory.PRODUCE])
-        assertEquals(28.6, metrics.nutritionDistribution[NutritionCategory.PROTEIN])
+        assertEquals(33.3, metrics.nutritionDistribution[NutritionCategory.PRODUCE])
+        assertEquals(33.3, metrics.nutritionDistribution[NutritionCategory.PROTEIN])
+        assertEquals(33.3, metrics.nutritionDistribution[NutritionCategory.REFINED_GRAIN])
         assertTrue(metrics.expiryAlerts.any { it.itemName == "Salmon" })
         assertTrue(metrics.recommendations.isNotEmpty())
     }
@@ -60,4 +76,31 @@ class HealthDashboardServiceTest {
             createdAt = expiryDate.atStartOfDay().toInstant(java.time.ZoneOffset.UTC)
         )
     }
+    @Test
+    fun missingTimeZoneUsesStoredZoneAndCapturesOnlyTheActualDate() {
+        var updates = 0
+        val dataSource = object : FridgeItemDataSource {
+            override fun fetchItemsForUser(userId: UUID) = emptyList<FridgeItemRecord>()
+            override fun fetchTimeZoneForUser(userId: UUID) = "Asia/Taipei"
+            override fun updateTimeZoneForUser(userId: UUID, timeZoneId: String) { updates++ }
+        }
+        val dates = mutableSetOf<KotlinLocalDate>()
+        val snapshots = object : HealthDashboardSnapshotStore {
+            override fun users() = listOf(userId to "Asia/Taipei")
+            override fun save(userId: UUID, date: LocalDate, timeZoneId: String, metrics: HealthDashboardMetrics, items: List<fridger.shared.health.InventoryItem>) {
+                assertEquals("Asia/Taipei", timeZoneId)
+                dates += KotlinLocalDate.parse(date.toString())
+            }
+            override fun fetch(userId: UUID, from: LocalDate, through: LocalDate) =
+                HealthDashboardSnapshotRange(emptyList(), emptyList(), emptyList(), dates.filter { it.toString() >= from.toString() && it.toString() <= through.toString() }.toSet())
+        }
+        val service = HealthDashboardService(dataSource, snapshots = snapshots, nowProvider = { java.time.Instant.parse("2024-01-10T17:00:00Z") })
+        val metrics = service.getDashboard(userId, HealthDashboardRequestOptions(includeTrends = true))
+        service.captureDailySnapshots()
+        service.captureDailySnapshots()
+        assertEquals(setOf(KotlinLocalDate(2024, 1, 11)), dates)
+        assertEquals(0, updates)
+        assertTrue(metrics.trendMetadata!!.partialRange)
+    }
+
 }

@@ -1,6 +1,9 @@
 package fridger.backend
 
 import fridger.backend.db.FridgeItemsTable
+import fridger.backend.db.HealthDashboardEventsTable
+import fridger.backend.db.HealthDashboardExpirySnapshotsTable
+import fridger.backend.db.HealthDashboardSnapshotsTable
 import fridger.backend.db.RefreshTokensTable
 import fridger.backend.db.UsersTable
 import org.jetbrains.exposed.sql.Database
@@ -25,13 +28,31 @@ object DatabaseTestHelper {
     /** Create tables fresh before each test. */
     fun setup() {
         connectIfNeeded()
-        transaction { SchemaUtils.create(UsersTable, RefreshTokensTable, FridgeItemsTable) }
+        transaction {
+            SchemaUtils.create(
+                UsersTable,
+                RefreshTokensTable,
+                FridgeItemsTable,
+                HealthDashboardSnapshotsTable,
+                HealthDashboardExpirySnapshotsTable,
+                HealthDashboardEventsTable,
+            )
+        }
     }
 
     /** Drop tables after each test to guarantee clean slate. */
     fun teardown() {
         // Safe to attempt drop even if not present
-        transaction { SchemaUtils.drop(FridgeItemsTable, RefreshTokensTable, UsersTable) }
+        transaction {
+            SchemaUtils.drop(
+                HealthDashboardExpirySnapshotsTable,
+                HealthDashboardEventsTable,
+                HealthDashboardSnapshotsTable,
+                FridgeItemsTable,
+                RefreshTokensTable,
+                UsersTable,
+            )
+        }
     }
 }
 

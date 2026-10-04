@@ -9,7 +9,7 @@ import fridger.com.io.data.model.IngredientCategory
 object IngredientCategoryClassifier {
     fun classify(rawName: String): IngredientCategory {
         val name = rawName.trim().lowercase()
-        if (name.isEmpty()) return IngredientCategory.OTHERS
+        if (name.isEmpty()) return IngredientCategory.UNCATEGORIZED
 
         return when {
             matches(name, dairyKeywords) -> IngredientCategory.DAIRY
@@ -18,7 +18,7 @@ object IngredientCategoryClassifier {
             matches(name, vegetableKeywords) -> IngredientCategory.VEGETABLES
             matches(name, fruitKeywords) -> IngredientCategory.FRUITS
             matches(name, grainKeywords) -> IngredientCategory.GRAINS
-            else -> IngredientCategory.OTHERS
+            else -> IngredientCategory.UNCATEGORIZED
         }
     }
 

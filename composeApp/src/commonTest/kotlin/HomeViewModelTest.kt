@@ -129,7 +129,7 @@ class HomeViewModelTest {
 
         override suspend fun getRecipesByIngredient(ingredient: String): Result<List<MealDto>> = Result.success(emptyList())
 
-        override suspend fun generateRecipeFromInventory(ingredients: List<String>): Result<RecipeSuggestion> {
+        override suspend fun generateRecipeFromInventory(ingredients: List<String>, styles: List<String>): Result<RecipeSuggestion> {
             lastInventoryRequest = ingredients
             return Result.success(
                 RecipeSuggestion(
@@ -144,6 +144,10 @@ class HomeViewModelTest {
                 )
             )
         }
+
+        override suspend fun saveRecipeLocally(recipe: RecipeSuggestion): Result<Unit> = Result.success(Unit)
+
+        override suspend fun saveRecipeRemotely(recipe: RecipeSuggestion, accessToken: String): Result<Unit> = Result.success(Unit)
 
         override suspend fun submitRecipeFeedback(
             recipeId: String,
@@ -303,7 +307,8 @@ class HomeViewModelTest {
             assertEquals(1, state.weekExpiringItems.size)
             assertEquals(1, state.expiredItems.size)
             assertEquals(4, state.refrigeratedItems.size)
-            assertEquals(dashboardMetrics, state.healthDashboard.metrics)
+            assertEquals(state.refrigeratedItems.size, state.healthDashboard.metrics?.totalTrackedItems)
+            assertTrue(state.healthDashboard.metrics!!.expiryAlerts.all { it.calorieBucket == null })
         }
 
     @Test
@@ -325,7 +330,8 @@ class HomeViewModelTest {
             assertTrue(state.expiredItems.isEmpty())
             assertTrue(state.refrigeratedItems.isEmpty())
             assertTrue(state.groupedRefrigeratedItems.isEmpty())
-            assertEquals(dashboardMetrics, state.healthDashboard.metrics)
+            assertEquals(state.refrigeratedItems.size, state.healthDashboard.metrics?.totalTrackedItems)
+            assertTrue(state.healthDashboard.metrics!!.expiryAlerts.all { it.calorieBucket == null })
         }
 
     @Test
@@ -719,4 +725,26 @@ class HomeViewModelTest {
             val recipeState = viewModel.recipeState.value as RecipeUiState.Success
             assertEquals(RecipeFeedbackType.DISLIKE, recipeState.recipe.userFeedback)
         }
+    @Test
+    fun `account change clears historical dashboard and selected ingredients`() = runTest(testDispatcher) {
+        val users = MutableStateFlow("test-user")
+        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val ingredients = MutableStateFlow(listOf(Ingredient(91, "Apple", today, today, fridger.com.io.data.model.IngredientCategory.FRUITS, Freshness.Fresh)))
+        repository = FakeIngredientRepository(ingredients)
+        val historyRepository = object : HealthDashboardRepository {
+            override suspend fun getDashboardMetrics(userId: String, includeTrends: Boolean, rangeDays: Int?): Result<HealthDashboardMetrics> =
+                Result.success(dashboardMetrics.copy(trendSnapshots = if (userId == "test-user") listOf(fridger.shared.health.TrendSnapshot(today, emptyMap(), totalTrackedItems = 1)) else emptyList()))
+        }
+        viewModel = HomeViewModel(repository, recipeRepository, translator, historyRepository, userSessionProvider, dashboardPreferences, analytics, userChanges = users)
+        advanceUntilIdle()
+        viewModel.onToggleItemSelection("91")
+        assertEquals(1, viewModel.uiState.value.healthDashboard.metrics!!.trendSnapshots.size)
+        ingredients.value = emptyList()
+        users.value = "bob"
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value.selectedItemIds.isEmpty())
+        assertTrue(viewModel.uiState.value.healthDashboard.metrics!!.trendSnapshots.isEmpty())
+        assertEquals(0, viewModel.uiState.value.healthDashboard.metrics!!.totalTrackedItems)
+    }
+
 }

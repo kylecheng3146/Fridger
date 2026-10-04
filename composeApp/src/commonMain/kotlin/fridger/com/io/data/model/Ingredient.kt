@@ -20,5 +20,8 @@ data class Ingredient(
     val addDate: LocalDate,
     val expirationDate: LocalDate,
     val category: IngredientCategory,
-    val freshness: Freshness
+    val freshness: Freshness,
+    val syncId: String = id.toString(),
+    val ownerId: String? = null,
+    val categoryOverride: IngredientCategory? = null,
 )

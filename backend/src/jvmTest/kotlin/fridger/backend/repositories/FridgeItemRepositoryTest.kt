@@ -76,4 +76,34 @@ class FridgeItemRepositoryTest : BaseDbTest() {
         assertTrue(names.containsAll(listOf("Kale", "Chicken Breast")))
         assertEquals(setOf(NutritionCategory.PRODUCE, NutritionCategory.PROTEIN), records.map { it.category }.toSet())
     }
+    @Test
+    fun inventoryUpsertAndDeleteCannotChangeAnotherAccount() {
+        val alice = UUID.randomUUID()
+        val bob = UUID.randomUUID()
+        transaction {
+            listOf(alice, bob).forEach { user ->
+                UsersTable.insert {
+                    it[id] = user
+                    it[name] = "Test"
+                    it[email] = "$user@example.com"
+                    it[createdAt] = Instant.now()
+                }
+            }
+        }
+        val id = UUID.randomUUID()
+        val added = LocalDate.of(2026, 10, 4)
+        val expires = added.plusDays(4)
+        assertTrue(repository.upsertItem(alice, id, "Mystery", fridger.shared.health.InventoryCategory.UNCATEGORIZED, added, expires, "Asia/Taipei"))
+        kotlin.test.assertFalse(repository.upsertItem(bob, id, "Stolen", fridger.shared.health.InventoryCategory.MEAT, added, expires, "UTC"))
+        kotlin.test.assertFalse(repository.deleteItem(bob, id))
+        val item = repository.fetchItemsForUser(alice).single()
+        assertEquals("Mystery", item.name)
+        kotlin.test.assertFalse(item.isClassified)
+        assertEquals(added, item.addedDate)
+        assertEquals(expires, item.expiryDate)
+        assertTrue(repository.fetchItemsForUser(bob).isEmpty())
+        assertTrue(repository.deleteItem(alice, id))
+        assertTrue(repository.fetchItemsForUser(alice).isEmpty())
+    }
+
 }

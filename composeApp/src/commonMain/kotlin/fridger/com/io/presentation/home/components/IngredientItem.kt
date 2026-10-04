@@ -14,6 +14,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -59,6 +60,7 @@ fun IngredientItem(
     isSelected: Boolean,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
+    onEditCategory: (() -> Unit)? = null,
     onRemove: (() -> Unit)? = null
 ) {
     val borderColor by animateColorAsState(
@@ -130,11 +132,18 @@ fun IngredientItem(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = item.category.name,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = item.category.displayName,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (onEditCategory != null) {
+                        TextButton(onClick = onEditCategory, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)) {
+                            Text("修改分類", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
             }
 
             Column(horizontalAlignment = Alignment.End) {
@@ -199,6 +208,7 @@ fun IngredientCompactCard(
     isSelected: Boolean,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
+    onEditCategory: (() -> Unit)? = null,
     onRemove: (() -> Unit)? = null,
 ) {
     val borderColor by animateColorAsState(
@@ -264,10 +274,15 @@ fun IngredientCompactCard(
                         maxLines = 1
                     )
                     Text(
-                        text = item.quantity,
+                        text = "${item.category.displayName} · ${item.quantity}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+                if (onEditCategory != null && !isSelected) {
+                    TextButton(onClick = onEditCategory, contentPadding = PaddingValues(horizontal = 4.dp)) {
+                        Text("分類", style = MaterialTheme.typography.labelSmall)
+                    }
                 }
                 if (onRemove != null && !isSelected) {
                     IconButton(

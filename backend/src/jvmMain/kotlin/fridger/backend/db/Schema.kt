@@ -13,6 +13,7 @@ object UsersTable : Table("users") {
     val email = text("email").uniqueIndex()
     val googleId = text("google_id").nullable().uniqueIndex()
     val pictureUrl = text("picture_url").nullable()
+    val timeZoneId = text("time_zone_id").default("UTC")
     val createdAt = timestamp("created_at")
     override val primaryKey = PrimaryKey(id)
 }
@@ -34,6 +35,43 @@ object FridgeItemsTable : Table("fridge_items") {
     val quantity = double("quantity")
     val caloriesPerPortion = integer("calories_per_portion")
     val expiryDate = date("expiry_date").nullable()
+    val addedDate = date("added_date").nullable()
+    val createdAt = timestamp("created_at")
+    override val primaryKey = PrimaryKey(id)
+}
+
+object HealthDashboardSnapshotsTable : Table("health_dashboard_snapshots") {
+    val userId = uuid("user_id")
+    val snapshotDate = date("snapshot_date")
+    val timeZoneId = text("time_zone_id")
+    val produceCount = integer("produce_count")
+    val proteinCount = integer("protein_count")
+    val grainCount = integer("grain_count")
+    val otherCount = integer("other_count")
+    val unclassifiedCount = integer("unclassified_count")
+    val totalTrackedItems = integer("total_tracked_items")
+    val diversityScore = integer("diversity_score")
+    val diversityRating = text("diversity_rating")
+    val createdAt = timestamp("created_at")
+    override val primaryKey = PrimaryKey(userId, snapshotDate)
+}
+
+object HealthDashboardExpirySnapshotsTable : Table("health_dashboard_expiry_snapshots") {
+    val userId = uuid("user_id")
+    val snapshotDate = date("snapshot_date")
+    val itemId = uuid("item_id")
+    val itemName = text("item_name")
+    val category = text("category")
+    val expiryDate = date("expiry_date")
+    override val primaryKey = PrimaryKey(userId, snapshotDate, itemId)
+}
+
+object HealthDashboardEventsTable : Table("health_dashboard_events") {
+    val id = uuid("id")
+    val userId = uuid("user_id")
+    val eventName = text("event_name")
+    val payload = text("payload")
+    val occurredAt = timestamp("occurred_at")
     val createdAt = timestamp("created_at")
     override val primaryKey = PrimaryKey(id)
 }

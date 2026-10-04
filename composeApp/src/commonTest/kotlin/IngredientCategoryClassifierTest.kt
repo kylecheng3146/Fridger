@@ -31,14 +31,21 @@ class IngredientCategoryClassifierTest {
     }
 
     @Test
-    fun fallbackToOthers() {
-        assertEquals(IngredientCategory.OTHERS, IngredientCategoryClassifier.classify("醬油"))
-        assertEquals(IngredientCategory.OTHERS, IngredientCategoryClassifier.classify(""))
+    fun unknownIngredientsRemainUnclassified() {
+        assertEquals(IngredientCategory.UNCATEGORIZED, IngredientCategoryClassifier.classify("醬油"))
+        assertEquals(IngredientCategory.UNCATEGORIZED, IngredientCategoryClassifier.classify(""))
     }
 
     @Test
     fun avoidEggKeywordFalsePositives() {
         assertEquals(IngredientCategory.VEGETABLES, IngredientCategoryClassifier.classify("Eggplant"))
-        assertEquals(IngredientCategory.OTHERS, IngredientCategoryClassifier.classify("蛋糕"))
+        assertEquals(IngredientCategory.UNCATEGORIZED, IngredientCategoryClassifier.classify("蛋糕"))
     }
+    @Test
+    fun recipeIngredientSearchUsesKnownCatalogNamesAndPreservesCustomNames() {
+        assertEquals("tomatoes", fridger.com.io.data.QuickAddCatalog.recipeSearchName("番茄"))
+        assertEquals("beef", fridger.com.io.data.QuickAddCatalog.recipeSearchName("beef"))
+        assertEquals("自種香草", fridger.com.io.data.QuickAddCatalog.recipeSearchName("自種香草"))
+    }
+
 }

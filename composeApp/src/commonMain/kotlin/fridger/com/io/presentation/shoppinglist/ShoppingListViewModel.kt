@@ -35,6 +35,10 @@ data class ShoppingListUiState(
     val syncRetryAttempt: Int = 0
 )
 
+object DashboardShoppingIntent {
+    val category = kotlinx.coroutines.flow.MutableStateFlow<fridger.shared.health.NutritionCategory?>(null)
+}
+
 class ShoppingListViewModel(
     private val repository: ShoppingListRepository = ShoppingListRepositoryImpl(),
     private val syncProcessor: ShoppingSyncProcessor = NoopShoppingSyncProcessor(),
